@@ -197,7 +197,7 @@ function next(stack, graph, msg) {
     handle(node, msg).then((outputMessage) => {
       // TODO - this iterates the graph serially
       stack.push.apply(stack, node.wires);
-      resolve(next(stack, graph, outputMessage, ow));
+      resolve(next(stack, graph, outputMessage[0]));
     })
   });
 }
@@ -257,17 +257,13 @@ function begin(msg) {
 
 let data = JSON.parse(fs.readFileSync("test.json"));
 let graph = parseFlow(data);
-// console.log(graph);
-
-init_worker();
-
-
 let doneCount = 0;
 let willCount = 0;
+
+// init_worker();
 // begin({});
+
 for (let i = 0; i < 100; i++) {
-  // console.log('will', i);
   willCount++;
-  // begin({i: i})
   main({flow: data, msg: {i: i}});
 }
