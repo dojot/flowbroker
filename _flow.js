@@ -70,17 +70,6 @@ function handle(node, msg) {
   })
 }
 
-
-// class CallCtx {
-//    msg: any;
-//    node: string; // next-hop id
-//    flow: string; // id of the graph to be traversed
-//
-//    meta: {
-//      // TODO include execution metadata
-//    }
-// }
-
 /**
  * Retrieves a given flow description
  * @param  {[string]} id Flow id.
@@ -104,12 +93,15 @@ function init_worker() {
   let last = new Date();
   let nMsg = 0;
   let total = 0;
+  let total_invoked = 0;
+  let total_returned = 0;
 
   setInterval(() => {
     let now = new Date();
     let p = now - last;
     if (p > 1000) {
-      console.log('Processed %d msg/s (%d | %dms | %d)...', nMsg/(p/1000), nMsg, p, total);
+      console.log('Processed %d msg/s (%d | %dms | amqp total %d | inv %d | ret %d)...',
+                  nMsg/(p/1000), nMsg, p, total, total_invoked, total_returned);
       total += nMsg;
       nMsg = 0;
       last = now;
@@ -134,6 +126,7 @@ function init_worker() {
 
         writerChannel.on('drain', () => {console.log('got drain event');})
         writerChannel.on('blocked', () => {console.log('got blocked event');})
+        writerChannel.assertQueue('out_queue', {durable: true});
 
         if (err) { console.error('failed to create channel'); return ; }
         consumerChannel.consume(q, function(ctx) {
@@ -156,10 +149,13 @@ function init_worker() {
           // TEST - ack before sending
           consumerChannel.ack(ctx);
 
+          total_invoked++;
           handle(nodeConfig, call.msg).then((results) => {
+            total_returned++;
             let t = new Date();
             // console.log('handle returned');
             if (nodeConfig.wires.length == 0) {
+              writerChannel.sendToQueue('out_queue', new Buffer(JSON.stringify(results)), {persistent: true});
               // console.log('no more proc. to do');
               doneCount++;
               nMsg++;
@@ -175,7 +171,6 @@ function init_worker() {
 
             // console.log('will proc results', results, nodeConfig);
             // results is an array of array of messages to queue up
-            let k = 0;
             for (let idx = 0 ; idx < nodeConfig.wires.length; idx++) {
               // TODO for full node-red compatibility, another 'for' (result publishing) is required.
               let nextOp = {
@@ -190,7 +185,6 @@ function init_worker() {
                 nextOp.msg = msg;
                 // console.log('about to send');
                 let res = writerChannel.sendToQueue(q, new Buffer(JSON.stringify(nextOp)), {persistent: true});
-                k++;
                 if (res == false) {
                   console.error("failed to send message");
                 }
@@ -288,17 +282,24 @@ function begin(end) {
           willCount++;
           let nextOp = { msg: {i: i}, node: n, flow: graph.id }
           // console.log('will send event', nextOp);
-          let res = ch.sendToQueue(q, new Buffer(JSON.stringify(nextOp)), {persistent: true});
-          if (res == false) {
+          let ret = ch.sendToQueue(q, new Buffer(JSON.stringify(nextOp)), {persistent: true});
+
+          // even when this returns false, it seems that messages are (eventually?) taken up
+          // by the broker.
+          if (ret == false) {
             failures++;
             console.error('failed to publish idx %d', i);
+          } else {
+            doneCount++;
           }
         }
       }
       console.log('took %dms to send %d events', new Date() - start, willCount);
       console.log('there were %d failures', failures);
-      if (end || false) {
-        setTimeout(() => {process.exit(0);}, 10);
+      if ((end || false) && (doneCount == willCount)) {
+        // this is needed because, for some reason the amqp driver is still in the process of
+        // sending the messages *after* the call returns (and no callbacks or promises are returned)
+        setTimeout(() => {conn.close();process.exit(0);}, 1000);
       }
     });
   });
@@ -308,7 +309,7 @@ let data = JSON.parse(fs.readFileSync("test.json"));
 let graph = parseFlow(data);
 let doneCount = 0;
 let willCount = 0;
-let shouldCount = 100;
+let shouldCount = 16000;
 
 if (process.argv[2] == 'amqp_prod') {
   begin(true);
