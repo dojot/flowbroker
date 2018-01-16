@@ -1,0 +1,27 @@
+version: '2.1'
+services:
+
+  amqp:
+    image: rabbitmq:3
+    hostname: amqp
+
+  # those should be configured and spawn at run time
+  worker:
+    image: mashup/worker
+    hostname: worker
+
+  device-in:
+    image: mashup/worker
+    hostname: device-in
+
+  device-out:
+    image: mashup/worker
+    hostname: device-out
+
+  change:
+    image: mashup/worker
+    hostname: change
+
+  switch:
+    image: mashup/worker
+    hostname: switch
