@@ -39,6 +39,9 @@ function handle_dummy(node, msg) {
   })
 }
 
+var rMin = 0;
+var rMax = 0;
+
  /**
   * Execute individual processing node, with given configuration
   * @param  {[type]} node node configuration to be used within invocation
@@ -46,6 +49,7 @@ function handle_dummy(node, msg) {
   * @return {[type]}      [description]
   */
 function handle(node, msg) {
+  let ts = new Date();
   // TODO this is a dummy (tests only) implementation
   return new Promise((resolve, reject) => {
     // TODO we could be using a proper zmq async req-rep pattern
@@ -53,6 +57,10 @@ function handle(node, msg) {
     sock.on("message", function(reply) {
       // console.log('got reply', reply.toString());
       sock.close();
+      // console.log('remote took %dms', new Date() - ts);
+      let d = new Date() - ts;
+      if (d < rMin) { rMin = d; }
+      if (d > rMax) { rMax = d; }
       resolve(JSON.parse(reply.toString()));
     });
 
@@ -92,6 +100,22 @@ function get_graph(id) {
 function init_worker() {
   let max = 0;
   let min = 0;
+
+  let last = new Date();
+  let nMsg = 0;
+  let total = 0;
+
+  setInterval(() => {
+    let now = new Date();
+    let p = now - last;
+    if (p > 1000) {
+      console.log('Processed %d msg/s (%d | %dms | %d)...', nMsg/(p/1000), nMsg, p, total);
+      total += nMsg;
+      nMsg = 0;
+      last = now;
+    }
+  }, 1000)
+
   amqp.connect('amqp://amqp', function(err, conn) {
     if (err) {
       console.log('failed to connect to amqp broker', err);
@@ -103,10 +127,14 @@ function init_worker() {
       }
 
       let q = 'task_queue';
-      consumerChannel.assertQueue(q, {durable: false});
+      consumerChannel.assertQueue(q, {durable: true});
       consumerChannel.prefetch(1);
 
       conn.createChannel((err, writerChannel) => {
+
+        writerChannel.on('drain', () => {console.log('got drain event');})
+        writerChannel.on('blocked', () => {console.log('got blocked event');})
+
         if (err) { console.error('failed to create channel'); return ; }
         consumerChannel.consume(q, function(ctx) {
           let call = JSON.parse(ctx.content.toString());
@@ -125,15 +153,19 @@ function init_worker() {
             console.error("unkown node in flow");
           }
 
+          // TEST - ack before sending
+          consumerChannel.ack(ctx);
+
           handle(nodeConfig, call.msg).then((results) => {
             let t = new Date();
             // console.log('handle returned');
             if (nodeConfig.wires.length == 0) {
               // console.log('no more proc. to do');
               doneCount++;
-              consumerChannel.ack(ctx);
+              nMsg++;
+              // consumerChannel.ack(ctx);
               if (doneCount == willCount) {
-                console.log('success %dms %dms', min, max);
+                console.log('success! rmin %dms rmax %dms', rMin, rMax);
                 setTimeout(() => {
                   process.exit(0);
                 }, 100)
@@ -157,8 +189,11 @@ function init_worker() {
               for (let msg of results) {
                 nextOp.msg = msg;
                 // console.log('about to send');
-                writerChannel.sendToQueue(q, new Buffer(JSON.stringify(nextOp)), {persistent: false});
+                let res = writerChannel.sendToQueue(q, new Buffer(JSON.stringify(nextOp)), {persistent: true});
                 k++;
+                if (res == false) {
+                  console.error("failed to send message");
+                }
                 // console.log('will send');
                 // console.log('will send msg', nextOp);
               }
@@ -166,7 +201,8 @@ function init_worker() {
             let s = new Date() - t;
             if (s > max) { max = s; }
             if (s < max) { min = s; }
-            consumerChannel.ack(ctx);
+            // nMsg++;
+            // consumerChannel.ack(ctx);
           })
         }, {noAck: false});
       })
@@ -222,12 +258,12 @@ function main(params) {
   next(stack, graph, msg, null).then((msg) => {
     doneCount++;
     if (doneCount == willCount) {
-      console.log('sucess!', willCount, doneCount);
+      console.log('success! rmin %dms rmax %dms', rMin, rMax);
     }
   });
 }
 
-function begin(msg) {
+function begin(end) {
   amqp.connect('amqp://amqp', function(err, conn) {
     if (err) {
       console.log('failed to connect', err);
@@ -239,18 +275,31 @@ function begin(msg) {
       }
 
       let q = 'task_queue';
-      ch.assertQueue(q, {durable: false});
+      ch.assertQueue(q, {durable: true});
+
+      ch.on('drain', () => {console.log('got drain event');})
+      ch.on('blocked', () => {console.log('got blocked event');})
 
       let start = new Date();
-      for (let i = 0; i < 10; i++) {
+      let failures = 0;
+
+      for (let i = 0; i < shouldCount; i++) {
         for (let n in graph.heads) {
           willCount++;
           let nextOp = { msg: {i: i}, node: n, flow: graph.id }
           // console.log('will send event', nextOp);
-          ch.sendToQueue(q, new Buffer(JSON.stringify(nextOp)), {persistent: false});
+          let res = ch.sendToQueue(q, new Buffer(JSON.stringify(nextOp)), {persistent: true});
+          if (res == false) {
+            failures++;
+            console.error('failed to publish idx %d', i);
+          }
         }
       }
-      console.log('took %dms to send events', new Date() - start);
+      console.log('took %dms to send %d events', new Date() - start, willCount);
+      console.log('there were %d failures', failures);
+      if (end || false) {
+        setTimeout(() => {process.exit(0);}, 10);
+      }
     });
   });
 }
@@ -259,11 +308,28 @@ let data = JSON.parse(fs.readFileSync("test.json"));
 let graph = parseFlow(data);
 let doneCount = 0;
 let willCount = 0;
+let shouldCount = 100;
 
-// init_worker();
-// begin({});
+if (process.argv[2] == 'amqp_prod') {
+  begin(true);
+}
+if (process.argv[2] == 'amqp_worker') {
+  init_worker();
+}
 
-for (let i = 0; i < 100; i++) {
-  willCount++;
-  main({flow: data, msg: {i: i}});
+if (process.argv[2] == 'amqp_multi') {
+  let nWorkers = parseInt(process.argv[3]);
+  begin();
+  for (let i = 0; i < nWorkers; i++) {
+    init_worker();
+  }
+
+  console.log('%d workers initialized', nWorkers);
+}
+
+if (process.argv[2] == 'local'){
+  for (let i = 0; i < shouldCount; i++) {
+    willCount++;
+    main({flow: data, msg: {i: i}});
+  }
 }
