@@ -99,13 +99,24 @@ function init_worker() {
   setInterval(() => {
     let now = new Date();
     let p = now - last;
-    if (p > 1000) {
-      console.log('Processed %d msg/s (%d | %dms | amqp total %d | inv %d | ret %d)...',
-                  nMsg/(p/1000), nMsg, p, total, total_invoked, total_returned);
-      total += nMsg;
-      nMsg = 0;
-      last = now;
+
+    if ((total_returned == 0) && (total_invoked == 0)) {
+      setTimeout(() => {
+        console.log('success! rmin %dms rmax %dms %d', rMin, rMax, doneCount);
+        console.log('finished processing in %dms', new Date() - start - 1000);
+        process.exit(0);
+      }, 100);
     }
+
+    if (args.verbose) {
+      console.log('Processed %d msg/s (done %d | %dms | inv %d | ret %d)...',
+                  total_returned/(p/1000), nMsg, p, total_invoked, total_returned);
+    }
+
+    total += total_invoked;
+    total_invoked = 0;
+    total_returned = 0;
+    last = now;
   }, 1000)
 
   amqp.connect('amqp://amqp', function(err, conn) {
@@ -160,11 +171,18 @@ function init_worker() {
               doneCount++;
               nMsg++;
               // consumerChannel.ack(ctx);
-              if (doneCount == willCount) {
-                console.log('success! rmin %dms rmax %dms', rMin, rMax);
-                setTimeout(() => {
-                  process.exit(0);
-                }, 100)
+              // if (doneCount == willCount) {
+              //   console.log('success! rmin %dms rmax %dms', rMin, rMax);
+              //   setTimeout(() => {
+              //     process.exit(0);
+              //   }, 100)
+              // }
+              if (doneCount == shouldCount) {
+                console.log('finished processing in %dms', new Date() - start);
+                if (args.verbose){
+                  console.log('Result message', JSON.stringify(results, null, 2));
+                }
+                process.exit(0);
               }
               return;
             }
@@ -225,6 +243,7 @@ function next(stack, graph, msg) {
     }
 
     handle(node, msg).then((outputMessage) => {
+      // console.log('did handle', at);
       // TODO - this iterates the graph serially
       stack.push.apply(stack, node.wires);
       resolve(next(stack, graph, outputMessage[0]));
@@ -236,23 +255,25 @@ function main(params) {
   if (params == undefined) {
     return {_status: "invalid params"};
   }
-  const flow = params.flow || null;
+
+  // const flow = params.flow || null;
   const msg = params.msg || null;
-
-
-  if ((flow == null) || (msg == null)) {
-    return {_status: "invalid params"};
-  }
+  // if ((flow == null) || (msg == null)) {
+  //   return {_status: "invalid params"};
+  // }
 
   const initialParams = {msg: msg};
 
   // let graph = parseFlow(flow);
   let stack = Object.keys(graph.heads).slice();
 
+  // console.log('will call', stack);
   next(stack, graph, msg, null).then((msg) => {
     doneCount++;
+    // console.log('flow done in %dms', new Date() - begin, msg);
     if (doneCount == willCount) {
       console.log('success! rmin %dms rmax %dms', rMin, rMax);
+      console.log('finished processing in %dms', new Date() - start);
     }
   });
 }
@@ -288,15 +309,15 @@ function begin(end) {
           // by the broker.
           if (ret == false) {
             failures++;
-            console.error('failed to publish idx %d', i);
+            // console.error('failed to publish idx %d', i);
           } else {
-            doneCount++;
+            sentCount++;
           }
         }
       }
       console.log('took %dms to send %d events', new Date() - start, willCount);
       console.log('there were %d failures', failures);
-      if ((end || false) && (doneCount == willCount)) {
+      if ((end || false) && (sentCount == willCount)) {
         // this is needed because, for some reason the amqp driver is still in the process of
         // sending the messages *after* the call returns (and no callbacks or promises are returned)
         setTimeout(() => {conn.close();process.exit(0);}, 1000);
@@ -305,30 +326,45 @@ function begin(end) {
   });
 }
 
+var ArgumentParser = require('argparse').ArgumentParser;
+let parser = new ArgumentParser({});
+parser.addArgument(['-n', '--number'], {defaultValue: 1});
+parser.addArgument(['-w', '--worker'], {defaultValue: 0});
+parser.addArgument(['-p', '--producer'], {action: 'storeTrue'});
+parser.addArgument(['-l', '--local'], {action: 'storeTrue'});
+parser.addArgument(['-m', '--multi'], {action: 'storeTrue'});
+parser.addArgument(['-v', '--verbose'], {action: 'storeTrue'});
+var args = parser.parseArgs();
+
 let data = JSON.parse(fs.readFileSync("test.json"));
 let graph = parseFlow(data);
 let doneCount = 0;
+let sentCount = 0;
 let willCount = 0;
-let shouldCount = 16000;
+let shouldCount = args.number;
 
-if (process.argv[2] == 'amqp_prod') {
+console.log('done initial parsing');
+let start = new Date();
+
+// amqp routing
+if (args.producer) {
   begin(true);
 }
-if (process.argv[2] == 'amqp_worker') {
+
+if (args.multi) {
+  begin();
+}
+
+for (let i = 0; i < args.worker; i++) {
   init_worker();
 }
-
-if (process.argv[2] == 'amqp_multi') {
-  let nWorkers = parseInt(process.argv[3]);
-  begin();
-  for (let i = 0; i < nWorkers; i++) {
-    init_worker();
-  }
-
-  console.log('%d workers initialized', nWorkers);
+if (args.worker) {
+  console.log('%d amqp workers initialized', args.worker);
 }
 
-if (process.argv[2] == 'local'){
+
+// promises stack
+if (args.local){
   for (let i = 0; i < shouldCount; i++) {
     willCount++;
     main({flow: data, msg: {i: i}});
