@@ -33,7 +33,7 @@ message's gone through it.
 
 ```shell
 npm install
-docker build -f worker.docker -t mashup/worker .
+docker build -f sampleNode/worker.docker -t mashup/worker .
 docker-compose -f compose.yaml up -d
 ```
 
