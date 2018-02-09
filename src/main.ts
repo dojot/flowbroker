@@ -1,11 +1,7 @@
 import fs = require("fs");
 import path = require("path");
 import util = require("util");
-
-class Settings {
-  version: "1.0.0"
-}
-let settings = new Settings();
+import { appendFile } from "fs";
 
 class NodeRedFileInfo {
   // Filename
@@ -28,8 +24,7 @@ class NodeRedFileInfo {
  * @param dir The directory to be searched.
  * @returns A list of file info.
  */
-function getNodeFiles(dir: string) : NodeRedFileInfo[]{
-  let ret: NodeRedFileInfo[] = [];
+function getNodeFiles(dir: string, shouldDescend: (pathName: string) => boolean, processFileCbk: (filename: string) => void) {
   let currentPath = path.resolve(dir);
 
   let filenames: string[] = [];
@@ -38,39 +33,46 @@ function getNodeFiles(dir: string) : NodeRedFileInfo[]{
   } catch (error) {
     console.log("Error while reading directory " + dir + ": " + error);
     console.log("Bailing out.");
-    return ret;
   }
 
   for(let filename of filenames) {
     let fullPath = path.join(dir, filename);
     let stats = fs.statSync(fullPath);
     if (stats.isFile()) {
+      processFileCbk(fullPath);
+    } else if (stats.isDirectory() &&  shouldDescend(filename)) {
+      // Descend.
+      let subdirInfo = getNodeFiles(fullPath, shouldDescend, processFileCbk);
+    }
+  }
+}
+
+function gatherNodeFileInfo(dir: string) : NodeRedFileInfo [] {
+  let ret: NodeRedFileInfo[] = [];
+  let shouldDescend = (filePath: string) => {
+    return !/^(\..*|lib|icons|node_modules|test|locales)$/.test(filePath)
+  }
+  let nodeInfoCbk = (filename: string) => { 
       try {
-        // Add to file info list.
-        fs.statSync(fullPath.replace(/\.js$/, ".html"));
+        // Check whether for each .js file there is also a .html file.
+        fs.statSync(filename.replace(/\.js$/, ".html"));
         let fileInfo: NodeRedFileInfo = {
-          file: fullPath,
+          file: filename,
           module: "node-red",
-          name: path.basename(fullPath).replace(/^\d+-/, "").replace(/\.js$/, ""),
-          version: settings.version
+          name: path.basename(filename).replace(/^\d+-/, "").replace(/\.js$/, ""),
+          version: "1.0.0"
         }
         ret.push(fileInfo);
       } catch (err) {
-        // Do nothing - there is no 
+        // Do nothing - there is no such file.
       }
-      
-    } else if (stats.isDirectory() && !/^(\..*|lib|icons|node_modules|test|locales)$/.test(filename)) {
-      // Descend.
-      let subdirInfo = getNodeFiles(fullPath);
-      ret = ret.concat(subdirInfo);
-    }
-  }
-
+  };
+  getNodeFiles(dir, shouldDescend, nodeInfoCbk);
   return ret;
 }
 
 
-let result = getNodeFiles("./nodes");
+let result = gatherNodeFileInfo("./nodes");
 
 console.log("Results:");
 console.log(util.inspect(result, {depth: null}));
