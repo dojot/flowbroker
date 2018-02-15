@@ -14,59 +14,37 @@
  * limitations under the License.
  **/
 
-var when = require("when");
-var fs = require("fs");
-var path = require("path");
+import when = require("when");
+import fs = require("fs");
+import path = require("path");
+import { CONFIG } from "./config";
+import { REDModule, REDNodeList, REDPackage, REDNodeInfo, REDNode } from "./types"
 
-var events;
-var log;
-var i18n;
+let disableNodePathScan = false;
+let iconFileExtensions = [".png", ".gif"];
 
-var settings;
-var disableNodePathScan = false;
-var iconFileExtensions = [".png", ".gif"];
+function init() {
 
-function init(runtime) {
-    settings = runtime.settings;
-    events = runtime.events;
-    log = runtime.log;
-    i18n = runtime.i18n;
 }
 
-function isIncluded(name) {
-    if (settings.nodesIncludes) {
-        for (var i=0;i<settings.nodesIncludes.length;i++) {
-            if (settings.nodesIncludes[i] == name) {
-                return true;
-            }
-        }
-    } else {
-        return true;
-    }
-    return false;
-}
-
-function isExcluded(name) {
-     if (settings.nodesExcludes) {
-        for (var i=0;i<settings.nodesExcludes.length;i++) {
-            if (settings.nodesExcludes[i] == name) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-function getLocalFile(file) {
-    if (!isIncluded(path.basename(file)) || isExcluded(path.basename(file))) {
-        return null;
-    }
+function getLocalFile(file: string): REDNode | null {
     try {
         fs.statSync(file.replace(/\.js$/,".html"));
         return {
             file:    file,
             module:  "node-red",
             name:    path.basename(file).replace(/^\d+-/,"").replace(/\.js$/,""),
-            version: settings.version
+            version: CONFIG.version,
+            config: "",
+            enabled: true,
+            err: null,
+            help: {},
+            id: "",
+            loaded: true,
+            local: true,
+            namespace: "",
+            template: "",
+            types: []
         };
     } catch(err) {
         return null;
@@ -80,11 +58,11 @@ function getLocalFile(file) {
  * @param dir the directory to search
  * @return an array of fully-qualified paths to .js files
  */
-function getLocalNodeFiles(dir) {
+function getLocalNodeFiles(dir: string) : REDNode[] {
     dir = path.resolve(dir);
 
-    var result = [];
-    var files = [];
+    let result: REDNode[] = [];
+    let files = [];
     try {
         files = fs.readdirSync(dir);
     } catch(err) {
@@ -92,10 +70,10 @@ function getLocalNodeFiles(dir) {
     }
     files.sort();
     files.forEach(function(fn) {
-        var stats = fs.statSync(path.join(dir,fn));
+        let stats = fs.statSync(path.join(dir,fn));
         if (stats.isFile()) {
             if (/\.js$/.test(fn)) {
-                var info = getLocalFile(path.join(dir,fn));
+                let info = getLocalFile(path.join(dir,fn));
                 if (info) {
                     result.push(info);
                 }
@@ -104,47 +82,44 @@ function getLocalNodeFiles(dir) {
             // Ignore /.dirs/, /lib/ /node_modules/
             if (!/^(\..*|lib|icons|node_modules|test|locales)$/.test(fn)) {
                 result = result.concat(getLocalNodeFiles(path.join(dir,fn)));
-            } else if (fn === "icons") {
-                var iconList = scanIconDir(path.join(dir,fn));
-                events.emit("node-icon-dir",{name:'node-red',path:path.join(dir,fn),icons:iconList});
-            }
+            } 
         }
     });
     return result;
 }
 
-function scanDirForNodesModules(dir,moduleName) {
-    var results = [];
-    var scopeName;
+function scanDirForNodesModules(dir: string, moduleName: string | null) : REDModule[] {
+    let results: REDModule[] = [];
+    let scopeName;
     try {
-        var files = fs.readdirSync(dir);
+        let files = fs.readdirSync(dir);
         if (moduleName) {
-            var m = /^(?:(@[^/]+)[/])?([^@/]+)/.exec(moduleName);
+            let m = /^(?:(@[^/]+)[/])?([^@/]+)/.exec(moduleName);
             if (m) {
                 scopeName = m[1];
                 moduleName = m[2];
             }
         }
-        for (var i=0;i<files.length;i++) {
-            var fn = files[i];
+        for (let i = 0; i < files.length; i++) {
+            let fn = files[i];
             if (/^@/.test(fn)) {
                 if (scopeName && scopeName === fn) {
                     // Looking for a specific scope/module
-                    results = results.concat(scanDirForNodesModules(path.join(dir,fn),moduleName));
+                    results = results.concat(scanDirForNodesModules(path.join(dir, fn), moduleName));
                     break;
                 } else {
-                    results = results.concat(scanDirForNodesModules(path.join(dir,fn),moduleName));
+                    results = results.concat(scanDirForNodesModules(path.join(dir, fn), moduleName));
                 }
             } else {
-                if (isIncluded(fn) && !isExcluded(fn) && (!moduleName || fn == moduleName)) {
-                    var pkgfn = path.join(dir,fn,"package.json");
+                if (!moduleName || fn == moduleName) {
+                    let pkgfn = path.join(dir, fn, "package.json");
                     try {
-                        var pkg = require(pkgfn);
+                        let pkg = require(pkgfn);
                         if (pkg['node-red']) {
-                            var moduleDir = path.join(dir,fn);
-                            results.push({dir:moduleDir,package:pkg});
+                            let moduleDir = path.join(dir, fn);
+                            results.push({ dir: moduleDir, package: pkg, local: true});
                         }
-                    } catch(err) {
+                    } catch (err) {
                         if (err.code != "MODULE_NOT_FOUND") {
                             // TODO: handle unexpected error
                         }
@@ -155,7 +130,7 @@ function scanDirForNodesModules(dir,moduleName) {
                 }
             }
         }
-    } catch(err) {
+    } catch (err) {
     }
     return results;
 }
@@ -165,21 +140,23 @@ function scanDirForNodesModules(dir,moduleName) {
  * @param moduleName the name of the module to be found
  * @return a list of node modules: {dir,package}
  */
-function scanTreeForNodesModules(moduleName) {
-    var dir = settings.coreNodesDir;
-    var results = [];
-    var userDir;
+function scanTreeForNodesModules(moduleName: string | null): REDModule[] {
+    let dir = CONFIG.coreNodesDir;
+    let results: REDModule[] = [];
+    let userDir;
 
-    if (settings.userDir) {
-        userDir = path.join(settings.userDir,"node_modules");
-        results = scanDirForNodesModules(userDir,moduleName);
-        results.forEach(function(r) { r.local = true; });
+    if (CONFIG.userDir) {
+        userDir = path.join(CONFIG.userDir,"node_modules");
+        results = scanDirForNodesModules(userDir, moduleName);
+        for (let module of results) {
+            module["local"] = true;
+        }        
     }
 
     if (dir) {
-        var up = path.resolve(path.join(dir,".."));
+        let up = path.resolve(path.join(dir,".."));
         while (up !== dir) {
-            var pm = path.join(dir,"node_modules");
+            let pm = path.join(dir,"node_modules");
             if (pm != userDir) {
                 results = results.concat(scanDirForNodesModules(pm,moduleName));
             }
@@ -190,163 +167,185 @@ function scanTreeForNodesModules(moduleName) {
     return results;
 }
 
-function getModuleNodeFiles(module) {
+function getModuleNodeFiles(module: REDModule): REDNode [] {
 
-    var moduleDir = module.dir;
-    var pkg = module.package;
+    let moduleDir = module.dir;
+    let pkg = module.package;
 
-    var nodes = pkg['node-red'].nodes||{};
-    var results = [];
-    var iconDirs = [];
+    let nodes: {
+        [nodeName: string]: string
+    } = {};
 
-    for (var n in nodes) {
+    if (pkg['node-red'] != undefined) {
+        nodes = pkg["node-red"]!.nodes || {}
+    }
+    let results: REDNode[] = [];
+    let iconDirs = [];
+
+    for (let n in nodes) {
         /* istanbul ignore else */
         if (nodes.hasOwnProperty(n)) {
-            var file = path.join(moduleDir,nodes[n]);
+            let file = path.join(moduleDir,nodes[n]);
             results.push({
                 file:    file,
                 module:  pkg.name,
                 name:    n,
-                version: pkg.version
+                version: pkg.version,
+                config: "",
+                enabled: true,
+                err: null,
+                help: {},
+                id: "",
+                loaded: true,
+                local: true,
+                namespace: "",
+                template: "",
+                types: []
             });
-            var iconDir = path.join(moduleDir,path.dirname(nodes[n]),"icons");
+            let iconDir = path.join(moduleDir,path.dirname(nodes[n]),"icons");
             if (iconDirs.indexOf(iconDir) == -1) {
                 try {
                     fs.statSync(iconDir);
-                    var iconList = scanIconDir(iconDir);
-                    events.emit("node-icon-dir",{name:pkg.name,path:iconDir,icons:iconList});
+                    let iconList = scanIconDir(iconDir);
                     iconDirs.push(iconDir);
                 } catch(err) {
                 }
             }
         }
     }
-    var examplesDir = path.join(moduleDir,"examples");
+    let examplesDir = path.join(moduleDir,"examples");
     try {
         fs.statSync(examplesDir)
-        events.emit("node-examples-dir",{name:pkg.name,path:examplesDir});
     } catch(err) {
     }
     return results;
 }
 
-function getNodeFiles(disableNodePathScan) {
-    var dir;
+function getNodeFiles(disableNodePathScan: boolean) {
     // Find all of the nodes to load
-    var nodeFiles = [];
+    let nodeFiles: REDNode[] = [];
 
-    var dir = path.resolve(__dirname + '/../../../../public/icons');
-    var iconList = scanIconDir(dir);
-    events.emit("node-icon-dir",{name:'node-red',path:dir,icons:iconList});
+    let dir = path.resolve(__dirname + '/../../../../public/icons');
+    let iconList = scanIconDir(dir);
 
-    if (settings.coreNodesDir) {
-        nodeFiles = getLocalNodeFiles(path.resolve(settings.coreNodesDir));
-        var defaultLocalesPath = path.join(settings.coreNodesDir,"core","locales");
-        i18n.registerMessageCatalog("node-red",defaultLocalesPath,"messages.json");
+    if (CONFIG.coreNodesDir) {
+        nodeFiles = getLocalNodeFiles(path.resolve(CONFIG.coreNodesDir));
+        let defaultLocalesPath = path.join(CONFIG.coreNodesDir,"core","locales");
+        // i18n.registerMessageCatalog("node-red",defaultLocalesPath,"messages.json");
     }
 
-    if (settings.userDir) {
-        dir = path.join(settings.userDir,"lib","icons");
+    if (CONFIG.userDir) {
+        dir = path.join(CONFIG.userDir,"lib","icons");
         iconList = scanIconDir(dir);
-        if (iconList.length > 0) {
-            events.emit("node-icon-dir",{name:'Library',path:dir,icons:iconList});
-        }
 
-        dir = path.join(settings.userDir,"nodes");
+        dir = path.join(CONFIG.userDir,"nodes");
         nodeFiles = nodeFiles.concat(getLocalNodeFiles(dir));
     }
-    if (settings.nodesDir) {
-        dir = settings.nodesDir;
-        if (typeof settings.nodesDir == "string") {
-            dir = [dir];
-        }
-        for (var i=0;i<dir.length;i++) {
-            nodeFiles = nodeFiles.concat(getLocalNodeFiles(dir[i]));
+    if (CONFIG.nodesDir) {
+        let nodesDir = CONFIG.nodesDir;
+        for (let i=0;i<nodesDir.length;i++) {
+            nodeFiles = nodeFiles.concat(getLocalNodeFiles(nodesDir[i]));
         }
     }
 
-    var nodeList = {
-        "node-red": {
-            name: "node-red",
-            version: settings.version,
+    let nodeList: REDNodeList = {}
+
+    nodeList["node-red"] = {
+        name: "node-red",
+        version: CONFIG.version,
+        nodes: {},
+        local: true,
+        "node-red" : { 
+            version: "",
             nodes: {}
         }
     }
-    nodeFiles.forEach(function(node) {
-        nodeList["node-red"].nodes[node.name] = node;
-    });
+
+    for (let node of nodeFiles) {
+        nodeList["node-red"]["nodes"][node.name] = node;
+    };
 
     if (!disableNodePathScan) {
-        var moduleFiles = scanTreeForNodesModules();
-        moduleFiles.forEach(function(moduleFile) {
-            var nodeModuleFiles = getModuleNodeFiles(moduleFile);
-            nodeList[moduleFile.package.name] = {
-                name: moduleFile.package.name,
-                version: moduleFile.package.version,
-                local: moduleFile.local||false,
-                nodes: {}
+        let modules = scanTreeForNodesModules(null);
+        for (let module of modules) {
+            let moduleFiles = getModuleNodeFiles(module);
+            nodeList[module.package.name] = {
+                name: module.package.name,
+                version: module.package.version,
+                local: module.local||false,
+                nodes: {},
+                "node-red" : { 
+                    version: "",
+                    nodes: {}
+                }
             };
-            if (moduleFile.package['node-red'].version) {
-                nodeList[moduleFile.package.name].redVersion = moduleFile.package['node-red'].version;
+            if (module.package['node-red'] != undefined) {
+                if (module.package['node-red']!.version) {
+                    nodeList[module.package.name].redVersion = module.package['node-red']!.version;
+                }
             }
-            nodeModuleFiles.forEach(function(node) {
-                node.local = moduleFile.local||false;
-                nodeList[moduleFile.package.name].nodes[node.name] = node;
-            });
-            nodeFiles = nodeFiles.concat(nodeModuleFiles);
-        });
+            for (let node of moduleFiles) {
+                node.local = module.local||false;
+                nodeList[module.package.name].nodes[node.name] = node;
+            };
+            nodeFiles = nodeFiles.concat(moduleFiles);
+        };
     } else {
         console.log("node path scan disabled");
     }
     return nodeList;
 }
 
-function getModuleFiles(module) {
-    var nodeList = {};
+function getModuleFiles(module: string) {
+    let nodeList: REDNodeList = {};
 
-    var moduleFiles = scanTreeForNodesModules(module);
+    let moduleFiles = scanTreeForNodesModules(module);
     if (moduleFiles.length === 0) {
-        var err = new Error(log._("nodes.registry.localfilesystem.module-not-found", {module:module}));
-        err.code = 'MODULE_NOT_FOUND';
+        let err = new Error("nodes.registry.localfilesystem.module-not-found");
         throw err;
     }
 
-    moduleFiles.forEach(function(moduleFile) {
-        var nodeModuleFiles = getModuleNodeFiles(moduleFile);
+    for (let moduleFile of moduleFiles) {
+        let nodeModuleFiles = getModuleNodeFiles(moduleFile);
         nodeList[moduleFile.package.name] = {
             name: moduleFile.package.name,
             version: moduleFile.package.version,
-            nodes: {}
+            local: true,
+            nodes: {},
+                "node-red" : { 
+                    version: "",
+                    nodes: {}
+                }
         };
-        if (moduleFile.package['node-red'].version) {
-            nodeList[moduleFile.package.name].redVersion = moduleFile.package['node-red'].version;
+        if (moduleFile.package['node-red'] != undefined) {
+            nodeList[moduleFile.package.name].redVersion = moduleFile.package['node-red']!.version;
         }
-        nodeModuleFiles.forEach(function(node) {
+        for (let node of nodeModuleFiles) {
             nodeList[moduleFile.package.name].nodes[node.name] = node;
             nodeList[moduleFile.package.name].nodes[node.name].local = moduleFile.local || false;
-        });
-    });
+        };
+    };
     return nodeList;
 }
 
-function scanIconDir(dir) {
-    var iconList = [];
+function scanIconDir(dir: string) {
+    let iconList: string[] = [];
     try {
-        var files = fs.readdirSync(dir);
-        files.forEach(function(file) {
-            var stats = fs.statSync(path.join(dir, file));
+        let files = fs.readdirSync(dir);
+        for (let file of files) {
+            let stats = fs.statSync(path.join(dir, file));
             if (stats.isFile() && iconFileExtensions.indexOf(path.extname(file)) !== -1) {
                 iconList.push(file);
             }
-        });
+        };
     } catch(err) {
     }
     return iconList;
 }
 
-module.exports = {
-    init: init,
-    getNodeFiles: getNodeFiles,
-    getLocalFile: getLocalFile,
-    getModuleFiles: getModuleFiles
+export {
+    init,
+    getNodeFiles,
+    getLocalFile,
+    getModuleFiles
 }
