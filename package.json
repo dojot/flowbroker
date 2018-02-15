@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build" : "tsc",
+    "build": "tsc",
     "start": "node ./build/main.js"
   },
   "repository": {
@@ -20,7 +20,10 @@
   "homepage": "https://github.com/giovannicuriel/node-blue#readme",
   "dependencies": {
     "@types/express": "^4.11.1",
+    "@types/when": "^2.4.29",
+    "eslint": "^4.17.0",
     "express": "^4.16.2",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "when": "^3.7.8"
   }
 }

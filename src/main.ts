@@ -24,7 +24,7 @@ class NodeRedFileInfo {
  * @param dir The directory to be searched.
  * @returns A list of file info.
  */
-function getNodeFiles(dir: string, shouldDescend: (pathName: string) => boolean, processFileCbk: (filename: string) => void) {
+function getNodeRedFiles(dir: string, shouldDescend: (pathName: string) => boolean, processFileCbk: (filename: string) => void) {
   let currentPath = path.resolve(dir);
 
   let filenames: string[] = [];
@@ -42,7 +42,7 @@ function getNodeFiles(dir: string, shouldDescend: (pathName: string) => boolean,
       processFileCbk(fullPath);
     } else if (stats.isDirectory() &&  shouldDescend(filename)) {
       // Descend.
-      let subdirInfo = getNodeFiles(fullPath, shouldDescend, processFileCbk);
+      let subdirInfo = getNodeRedFiles(fullPath, shouldDescend, processFileCbk);
     }
   }
 }
@@ -67,7 +67,7 @@ function gatherNodeFileInfo(dir: string) : NodeRedFileInfo [] {
         // Do nothing - there is no such file.
       }
   };
-  getNodeFiles(dir, shouldDescend, nodeInfoCbk);
+  getNodeRedFiles(dir, shouldDescend, nodeInfoCbk);
   return ret;
 }
 
