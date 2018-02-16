@@ -4,13 +4,13 @@ import { REDLoader } from "./loader";
 
 let registry = new REDRegistry();
 
-registry.loader.load().then(() => {
-  // console.log("registry.getAllNodeConfigs(): ");
-  // console.log(util.inspect(registry.getAllNodeConfigs("en-US"), { depth: null}))
+registry.load().done((value) => {
+  console.log("registry.getAllNodeConfigs(): ");
+  console.log(util.inspect(registry.getAllNodeConfigs("en-US"), { depth: null}))
 
-  // console.log("===============================================================");
-  // console.log("registry.getNodeList(): ");
-  // console.log(util.inspect(registry.getNodeList(), { depth: null}))
+  console.log("===============================================================");
+  console.log("registry.getNodeList(): ");
+  console.log(util.inspect(registry.getNodeList(), { depth: null}))
 
   // console.log("===============================================================");
   // console.log("registry.getNodeIcons(): ");
@@ -18,6 +18,7 @@ registry.loader.load().then(() => {
 
   console.log("===============================================================");
   console.log("registry.locales.getAllNodes(): ");
-  console.log(util.inspect(registry.locales.getAllNodes("en-US"), { depth: null}))
+  registry.locales.get("node-red", "en-US", obj => {
+    console.log(util.inspect(obj, { depth: null }));
+  });
 });
-

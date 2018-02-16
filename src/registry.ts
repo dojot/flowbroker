@@ -78,9 +78,10 @@ class REDRegistry {
 
     load() {
         this.moduleConfigs = this.loadNodeConfigs();
-        this.i18n.init().then((value: any) => {
-            console.log("Successfully loaded all locales.");
-        });
+        let i18nInit = this.i18n.init();
+        let loaderInit = this.loader.load();
+        return when.settle([i18nInit, loaderInit]);
+
     }
 
     filterNodeInfo(n: REDNode) {

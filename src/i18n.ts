@@ -77,7 +77,8 @@ export class REDi18n {
 
   // Not actually sure how this is used.
   MessageFileLoader = {
-      fetchOne: (lng: string, ns: string, callback: any) => {
+      type: "backend",
+      read: (lng: string, ns: string, callback: any) => {
           if (this.resourceMap[ns]) {
               var file = path.join(this.resourceMap[ns].basedir,lng,this.resourceMap[ns].file);
               //console.log(file);
@@ -107,15 +108,19 @@ export class REDi18n {
 
   init() {
     return when.promise((resolve, reject) => {
-      i18n.use(this.MessageFileLoader);
+      this.i.use(this.MessageFileLoader);
       this.i.init(
         {
           ns: [],
           defaultNS: "runtime",
           fallbackLng: [this.defaultLang]
         },
-        function() {
-          when.resolve();
+        (error) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(0);
+          }
         }
       );
     });

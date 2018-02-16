@@ -37,7 +37,9 @@ export class REDLocale {
           var catalog = this.i18n.getCatalog(namespace,lang);
           callback(catalog);
       });
-      this.i18n.i.loadLanguages(prevLang, () => { });
+      if (prevLang) {
+        this.i18n.i.loadLanguages(prevLang, () => {});
+      }
   }
 
   getAllNodes(lngs: string) {
