@@ -17,7 +17,7 @@
 import when = require("when");
 import fs = require("fs");
 import path = require("path");
-import { REDNode, REDNodeList, REDNodeFile } from "./types";
+import { REDNode, REDNodeList } from "./types";
 import { CONFIG } from "./config"
 
 import localfilesystem = require("./localfilesystem");
@@ -97,7 +97,7 @@ function loadNodeFiles(nodeFiles: REDNodeList) {
     });
 }
 
-function loadNodeConfig(fileInfo: REDNodeFile) {
+function loadNodeConfig(fileInfo: REDNode) {
     return when.promise(function (resolve) {
         let file = fileInfo.file;
         let module = fileInfo.module;

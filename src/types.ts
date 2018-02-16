@@ -25,6 +25,23 @@ export class REDNode {
   version: string;
   // To be inspected - not sure how this attribute is filled.
   err: string | Error | null;
+
+  constructor() {
+    this.config = "";
+    this.enabled = true;
+    this.file = "";
+    this.help = {};
+    this.id = "";
+    this.loaded = true;
+    this.local = true;
+    this.module = "";
+    this.name = "";
+    this.namespace = "";
+    this.template = "";
+    this.types = [];
+    this.version = "1.0.0";
+    this.err = null;
+  }
 }
 
 export class REDNodeInfo {
@@ -32,6 +49,10 @@ export class REDNodeInfo {
     nodes: {
       [nodeName: string]: string;
     };
+    constructor() {
+      this.version = "1.0.0";
+      this.nodes = {};
+    }
 }
 
 export interface REDPackage {
