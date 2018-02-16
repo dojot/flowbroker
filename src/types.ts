@@ -55,24 +55,52 @@ export class REDNodeInfo {
     }
 }
 
-export interface REDPackage {
+export class REDPackage {
   name: string;
   version: string;
   local: boolean;
+  icons: string[];
   nodes : {
     [nodeName: string]: REDNode
   };
   redVersion?: string;
   "node-red"? : REDNodeInfo;
+
+  constructor() {
+    this.name = "";
+    this.version = "";
+    this.local = true;
+    this.icons = [];
+    this.nodes = {};
+    this.redVersion = "";
+    this["node-red"] = new REDNodeInfo();
+  }
 }
 
-export interface REDModule {
+export class REDModule {
   package: REDPackage;
   dir: string;
   local?: boolean;
+  constructor() {
+    this.package = new REDPackage();
+    this.dir = "";
+    this.local = true;
+  }
 }
 
 
 export class REDNodeList {
   [moduleName: string]: REDPackage
+}
+
+export class REDIconPath {
+  icons: string[];
+  name: string;
+  path: string;
+
+  constructor() {
+    this.icons = [];
+    this.name = "";
+    this.path = "";
+  }
 }

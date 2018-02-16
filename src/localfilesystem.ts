@@ -248,18 +248,10 @@ function getNodeFiles(disableNodePathScan: boolean) {
         }
     }
 
-    let nodeList: REDNodeList = {}
+    let nodeList = new REDNodeList();
 
-    nodeList["node-red"] = {
-        name: "node-red",
-        version: CONFIG.version,
-        nodes: {},
-        local: true,
-        "node-red" : { 
-            version: "",
-            nodes: {}
-        }
-    }
+    nodeList["node-red"].name = "node-red";
+    nodeList["node-red"].version = CONFIG.version;
 
     for (let node of nodeFiles) {
         nodeList["node-red"]["nodes"][node.name] = node;
@@ -269,16 +261,9 @@ function getNodeFiles(disableNodePathScan: boolean) {
         let modules = scanTreeForNodesModules(null);
         for (let module of modules) {
             let moduleFiles = getModuleNodeFiles(module);
-            nodeList[module.package.name] = {
-                name: module.package.name,
-                version: module.package.version,
-                local: module.local||false,
-                nodes: {},
-                "node-red" : { 
-                    version: "",
-                    nodes: {}
-                }
-            };
+            nodeList[module.package.name].name = module.package.name;
+            nodeList[module.package.name].version = module.package.version;
+            nodeList[module.package.name].local = module.local||false;
             if (module.package['node-red'] != undefined) {
                 if (module.package['node-red']!.version) {
                     nodeList[module.package.name].redVersion = module.package['node-red']!.version;
@@ -307,16 +292,9 @@ function getModuleFiles(module: string) {
 
     for (let moduleFile of moduleFiles) {
         let nodeModuleFiles = getModuleNodeFiles(moduleFile);
-        nodeList[moduleFile.package.name] = {
-            name: moduleFile.package.name,
-            version: moduleFile.package.version,
-            local: true,
-            nodes: {},
-                "node-red" : { 
-                    version: "",
-                    nodes: {}
-                }
-        };
+        nodeList[moduleFile.package.name].name = moduleFile.package.name;
+        nodeList[moduleFile.package.name].version = moduleFile.package.version;
+
         if (moduleFile.package['node-red'] != undefined) {
             nodeList[moduleFile.package.name].redVersion = moduleFile.package['node-red']!.version;
         }
