@@ -20,10 +20,17 @@ import when = require("when");
 import path = require("path");
 import fs = require("fs");
 
-import loader = require("./loader");
-import { REDNode, REDNodeList, REDPackage, REDIconPath } from "./types";
+import { REDNode, REDNodeList, REDPackage, REDIconPath } from './types';
+import { REDLoader } from "./loader";
+import { REDLocalFileSystem } from "./localfilesystem";
+import { REDi18n } from './i18n';
+import { REDLocale } from './locales';
 
 class REDRegistry {
+    loader: REDLoader;
+    i18n: REDi18n;
+    locales: REDLocale;
+    localfilesystem: REDLocalFileSystem;
     nodeConfigCache: string;
     moduleConfigs: REDNodeList;
     nodeList: string[];
@@ -43,12 +50,12 @@ class REDRegistry {
     icon_paths: {
         [moduleName: string]: [string];
     } = {
-            "node-red": [path.resolve(__dirname + '/../../../../public/icons')]
+            "node-red": [path.resolve(__dirname + '/../public/icons')]
         };
     iconCache: {
         [iconName: string]: string;
     } = {};
-    defaultIcon = path.resolve(__dirname + '/../../../../public/icons/arrow-in.png');
+    defaultIcon = path.resolve(__dirname + '/../public/icons/arrow-in.png');
 
 
     constructor() {
@@ -63,11 +70,17 @@ class REDRegistry {
         //  Node = require("../Node");
         //  events.removeListener("node-icon-dir",nodeIconDir);
         //  events.on("node-icon-dir",nodeIconDir);
-
+        this.i18n = new REDi18n();
+        this.localfilesystem = new REDLocalFileSystem(this.i18n);
+        this.loader = new REDLoader(this, this.localfilesystem);
+        this.locales = new REDLocale(this.i18n, this);
     }
 
     load() {
         this.moduleConfigs = this.loadNodeConfigs();
+        this.i18n.init().then((value: any) => {
+            console.log("Successfully loaded all locales.");
+        });
     }
 
     filterNodeInfo(n: REDNode) {
@@ -114,6 +127,7 @@ class REDRegistry {
             if (this.moduleConfigs.hasOwnProperty(module)) {
                 if (Object.keys(this.moduleConfigs[module].nodes).length > 0) {
                     if (!moduleList[module]) {
+                        moduleList[module] = new REDPackage();
                         moduleList[module].name = module;
                         moduleList[module].version = this.moduleConfigs[module].version;
                         moduleList[module].local = this.moduleConfigs[module].local || false;
@@ -165,6 +179,7 @@ class REDRegistry {
         this.moduleNodes[set.module].push(set.name);
 
         if (!this.moduleConfigs[set.module]) {
+            this.moduleConfigs[set.module] = new REDPackage();
             this.moduleConfigs[set.module].name = set.module;
             this.moduleConfigs[set.module].local = set.local;
         }
@@ -378,7 +393,7 @@ class REDRegistry {
                 let config = this.moduleConfigs[this.getModule(id)].nodes[this.getNode(id)];
                 // if (config.enabled && !config.err) {
                 result += config.config;
-                result += loader.getNodeHelp(config, lang || "en-US") || "";
+                result += this.loader.getNodeHelp(config, lang || "en-US") || "";
                 //script += config.script;
                 // }
             }
@@ -400,7 +415,7 @@ class REDRegistry {
         let configNode = config.nodes[this.getNode(id)];
         if (configNode) {
             let result = configNode.config;
-            result += loader.getNodeHelp(configNode, lang || "en-US")
+            result += this.loader.getNodeHelp(configNode, lang || "en-US")
 
             //if (config.script) {
             //    result += '<script type="text/javascript">'+config.script+'</script>';
@@ -547,11 +562,11 @@ class REDRegistry {
             if (module.icons === undefined) {
                 module.icons = [];
             }
-            dir.icons.forEach((icon) => {
+            for (let icon of dir.icons) {
                 if (module.icons.indexOf(icon) === -1) {
                     module.icons.push(icon);
                 }
-            });
+            };
         }
     }
 

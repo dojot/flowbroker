@@ -17,230 +17,234 @@
 import when = require("when");
 import fs = require("fs");
 import path = require("path");
+import { map } from "when";
+
 import { REDNode, REDNodeList } from "./types";
 import { CONFIG } from "./config"
-
-import localfilesystem = require("./localfilesystem");
-import { map } from "when";
-let registry = require("./registry");
+import { REDRegistry } from "./registry";
+import { REDLocalFileSystem } from "./localfilesystem";
 
 
-function init() {
-    localfilesystem.init();
-}
+class REDLoader {
+    registry: REDRegistry;
+    localfilesystem: REDLocalFileSystem;
 
-function load() {
-    let nodeFiles = localfilesystem.getNodeFiles(false);
-    return loadNodeFiles(nodeFiles);
-}
+    constructor(reg: REDRegistry, fs: REDLocalFileSystem) {
+        this.registry = reg;
+        this.localfilesystem = fs
+    }
 
-function loadNodeFiles(nodeFiles: REDNodeList) {
-    let promises = [];
-    for (let module in nodeFiles) {
-        /* istanbul ignore else */
-        if (nodeFiles.hasOwnProperty(module)) {
-            if (module == "node-red" || !registry.getModuleInfo(module)) {
-                let first = true;
-                for (let node in nodeFiles[module].nodes) {
-                    /* istanbul ignore else */
-                    if (nodeFiles[module].nodes.hasOwnProperty(node)) {
-                        if (module != "node-red" && first) {
-                            // Check the module directory exists
-                            first = false;
-                            let fn = nodeFiles[module].nodes[node].file;
-                            let parts = fn.split("/");
-                            let i = parts.length - 1;
-                            for (; i >= 0; i--) {
-                                if (parts[i] == "node_modules") {
+    load() {
+        let nodeFiles = this.localfilesystem.getNodeFiles(false);
+        return this.loadNodeFiles(nodeFiles);
+    }
+
+    loadNodeFiles(nodeFiles: REDNodeList) {
+        let promises = [];
+        for (let module in nodeFiles) {
+            /* istanbul ignore else */
+            if (nodeFiles.hasOwnProperty(module)) {
+                if (module == "node-red" || !this.registry.getModuleInfo(module)) {
+                    let first = true;
+                    for (let node in nodeFiles[module].nodes) {
+                        /* istanbul ignore else */
+                        if (nodeFiles[module].nodes.hasOwnProperty(node)) {
+                            if (module != "node-red" && first) {
+                                // Check the module directory exists
+                                first = false;
+                                let fn = nodeFiles[module].nodes[node].file;
+                                let parts = fn.split("/");
+                                let i = parts.length - 1;
+                                for (; i >= 0; i--) {
+                                    if (parts[i] == "node_modules") {
+                                        break;
+                                    }
+                                }
+                                let moduleFn = parts.slice(0, i + 2).join("/");
+
+                                try {
+                                    let stat = fs.statSync(moduleFn);
+                                } catch (err) {
+                                    // Module not found, don't attempt to load its nodes
                                     break;
                                 }
                             }
-                            let moduleFn = parts.slice(0, i + 2).join("/");
 
                             try {
-                                let stat = fs.statSync(moduleFn);
+                                promises.push(this.loadNodeConfig(nodeFiles[module].nodes[node]))
                             } catch (err) {
-                                // Module not found, don't attempt to load its nodes
-                                break;
+                                //
                             }
                         }
+                    }
+                }
+            }
+        }
+        return when.settle(promises).then((results: when.Descriptor<any>[]) => {
+            let nodes = results.map((r: when.Descriptor<REDNode>) => {
+                if (r.value != undefined) {
+                    this.registry.addNodeSet(r.value.id, r.value, r.value.version);
+                    return r.value;
+                }
+                return null;
+            });
+            let filteredNodes: REDNode[] = [];
+            for (let node of nodes) {
+                if (node != undefined) {
+                    filteredNodes.push(node)
+                }
+            }
 
-                        try {
-                            promises.push(loadNodeConfig(nodeFiles[module].nodes[node]))
-                        } catch (err) {
-                            //
+            if (nodes != undefined) {
+                return this.loadNodeSetList(filteredNodes);
+            } 
+        });
+    }
+
+    loadNodeConfig(fileInfo: REDNode) {
+        return when.promise((resolve) => {
+            let file = fileInfo.file;
+            let module = fileInfo.module;
+            let name = fileInfo.name;
+            let version = fileInfo.version;
+
+            let id = module + "/" + name;
+            let info = this.registry.getNodeInfo(id);
+            let isEnabled = true;
+            if (info) {
+                if (info.hasOwnProperty("loaded")) {
+                    throw new Error(file + " already loaded");
+                }
+                isEnabled = info.enabled;
+            }
+
+            let node: REDNode = {
+                id: id,
+                module: module,
+                name: name,
+                file: file,
+                template: file.replace(/\.js$/, ".html"),
+                enabled: isEnabled,
+                loaded: false,
+                version: version,
+                local: fileInfo.local,
+                config: "",
+                err: null,
+                help: {},
+                namespace: "",
+                types: []
+            };
+            if (fileInfo.types != undefined) {
+                node.types = fileInfo.types;
+            }
+
+            fs.readFile(node.template, 'utf8', (err, content) => {
+                if (err) {
+                    node.types = [];
+                    if (err.code === 'ENOENT') {
+                        if (!node.types) {
+                            node.types = [];
+                        }
+                        node.err = "Error: " + node.template + " does not exist";
+                    } else {
+                        node.types = [];
+                        node.err = err.toString();
+                    }
+                    resolve(node);
+                } else {
+                    let types = [];
+
+                    let regExp = /<script (?:[^>]*)data-template-name\s*=\s*['"]([^'"]*)['"]/gi;
+                    let match = null;
+
+                    while ((match = regExp.exec(content)) !== null) {
+                        types.push(match[1]);
+                    }
+                    node.types = types;
+
+                    let langRegExp = /^<script[^>]* data-lang\s*=\s*['"](.+?)['"]/i;
+                    regExp = /(<script[^>]* data-help-name=[\s\S]*?<\/script>)/gi;
+                    match = null;
+                    let mainContent = "";
+                    let helpContent: {
+                        [language: string]: string;
+                    } = {};
+                    let index = 0;
+                    while ((match = regExp.exec(content)) !== null) {
+                        mainContent += content.substring(index, regExp.lastIndex - match[1].length);
+                        index = regExp.lastIndex;
+                        let help = content.substring(regExp.lastIndex - match[1].length, regExp.lastIndex);
+
+                        let lang = CONFIG.defaultLang;
+                        if ((match = langRegExp.exec(help)) !== null) {
+                            lang = match[1];
+                        }
+                        if (!helpContent.hasOwnProperty(lang)) {
+                            helpContent[lang] = "";
+                        }
+
+                        helpContent[lang] += help;
+                    }
+                    mainContent += content.substring(index);
+
+                    node.config = mainContent;
+                    node.help = helpContent;
+                    // TODO: parse out the javascript portion of the template
+                    //node.script = "";
+                    for (let i = 0; i < node.types.length; i++) {
+                        if (this.registry.getTypeId(node.types[i])) {
+                            node.err = node.types[i] + " already registered";
+                            break;
                         }
                     }
+                    fs.stat(path.join(path.dirname(file), "locales"), (err, stat) => {
+                        if (!err) {
+                            node.namespace = node.id;
+                            // CONFIG.registerMessageCatalog(node.id,
+                            //     path.join(path.dirname(file), "locales"),
+                            //     path.basename(file, ".js") + ".json")
+                            //     .then(() {
+                            //         resolve(node);
+                            //     });
+                        } else {
+                            node.namespace = node.module;
+                            resolve(node);
+                        }
+                    });
                 }
-            }
-        }
-    }
-    return when.settle(promises).then(function (results: when.Descriptor<any>[]) {
-        let nodes = results.map(function (r: when.Descriptor<REDNode>) {
-            if (r.value != undefined) {
-                registry.addNodeSet(r.value.id, r.value, r.value.version);
-                return r.value;
-            }
+            });
         });
-        let filteredNodes: REDNode[] = [];
-        for (let node of nodes) {
-            if (node != undefined) {
-                filteredNodes.push(node)
-            }
-        }
-
-        if (nodes != undefined) { 
-            return loadNodeSetList(filteredNodes); 
-        } else { 
-            return null; 
-        }
-    });
-}
-
-function loadNodeConfig(fileInfo: REDNode) {
-    return when.promise(function (resolve) {
-        let file = fileInfo.file;
-        let module = fileInfo.module;
-        let name = fileInfo.name;
-        let version = fileInfo.version;
-
-        let id = module + "/" + name;
-        let info = registry.getNodeInfo(id);
-        let isEnabled = true;
-        if (info) {
-            if (info.hasOwnProperty("loaded")) {
-                throw new Error(file + " already loaded");
-            }
-            isEnabled = info.enabled;
-        }
-
-        let node: REDNode = {
-            id: id,
-            module: module,
-            name: name,
-            file: file,
-            template: file.replace(/\.js$/, ".html"),
-            enabled: isEnabled,
-            loaded: false,
-            version: version,
-            local: fileInfo.local,
-            config: "",
-            err: null,
-            help: {},
-            namespace: "",
-            types: []
-        };
-        if (fileInfo.types != undefined) {
-            node.types = fileInfo.types;
-        }
-
-        fs.readFile(node.template, 'utf8', function (err, content) {
-            if (err) {
-                node.types = [];
-                if (err.code === 'ENOENT') {
-                    if (!node.types) {
-                        node.types = [];
-                    }
-                    node.err = "Error: " + node.template + " does not exist";
-                } else {
-                    node.types = [];
-                    node.err = err.toString();
-                }
-                resolve(node);
-            } else {
-                let types = [];
-
-                let regExp = /<script (?:[^>]*)data-template-name\s*=\s*['"]([^'"]*)['"]/gi;
-                let match = null;
-
-                while ((match = regExp.exec(content)) !== null) {
-                    types.push(match[1]);
-                }
-                node.types = types;
-
-                let langRegExp = /^<script[^>]* data-lang\s*=\s*['"](.+?)['"]/i;
-                regExp = /(<script[^>]* data-help-name=[\s\S]*?<\/script>)/gi;
-                match = null;
-                let mainContent = "";
-                let helpContent: {
-                    [language: string]: string;
-                } = {};
-                let index = 0;
-                while ((match = regExp.exec(content)) !== null) {
-                    mainContent += content.substring(index, regExp.lastIndex - match[1].length);
-                    index = regExp.lastIndex;
-                    let help = content.substring(regExp.lastIndex - match[1].length, regExp.lastIndex);
-
-                    let lang = CONFIG.defaultLang;
-                    if ((match = langRegExp.exec(help)) !== null) {
-                        lang = match[1];
-                    }
-                    if (!helpContent.hasOwnProperty(lang)) {
-                        helpContent[lang] = "";
-                    }
-
-                    helpContent[lang] += help;
-                }
-                mainContent += content.substring(index);
-
-                node.config = mainContent;
-                node.help = helpContent;
-                // TODO: parse out the javascript portion of the template
-                //node.script = "";
-                for (let i = 0; i < node.types.length; i++) {
-                    if (registry.getTypeId(node.types[i])) {
-                        node.err = node.types[i] + " already registered";
-                        break;
-                    }
-                }
-                fs.stat(path.join(path.dirname(file), "locales"), function (err, stat) {
-                    if (!err) {
-                        node.namespace = node.id;
-                        // CONFIG.registerMessageCatalog(node.id,
-                        //     path.join(path.dirname(file), "locales"),
-                        //     path.basename(file, ".js") + ".json")
-                        //     .then(function () {
-                        //         resolve(node);
-                        //     });
-                    } else {
-                        node.namespace = node.module;
-                        resolve(node);
-                    }
-                });
-            }
-        });
-    });
-}
-
-/**
- * Loads the specified node into the runtime
- * @param node a node info object - see loadNodeConfig
- * @return a promise that resolves to an update node info object. The object
- *         has the following properties added:
- *            err: any error encountered whilst loading the node
- *
- */
-function loadNodeSet(node: REDNode) {
-    let nodeDir = path.dirname(node.file);
-    let nodeFn = path.basename(node.file);
-    if (!node.enabled) {
-        return when.resolve(node);
-    } else {
     }
 
-    // try {
+    /**
+     * Loads the specified node into the runtime
+     * @param node a node info object - see loadNodeConfig
+     * @return a promise that resolves to an update node info object. The object
+     *         has the following properties added:
+     *            err: any error encountered whilst loading the node
+     *
+     */
+    loadNodeSet(node: REDNode) {
+        let nodeDir = path.dirname(node.file);
+        let nodeFn = path.basename(node.file);
+        if (!node.enabled) {
+            return when.resolve(node);
+        } else {
+        }
+
+        // try {
         let loadPromise = null;
         // let r = require(node.file);
-        // // This is where the function from JS file is loaded into NodeRED
+        // // This is where the from JS file is loaded into NodeRED
         // if (typeof r === "function") {
         //     let red = createNodeApi(node);
         //     let promise = r(red);
         //     if (promise != null && typeof promise.then === "function") {
-        //         loadPromise = promise.then(function () {
+        //         loadPromise = promise.then(() {
         //             node.enabled = true;
         //             node.loaded = true;
         //             return node;
-        //         }).catch(function (err) {
+        //         }).catch((err) {
         //             node.err = err;
         //             return node;
         //         });
@@ -252,91 +256,86 @@ function loadNodeSet(node: REDNode) {
             loadPromise = when.resolve(node);
         }
         return loadPromise;
-    // } catch (err) {
-    //     node.err = err;
-    //     let stack = err.stack;
-    //     let message;
-    //     if (stack) {
-    //         let i = stack.indexOf(node.file);
-    //         if (i > -1) {
-    //             let excerpt = stack.substring(i + node.file.length + 1, i + node.file.length + 20);
-    //             let m = /^(\d+):(\d+)/.exec(excerpt);
-    //             if (m) {
-    //                 node.err = err + " (line:" + m[1] + ")";
-    //             }
-    //         }
-    //     }
-    //     return when.resolve(node);
-    // }
-}
+        // } catch (err) {
+        //     node.err = err;
+        //     let stack = err.stack;
+        //     let message;
+        //     if (stack) {
+        //         let i = stack.indexOf(node.file);
+        //         if (i > -1) {
+        //             let excerpt = stack.substring(i + node.file.length + 1, i + node.file.length + 20);
+        //             let m = /^(\d+):(\d+)/.exec(excerpt);
+        //             if (m) {
+        //                 node.err = err + " (line:" + m[1] + ")";
+        //             }
+        //         }
+        //     }
+        //     return when.resolve(node);
+        // }
+    }
 
-function loadNodeSetList(nodes: REDNode[]) {
-    let promises = [];
-    for (let node of nodes) {
-        if (!node.err) {
-            promises.push(loadNodeSet(node));
-        } else {
-            promises.push(node);
+    loadNodeSetList(nodes: REDNode[]) {
+        let promises = [];
+        for (let node of nodes) {
+            if (!node.err) {
+                promises.push(this.loadNodeSet(node));
+            } else {
+                promises.push(node);
+            }
+        };
+
+        return when.settle(promises).then(() => {
+            return this.registry.saveNodeList();
+        });
+    }
+
+    addModule(module: string): when.Promise<any> {
+        let nodes = [];
+        if (this.registry.getModuleInfo(module)) {
+            // TODO: nls
+            let e = new Error("module_already_loaded");
+            return when.reject(e);
         }
-    };
-
-    return when.settle(promises).then(function () {
-        return registry.saveNodeList();
-    });
-}
-
-function addModule(module: string) : when.Promise<any> {
-    let nodes = [];
-    if (registry.getModuleInfo(module)) {
-        // TODO: nls
-        let e = new Error("module_already_loaded");
-        return when.reject(e);
+        try {
+            let moduleFiles = this.localfilesystem.getModuleFiles(module);
+            return this.loadNodeFiles(moduleFiles);
+        } catch (err) {
+            return when.reject(err);
+        }
     }
-    try {
-        let moduleFiles = localfilesystem.getModuleFiles(module);
-        return loadNodeFiles(moduleFiles);
-    } catch (err) {
-        return when.reject(err);
-    }
-}
 
-function loadNodeHelp(node: REDNode, lang: string) : string | null{
-    let dir = path.dirname(node.template);
-    let base = path.basename(node.template);
-    let localePath = path.join(dir, "locales", lang, base);
-    try {
-        // TODO: make this async
-        let content = fs.readFileSync(localePath, "utf8")
-        return content;
-    } catch (err) {
-        return null;
+    loadNodeHelp(node: REDNode, lang: string): string | null {
+        let dir = path.dirname(node.template);
+        let base = path.basename(node.template);
+        let localePath = path.join(dir, "locales", lang, base);
+        try {
+            // TODO: make this async
+            let content = fs.readFileSync(localePath, "utf8")
+            return content;
+        } catch (err) {
+            return null;
+        }
     }
-}
 
-function getNodeHelp(node: REDNode, lang: string) : string | null{
-    if (!node.help[lang]) {
-        let help = loadNodeHelp(node, lang);
-        if (help == null) {
-            let langParts = lang.split("-");
-            if (langParts.length == 2) {
-                help = loadNodeHelp(node, langParts[0]);
+    getNodeHelp(node: REDNode, lang: string): string | null {
+        if (!node.help[lang]) {
+            let help = this.loadNodeHelp(node, lang);
+            if (help == null) {
+                let langParts = lang.split("-");
+                if (langParts.length == 2) {
+                    help = this.loadNodeHelp(node, langParts[0]);
+                }
+            }
+            if (help) {
+                node.help[lang] = help;
+            } else if (lang === CONFIG.defaultLang) {
+                return null;
+            } else {
+                node.help[lang] = this.getNodeHelp(node, CONFIG.defaultLang);
             }
         }
-        if (help) {
-            node.help[lang] = help;
-        } else if (lang === CONFIG.defaultLang) {
-            return null;
-        } else {
-            node.help[lang] = getNodeHelp(node, CONFIG.defaultLang);
-        }
+        return node.help[lang];
     }
-    return node.help[lang];
 }
 
-export {
-    init,
-    load,
-    addModule,
-    loadNodeSet,
-    getNodeHelp
-}
+export { REDLoader }

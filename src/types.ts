@@ -104,3 +104,9 @@ export class REDIconPath {
     this.path = "";
   }
 }
+
+export interface REDi18nCatalog {
+  namespace: string;
+  dir: string;
+  file: string;
+}
