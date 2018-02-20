@@ -18,7 +18,7 @@ import when = require("when");
 import fs = require("fs");
 import path = require("path");
 import { CONFIG } from "./config";
-import { REDModule, REDNodeList, REDPackage, REDNodeInfo, REDNode } from "./types"
+import { REDModule, REDNodeList, REDPackage, REDNodeInfo, REDNode } from './types';
 import { REDLoader } from "./loader";
 import { REDi18n } from './i18n';
 
@@ -38,22 +38,12 @@ class REDLocalFileSystem {
     getLocalFile(file: string): REDNode | null {
         try {
             fs.statSync(file.replace(/\.js$/, ".html"));
-            return {
-                file: file,
-                module: "node-red",
-                name: path.basename(file).replace(/^\d+-/, "").replace(/\.js$/, ""),
-                version: CONFIG.version,
-                config: "",
-                enabled: true,
-                err: null,
-                help: {},
-                id: "",
-                loaded: true,
-                local: true,
-                namespace: "",
-                template: "",
-                types: []
-            };
+            let tempNode = new REDNode();
+            tempNode.file = file;
+            tempNode.module = "node-red";
+            tempNode.name = path.basename(file).replace(/^\d+-/, "").replace(/\.js$/, "");
+            tempNode.version = CONFIG.version;
+            return tempNode;
         } catch (err) {
             return null;
         }
@@ -125,7 +115,7 @@ class REDLocalFileSystem {
                             let pkg = require(pkgfn);
                             if (pkg['node-red']) {
                                 let moduleDir = path.join(dir, fn);
-                                results.push({ dir: moduleDir, package: pkg, local: true });
+                                results.push({ dir: moduleDir, package: pkg/*, local: true */});
                             }
                         } catch (err) {
                             if (err.code != "MODULE_NOT_FOUND") {
@@ -194,22 +184,12 @@ class REDLocalFileSystem {
             /* istanbul ignore else */
             if (nodes.hasOwnProperty(n)) {
                 let file = path.join(moduleDir, nodes[n]);
-                results.push({
-                    file: file,
-                    module: pkg.name,
-                    name: n,
-                    version: pkg.version,
-                    config: "",
-                    enabled: true,
-                    err: null,
-                    help: {},
-                    id: "",
-                    loaded: true,
-                    local: true,
-                    namespace: "",
-                    template: "",
-                    types: []
-                });
+                let tempNode = new REDNode();
+                tempNode.file = file;
+                tempNode.module = pkg.name;
+                tempNode.name = n;
+                tempNode.version = pkg.version;
+                results.push(tempNode);
                 let iconDir = path.join(moduleDir, path.dirname(nodes[n]), "icons");
                 if (iconDirs.indexOf(iconDir) == -1) {
                     try {
@@ -240,6 +220,10 @@ class REDLocalFileSystem {
             nodeFiles = this.getLocalNodeFiles(path.resolve(CONFIG.coreNodesDir));
             let defaultLocalesPath = path.join(CONFIG.coreNodesDir, "core", "locales");
             this.i18n.registerMessageCatalog("node-red",defaultLocalesPath,"messages.json");
+            defaultLocalesPath = path.join(CONFIG.coreNodesDir, "editor", "locales");
+            this.i18n.registerMessageCatalog("editor",defaultLocalesPath,"editor.json");
+            this.i18n.registerMessageCatalog("jsonata",defaultLocalesPath,"jsonata.json");
+            this.i18n.registerMessageCatalog("infotips",defaultLocalesPath,"infotips.json");
         }
 
         if (CONFIG.userDir) {
@@ -269,6 +253,7 @@ class REDLocalFileSystem {
             let modules = this.scanTreeForNodesModules(null);
             for (let module of modules) {
                 let moduleFiles = this.getModuleNodeFiles(module);
+                nodeList[module.package.name] = new REDPackage();
                 nodeList[module.package.name].name = module.package.name;
                 nodeList[module.package.name].version = module.package.version;
                 nodeList[module.package.name].local = module.local || false;

@@ -33,7 +33,7 @@ export class REDNode {
     this.help = {};
     this.id = "";
     this.loaded = true;
-    this.local = true;
+    this.local = false;
     this.module = "";
     this.name = "";
     this.namespace = "";
@@ -68,8 +68,8 @@ export class REDPackage {
 
   constructor() {
     this.name = "";
-    this.version = "";
-    this.local = true;
+    this.version = "0.18.0";
+    this.local = false;
     this.icons = [];
     this.nodes = {};
     this.redVersion = "";
@@ -84,7 +84,7 @@ export class REDModule {
   constructor() {
     this.package = new REDPackage();
     this.dir = "";
-    this.local = true;
+    this.local = false;
   }
 }
 
