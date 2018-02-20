@@ -18,10 +18,11 @@ class ExpressApp {
   }
 
   start(port: Number, callback: () => void) {
+    console.log("Starting express-app...");
     this.registry.load().done((value) => {
       console.log("All nodeRED nodes were loaded. Starting application.")
       this.app.listen(port, callback);
-    })
+    });
   }
 
   getNodesHandler(req: express.Request, res: express.Response) {
@@ -47,15 +48,15 @@ class ExpressApp {
       res.json(reparsedList);
     } else if (req.accepts("text/html")) {
       console.log("Retrieving text/html type")
-      res.send(JSON.stringify(this.registry.getAllNodeConfigs("en-US")));
+      res.send(this.registry.getAllNodeConfigs("en-US"));
     }
   }
 
-  getLocaleHandler (req: express.Request, res: express.Response) {
+  getAllLocalesHandler (req: express.Request, res: express.Response) {
     if (this.isStarted) {
       res.send("Module is not yet fully loaded.")
     }
-    this.registry.locales.get(req.params["moduleid"], "en-US", (answer: any) => {
+    this.registry.locales.get(req.params[0], "en-US", (answer: any) => {
       res.send(JSON.stringify(answer));
     })
   };
@@ -71,12 +72,14 @@ class ExpressApp {
         this.getNodesHandler(req, res);
       }
     );
+
     this.app.get(
-      "/locales/:moduleid",
+      /locales\/(.+)\/?$/,
       (req: express.Request, res: express.Response) => {
-        this.getLocaleHandler(req, res);
+        this.getAllLocalesHandler(req, res);
       }
     );
+
     this.app.get(
       "/red/keymap.json",
       (req: express.Request, res: express.Response) => {

@@ -77,11 +77,21 @@ class REDRegistry {
     }
 
     load() {
+        console.log("[REGISTRY] Building promises for data load operations...");
         this.moduleConfigs = this.loadNodeConfigs();
+        console.log("[REGISTRY] Building promise for i18n initialization...");
         let i18nInit = this.i18n.init();
+        console.log("[REGISTRY] ... promise for i18n intialization build.");
+        console.log("[REGISTRY] Building promise for node loader initialization...");
         let loaderInit = this.loader.load();
-        return when.settle([i18nInit, loaderInit]);
-
+        console.log("[REGISTRY] ... promise for node loader initialization build.");
+        console.log("[REGISTRY] ... all load promises were built.");
+        console.log("[REGISTRY] Returning a 'settle' promise.");
+        return when.settle([i18nInit, loaderInit]).then((value) => {
+            console.log("[REGISTRY] Ok");
+        }).catch((value) => {
+            console.log("[REGISTRY] Failure");
+        });
     }
 
     filterNodeInfo(n: REDNode) {
@@ -154,11 +164,14 @@ class REDRegistry {
     }
 
     loadNodeConfigs(): REDNodeList {
+        console.log("[REGISTRY] Loading node configs...");
         let configs = this.settings.nodes;
 
         if (configs['node-red']) {
+            console.log("[REGISTRY] ... node configs were loaded.");
             return configs;
         } else {
+            console.log("[REGISTRY] ... node configs were loaded (empty).");
             return {};
         }
     }

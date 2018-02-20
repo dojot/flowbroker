@@ -9,9 +9,9 @@ class Config {
   constructor() {
     this.defaultLang = "en-US";
     this.version = "1.0.0";
-    this.coreNodesDir = "./nodes" /*path.resolve("./nodes")*/;
+    this.coreNodesDir = "./nodes";
     this.userDir = "";
-    this.nodesDir = [/*path.resolve("./node_modules")*/];
+    this.nodesDir = [];
   }
 }
 const CONFIG = new Config();

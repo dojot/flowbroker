@@ -18,6 +18,7 @@ import i18n = require("i18next");
 import when = require("when");
 import path = require("path");
 import fs = require("fs");
+import util = require("util");
 
 import { REDi18nCatalog, REDNodeList } from './types';
 
@@ -57,13 +58,11 @@ export class REDi18n {
   registerMessageCatalog(namespace: string, dir: string, file: string) {
     return when.promise((resolve, reject) => {
       this.resourceMap[namespace] = { basedir: dir, file: file };
-      this.i.loadNamespaces([namespace], function() {
-        when.resolve();
-      });
+      this.i.loadNamespaces([namespace], () => { resolve(0); });
     });
   }
 
-  mergeCatalog(fallback: any, catalog: any) {
+  mergeCatalog(fallback: any, catalog: any) : void {
     for (var k in fallback) {
       if (fallback.hasOwnProperty(k)) {
         if (!catalog[k]) {
@@ -107,8 +106,11 @@ export class REDi18n {
   }
 
   init() {
+    console.log("[I18N] Building promise for i18n initialization.");
     return when.promise((resolve, reject) => {
+      console.log("[I18N] Loading MessageFileLoader plugin...");
       this.i.use(this.MessageFileLoader);
+      console.log("[I18N] Initializing i18n...");
       this.i.init(
         {
           ns: [],
@@ -116,9 +118,14 @@ export class REDi18n {
           fallbackLng: [this.defaultLang]
         },
         (error) => {
+          console.log("[I18N] ... i18n initialization finished.");
+          console.log("[I18N] Error is: " + util.inspect(error, {depth: null}));
           if (error) {
-            reject(error);
+            console.log("[I18N] Rejecting initialization promise.");
+            // reject(error);
+            resolve(0);
           } else {
+            console.log("[I18N] Resolving initialization promise.");
             resolve(0);
           }
         }

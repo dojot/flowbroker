@@ -17,6 +17,7 @@
 import when = require("when");
 import fs = require("fs");
 import path = require("path");
+import util = require("util");
 import { map } from "when";
 
 import { REDNode, REDNodeList } from "./types";
@@ -35,12 +36,16 @@ class REDLoader {
     }
 
     load() {
+        console.log("[LOADER] Retrieving a list of red-node files...");
         let nodeFiles = this.localfilesystem.getNodeFiles(false);
+        console.log("[LOADER] ... a list of red-node files was built.");
+        console.log("[LOADER] Returning a promise of loading this list...");
         return this.loadNodeFiles(nodeFiles);
     }
 
     loadNodeFiles(nodeFiles: REDNodeList) {
-        let promises = [];
+        console.log("[LOADER] Building node configuration load promises...");
+        let promises: When.Promise<REDNode>[] = [];
         for (let module in nodeFiles) {
             /* istanbul ignore else */
             if (nodeFiles.hasOwnProperty(module)) {
@@ -80,14 +85,18 @@ class REDLoader {
                 }
             }
         }
-        return when.settle(promises).then((results: when.Descriptor<any>[]) => {
-            let nodes = results.map((r: when.Descriptor<REDNode>) => {
+        console.log("[LOADER] ... all node configuration load promises were built.");
+        console.log("[LOADER] Building a 'settle' promise to load all nodes from config files.")
+        return when.settle(promises).then((descriptors: when.Descriptor<any>[]) => {
+            console.log("[LOADER] Some of the promises from load all nodes from config files set were fulfilled.")
+            let nodes = descriptors.map((r: when.Descriptor<REDNode>) => {
                 if (r.value != undefined) {
                     this.registry.addNodeSet(r.value.id, r.value, r.value.version);
                     return r.value;
                 }
                 return null;
             });
+
             let filteredNodes: REDNode[] = [];
             for (let node of nodes) {
                 if (node != undefined) {
@@ -95,14 +104,25 @@ class REDLoader {
                 }
             }
 
-            if (nodes != undefined) {
+            console.log("[LOADER] Filtered results length is " + filteredNodes.length);
+            if (filteredNodes.length != 0) {
                 return this.loadNodeSetList(filteredNodes);
-            } 
+            }
+        }).catch((descriptors: When.Descriptor<REDNode>[]) => {
+            console.log("[LOADER] None of the promises from load all nodes from config files set were fulfilled.")
+            for (let d of descriptors) {
+                if (d.state == "rejected") {
+                    console.log("[LOADER] One promise was rejected: " + util.inspect(d.reason, {depth: null}));
+                } else {
+                    console.log("[LOADER] One promise was resolved: " + util.inspect(d.value, {depth: null}));
+                }
+            }
         });
     }
 
-    loadNodeConfig(fileInfo: REDNode) {
+    loadNodeConfig(fileInfo: REDNode): When.Promise<REDNode> {
         return when.promise((resolve) => {
+            console.log("Loading node config for fileInfo " + fileInfo.name);
             let file = fileInfo.file;
             let module = fileInfo.module;
             let name = fileInfo.name;
@@ -200,12 +220,12 @@ class REDLoader {
                     fs.stat(path.join(path.dirname(file), "locales"), (err, stat) => {
                         if (!err) {
                             node.namespace = node.id;
-                            // CONFIG.registerMessageCatalog(node.id,
-                            //     path.join(path.dirname(file), "locales"),
-                            //     path.basename(file, ".js") + ".json")
-                            //     .then(() {
-                            //         resolve(node);
-                            //     });
+                            this.registry.i18n.registerMessageCatalog(node.id,
+                                path.join(path.dirname(file), "locales"),
+                                path.basename(file, ".js") + ".json")
+                                .then(() => {
+                                    resolve(node);
+                                });
                         } else {
                             node.namespace = node.module;
                             resolve(node);
@@ -284,7 +304,7 @@ class REDLoader {
             }
         };
 
-        return when.settle(promises).then(() => {
+        return when.all(promises).then(() => {
             return this.registry.saveNodeList();
         });
     }
