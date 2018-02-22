@@ -78,14 +78,27 @@ function initHandler() {
   });
 }
 
-let parser = new ArgumentParser({});
-parser.addArgument(['-f', '--flow']);
-parser.addArgument(['-m', '--message']);
-parser.addArgument(['-d', '--device']);
-parser.addArgument(['-t', '--template']);
-parser.addArgument(['-s', '--server']);
-parser.addArgument(['-i', '--kill-idle']);
-parser.addArgument(['-w', '--workers'], {defaultValue: 3});
+let parser = new ArgumentParser({
+  description: "Flow manager and executor for dojot"
+});
+parser.addArgument(['-f', '--flow'],
+                   {help:'Load flow definition from file. FLOW must be a valid JSON file, ' +
+                         'containing a valid node-red flow'});
+parser.addArgument(['-m', '--message'],
+                   {help:'Event that should trigger a flow execution run.'});
+parser.addArgument(['-d', '--device'], {help:'Device that generated the event.'});
+parser.addArgument(['-t', '--template'], {help:'Device template that generated the event.'});
+parser.addArgument(['-s', '--server'], {help:'Run as a daemon service (production)'});
+parser.addArgument(['-i', '--kill-idle'],
+                   {help:'If no more events are generaed within KILL_IDLE milliseconds, kill ' +
+                         'the process'});
+parser.addArgument(['-w', '--workers'],
+                   {
+                      defaultValue: 3,
+                      help: 'Number of workers (AMQP consumers) to spawn. This has a direct effect ' +
+                             'on the amount of messages per second a broker instance is able to ' +
+                             'handle'
+                   });
 parser.addArgument(['-v', '--verbose'], {action: 'storeTrue'});
 var args = parser.parseArgs();
 

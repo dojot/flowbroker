@@ -1,6 +1,6 @@
 # Mashup invoker proof of concept
 
-This repository contains a simple implementation for a replacement for dojot's flow/mashup
+This repository contains the implementation for a replacement for dojot's flow/mashup
 processor, based on nodes that run as persistent services on the platform.
 
 The idea here is to run each known processing node (switch, change, geo, email, etc) as a container
@@ -9,45 +9,58 @@ containers, chaining their responses to produce the final flow results.
 
 ## Implementation
 
-The implementation for the proof of concept is on `_flow.js`. In there, two approaches were
-tested.
+ - The orchestrator itself is implemented under the directory `orchestrator`.
+ - The library that abstracts communication from the *orchestrator* to the nodes themselves (e.g.
+change, email) is implemented under `lib`
+ - A sample node implementation is found under `sampleNode`.
 
-The first uses promises to implement a "node-red" like alternative, thus limiting the execution of
-any given flow (i.e. message trigger) to the process that started its processing. While this does
-have the best throughput, it has the downside of invalidating the whole flow, should any of its
-steps fail.
+This code has been developed and tested using node v8.9.x
 
-A second approach is based on amqp (rabbitmq) to achieve better task distribution. In this mode
-each message is placed at an amqp queue, and the set of workers consume from there, triggering
-the remote node that implements the processing step and eventually placing its results back on the
-queue, to be processed at a later time. Having the extra layer of messaging takes its toll on the
-perceived latency and overall throughput of the implementation, but allows for better workload
-management.
-
-For the tests, a single node implementation was made available at `_dummy.js`. It does nothing
-but wait for an arbitrary time, and return the message with an extra field informing that the
-message's gone through it.
-
-
-## How to use
+## How to build (orchestrator)
 
 ```shell
+cd orchestrator
 npm install
-docker build -f sampleNode/worker.docker -t mashup/worker .
-docker-compose -f compose.yaml up -d
 ```
 
-That does not start any orchestrator instance. To do so:
+## Running
 
 ```shell
-docker run --rm -it --network dojotflowbroker_default -v $PWD:/opt node:4 bash
+node index.js [options]
+```
 
-# then, within the container
-cd /opt
-# to start an amqp worker:
-node _flow.js amqp_worker
-# to start an amqp publisher:
-node _flow.js amqp_prod
-# to run the promise-based PoC
-node _flow.js local
+To run as a server:
+
+```shell
+node index.js -s
+```
+
+To run a message against a flow (sample):
+
+```shell
+node index.js -v -m '{"temperature": 22.5}' -d '18a9' -f flow.json -i 1000
+```
+
+This allows a processing node developer to easily test a node when used alongside the broker.
+For a sample flow definition file, check `docs/samples/flow.json`.
+
+All the commands above will require at least a running, reachable instance of RabbitMQ at the
+hostname `amqp`.
+
+To quickly create an environment using docker-compose, one may use the compose file (`compose.yaml`).
+For now, remember that any installed nodes must be added manually to the compose file or else the
+orchestrator will not be able to reach them. (developers) To allow quick prototyping and validation
+of the flow broker, a raw `node:8` container is used, with the project's homedir mounted into it.
+
+```shell
+# -- on host --
+docker-compose -p flows -f compose.yaml up -d
+
+# spawn flowbroker within the same network
+docker run --rm -it --network flows_default -v $PWD:/flowbroker node:8 bash
+
+# -- now, within the container --
+cd /flowbroker/orchestrator
+npm install
+node index.js -v -m '{"temperature": 22.5}' -d '18a9' -f ../docs/samples/flow.json -i 1000
 ```

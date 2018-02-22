@@ -1,0 +1,9 @@
+version: '2.1'
+services:
+
+  amqp:
+    image: rabbitmq:3
+    hostname: amqp
+
+networks:
+  default:

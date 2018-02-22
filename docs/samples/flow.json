@@ -2,7 +2,7 @@
   {
     "id": "b032cba2.69981",
     "type": "tab",
-    "label": "Flow 1"
+    "label": "Sample flow"
   },
   {
     "id": "6046b7d1.a52ab",
@@ -12,15 +12,6 @@
     "x": 211.5,
     "y": 136,
     "wires": ["d4d0b51f.60b0b"]
-  },
-  {
-    "id": "5ddf7439.0d632c",
-    "type": "device-out",
-    "z": "b032cba2.69981",
-    "debug": "",
-    "x": 563.5,
-    "y": 339,
-    "wires": []
   },
   {
     "id": "d4d0b51f.60b0b",
@@ -53,6 +44,6 @@
     "reg": false,
     "x": 434,
     "y": 263,
-    "wires": ["5ddf7439.0d632c"]
+    "wires": []
   }
 ]
