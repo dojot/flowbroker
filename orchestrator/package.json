@@ -1,0 +1,15 @@
+{
+  "name": "orchestrator",
+  "version": "1.0.0",
+  "description": "Flow orchestrator module",
+  "main": "index.js",
+  "scripts": {
+    "test": ""
+  },
+  "author": "Matheus Magalhaes",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "amqplib": "^0.5.2",
+    "argparse": "^1.0.9"
+  }
+}
