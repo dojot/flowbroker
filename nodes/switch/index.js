@@ -39,7 +39,7 @@ class DataHandler {
      */
     getLocaleData(locale) {
 
-        let path = "locales/" + locale + "/change.json";
+        let path = "locales/" + locale + "/switch.json";
 
         if (fs.existsSync(path)) {
             return require(path);
