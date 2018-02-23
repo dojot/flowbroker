@@ -14,7 +14,7 @@ class DataHandler {
      * @return {string} String with the path to the node representation file
      */
     getNodeRepresentationPath() {
-        return path.resolve(__dirname, 'edge.html');
+        return path.resolve(__dirname, 'template.html');
     }
 
     /**
@@ -24,8 +24,8 @@ class DataHandler {
      */
     getMetadata() {
         return {
-            'id': 'dojot/edge',
-            'name': 'edge',
+            'id': 'dojot/template',
+            'name': 'template',
             'module': 'dojot',
             'version': '1.0.0',
         }
@@ -38,7 +38,7 @@ class DataHandler {
      */
     getLocaleData(locale) {
 
-        let path = "locales/" + locale + "/edge.json";
+        let path = "locales/" + locale + "/template.json";
 
         if (fs.existsSync(path)) {
             return require(path);
@@ -57,7 +57,6 @@ class DataHandler {
 
         return [true, null];
     }
-
 
     /**
      * Statelessly handle a single given message, using given node configuration parameters
