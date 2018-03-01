@@ -57,7 +57,7 @@ typings/
 # dotenv environment variables file
 .env
 
-build/*
+build
 
 .idea/
 .vscode/
