@@ -27,10 +27,24 @@ class UnknownFlowError extends FlowError {
     super("Unknown flow: " + id);
     this.flowid = id;
   }
+
+  payload() {
+    return {
+      'message': this.message,
+      'flow': this.flowid
+    }
+  }
 }
 
 class TenantError extends FlowError {
   constructor() { super("Invalid tenant id supplied"); }
+}
+
+class MongoError extends FlowError {
+  constructor() {
+    super("Database operation failed");
+    this.httpStatus = 500;
+  }
 }
 
 class FlowManager {
@@ -65,7 +79,7 @@ class FlowManager {
       heads: [],
       devices: [],
       templates: [],
-      nodes: {},
+      nodes: {}, // nodes dict should be used on cache only: mongo doesn't like dots on keys
       red: flow
     };
 
@@ -137,7 +151,14 @@ class FlowManager {
         reject(new InvalidFlowError("Invalid 'enabled' field"));
       }
 
-      let parsed = this.parse(flow);
+      let parsed;
+      try {
+        parsed = this.parse(flow);
+        delete parsed.nodes; // mongo doesn't like dots on keys
+      } catch (e) {
+        reject(new InvalidFlowError());
+      }
+
       parsed.enabled = enabledVal;
       parsed.label = label;
       parsed.id = uuid();
@@ -150,23 +171,31 @@ class FlowManager {
     });
   }
 
-  set(flowid, enabled, label, flow){
+  set(flowid, label, enabled, flow){
     return new Promise((resolve, reject) => {
-
-      let parsed = this.parse(flow);
-
-      this.collection.findOneAndReplace({id: flowid}, parsed).then((result) => {
-        if (flow.ok === 1) {
-          resolve(parsed);
-        } else {
-          reject(flow.lastErrorObject);
+      this.get(flowid).then((oldFlow) => {
+        let newFlow = JSON.parse(JSON.stringify(oldFlow));
+        newFlow._id = oldFlow._id;
+        if (flow) {
+          let parsed = this.parse(flow);
+          delete parsed.nodes; // mongo doesn't like dots on keys
+          for (let k in parsed) {
+            newFlow[k] = parsed[k];
+          }
         }
-      }).catch((error) => {
-        if (error instanceof mongo.MongoError){
+        if (label) { newFlow.label = label; }
+        if (enabled) { newFlow.enabled = enabled; }
+
+        this.collection.findOneAndReplace({id: flowid}, newFlow).then((result) => {
+          if (result.ok === 1) {
+            resolve(newFlow);
+          }
+          reject(new MongoError());
+        }).catch((error) => {
           reject(error);
-        } else {
-          reject(new Error("UnknownFlow [" + flowid + "] requested"));
-        }
+        });
+      }).catch((error) => {
+        reject(error);
       });
     });
   }
@@ -174,17 +203,15 @@ class FlowManager {
   remove(flowid) {
     return new Promise((resolve, reject) => {
       this.collection.findOneAndDelete({id: flowid}).then((flow) => {
-        if (flow.ok === 1) {
+        if (flow.value == null) {
+          reject(new UnknownFlowError(flowid));
+        } else if (flow.ok === 1) {
           resolve(flow.value);
         } else {
-          reject(flow.lastErrorObject);
+          reject(new MongoError());
         }
       }).catch((error) => {
-        if (error instanceof mongo.MongoError){
-          reject(error);
-        } else {
-          reject(new Error("UnknownFlow [" + flowid + "] requested"));
-        }
+        reject(error);
       });
     });
   }

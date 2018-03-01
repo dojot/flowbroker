@@ -27,25 +27,31 @@ function validateMandatoryFields(body, fields) {
   }
 }
 
+function summarizeFlow(flow) {
+  return {
+    'label': flow.label,
+    'enabled': flow.enabled,
+    'id': flow.id,
+    'flow': flow.red
+  };
+}
+
 app.get('/v1/flow', (req, res) => {
   let fm = null;
   try {
     fm = FlowManager.get(req.service);
   } catch (e) {
-    const msg = "Failed to switch tenancy context";
-    console.error(msg);
-    return res.status(500).send({"message": msg});
+    if (e instanceof FlowError)
+      return res.status(e.httpStatus).send(e.payload());
+
+    console.error(e);
+    return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
   fm.getAll().then((flows) => {
     let filtered = [];
     for (let flow of flows) {
-      filtered.push({
-        'label': flow.label,
-        'enabled': flow.enabled,
-        'id': flow.id,
-        'flow': flow.red
-      });
+      filtered.push(summarizeFlow(flow));
     }
     return res.status(200).send({'flows': filtered});
   }).catch((error) => {
@@ -59,9 +65,11 @@ app.post('/v1/flow', (req, res) => {
   try {
     fm = FlowManager.get(req.service);
   } catch (e) {
-    const msg = "Failed to switch tenancy context";
-    console.error(msg);
-    return res.status(500).send({"message": msg});
+    if (e instanceof FlowError)
+      return res.status(e.httpStatus).send(e.payload());
+
+    console.error(e);
+    return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
   const error = validateMandatoryFields(req.body, ['label', 'flow']);
@@ -86,9 +94,11 @@ app.delete('/v1/flow', (req, res) => {
   try {
     fm = FlowManager.get(req.service);
   } catch (e) {
-    const msg = "Failed to switch tenancy context";
-    console.error(msg);
-    return res.status(500).send({"message": msg});
+    if (e instanceof FlowError)
+      return res.status(e.httpStatus).send(e.payload());
+
+    console.error(e);
+    return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
   fm.removeAll().then(() => {
@@ -104,41 +114,74 @@ app.get('/v1/flow/:id', (req, res) => {
   try {
     fm = FlowManager.get(req.service);
   } catch (e) {
-    const msg = "Failed to switch tenancy context";
-    console.error(msg);
-    return res.status(500).send({"message": msg});
+    if (e instanceof FlowError)
+      return res.status(e.httpStatus).send(e.payload());
+
+    console.error(e);
+    return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
   fm.get(req.params.id).then((flow) => {
+    return res.status(200).send(summarizeFlow(flow));
+  }).catch((error) => {
+    if (error instanceof FlowError) {
+      return res.status(error.httpStatus).send(error.payload());
+    } else {
+      console.error(error);
+      return res.status(500).send({'message': 'Failed to get flow'});
+    }
+  });
+});
+
+app.put('/v1/flow/:id', (req, res) => {
+  let fm = null;
+  try {
+    fm = FlowManager.get(req.service);
+  } catch (e) {
+    if (e instanceof FlowError)
+      return res.status(e.httpStatus).send(e.payload());
+
+    console.error(e);
+    return res.status(500).send({"message": "Failed to switch tenancy context"});
+  }
+
+  fm.set(req.params.id, req.body.label, req.body.enabled, req.body.flow).then((flow) => {
+    return res.status(200).send(summarizeFlow(flow));
+  }).catch((error) => {
+    if (error instanceof FlowError) {
+      return res.status(error.httpStatus).send(error.payload());
+    } else {
+      console.error(error);
+      return res.status(500).send({'message': 'Failed to update flows'});
+    }
+  });
+});
+
+app.delete('/v1/flow/:id', (req, res) => {
+  let fm = null;
+  try {
+    fm = FlowManager.get(req.service);
+  } catch (e) {
+    if (e instanceof FlowError)
+      return res.status(e.httpStatus).send(e.payload());
+
+    console.error(e);
+    return res.status(500).send({"message": "Failed to switch tenancy context"});
+  }
+
+  fm.remove(req.params.id).then((flow) => {
     return res.status(200).send({
-      'label': flow.label,
-      'enabled': flow.enabled,
-      'id': flow.id,
-      'flow': flow.red
+      'message': 'flow removed',
+      'flow': summarizeFlow(flow)
     });
   }).catch((error) => {
     if (error instanceof FlowError) {
       return res.status(error.httpStatus).send(error.payload());
     } else {
       console.error(error);
-      return res.status(500).send({'message': 'Failed to list flows'});
+      return res.status(500).send({'message': 'Failed to remove flow'});
     }
   });
-});
-
-app.post('/v1/flow/:id', (req, res) => {
-  let fm = FlowManager.get(req.service);
-  return res.status(501);
-});
-
-app.put('/v1/flow/:id', (req, res) => {
-  let fm = FlowManager.get(req.service);
-  return res.status(501);
-});
-
-app.delete('/v1/flow/:id', (req, res) => {
-  let fm = FlowManager.get(req.service);
-  return res.status(501);
 });
 
 MongoManager.get().then((client) => {
