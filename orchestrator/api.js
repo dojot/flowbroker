@@ -10,6 +10,8 @@ var FlowManagerBuilder = require('./flowManager').FlowManagerBuilder;
 var FlowError = require('./flowManager').FlowError;
 var MongoManager = require('./mongodb');
 
+var NodeAPI = require('./node-red/src/index');
+
 var mongoClient;
 var FlowManager;
 
@@ -20,6 +22,9 @@ app.use(bodyParser.json()); // for parsing application/json
 app.use(authChecker.authParse);
 app.use(authChecker.authEnforce);
 
+const nodeHandler = new NodeAPI();
+nodeHandler.registerExpress(app);
+
 function validateMandatoryFields(body, fields) {
   for (let f of fields) {
     if (!body.hasOwnProperty(f))
@@ -29,10 +34,12 @@ function validateMandatoryFields(body, fields) {
 
 function summarizeFlow(flow) {
   return {
-    'label': flow.label,
+    'name': flow.label,
     'enabled': flow.enabled,
     'id': flow.id,
-    'flow': flow.red
+    'flow': flow.red,
+    'created': flow.created.getTime(),
+    'updated': flow.updated.getTime(),
   };
 }
 
@@ -72,15 +79,19 @@ app.post('/v1/flow', (req, res) => {
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
-  const error = validateMandatoryFields(req.body, ['label', 'flow']);
+  const error = validateMandatoryFields(req.body, ['name', 'flow']);
   if (error) {
     return res.status(400).send({'message': error});
   }
 
-  fm.create(req.body.label, req.body.enabled, req.body.flow).then((parsed) => {
-    return res.status(200).send(parsed.red);
+  fm.create(req.body.name, req.body.enabled, req.body.flow).then((parsed) => {
+    return res.status(200).send({
+      'message': 'ok',
+      'flow': summarizeFlow(parsed)
+    });
   }).catch((error) => {
     if (error instanceof FlowError) {
+      console.error(error);
       return res.status(error.httpStatus).send(error.payload());
     } else {
       console.error(error);
@@ -122,7 +133,10 @@ app.get('/v1/flow/:id', (req, res) => {
   }
 
   fm.get(req.params.id).then((flow) => {
-    return res.status(200).send(summarizeFlow(flow));
+    return res.status(200).send({
+      'message': 'ok',
+      'flow': summarizeFlow(flow)
+    });
   }).catch((error) => {
     if (error instanceof FlowError) {
       return res.status(error.httpStatus).send(error.payload());
@@ -145,8 +159,11 @@ app.put('/v1/flow/:id', (req, res) => {
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
-  fm.set(req.params.id, req.body.label, req.body.enabled, req.body.flow).then((flow) => {
-    return res.status(200).send(summarizeFlow(flow));
+  fm.set(req.params.id, req.body.name, req.body.enabled, req.body.flow).then((flow) => {
+    return res.status(200).send({
+      'message': 'ok',
+      'flow': summarizeFlow(flow)
+    });
   }).catch((error) => {
     if (error instanceof FlowError) {
       return res.status(error.httpStatus).send(error.payload());
@@ -183,6 +200,8 @@ app.delete('/v1/flow/:id', (req, res) => {
     }
   });
 });
+
+
 
 MongoManager.get().then((client) => {
   mongoClient = client;

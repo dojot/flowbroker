@@ -138,17 +138,18 @@ class FlowManager {
   create(label, enabled, flow) {
     return new Promise((resolve, reject) => {
       if (!label)
-        reject(new InvalidFlowError("Label field is required"));
+        return reject(new InvalidFlowError("Label field is required"));
 
       let enabledVal;
       if ((enabled === undefined) || (enabled === null)) {
         enabledVal = true;
       } else if (enabled instanceof String) {
         enabledVal = (enabled.lower() in ['true', '1']);
-      } else if (enabled instanceof Boolean) {
+      } else if ((enabled instanceof Boolean) || (typeof enabled == 'boolean')) {
         enabledVal = enabled;
       } else {
-        reject(new InvalidFlowError("Invalid 'enabled' field"));
+        console.log('invalid', enabled, enabled instanceof Boolean, typeof enabled)
+        return reject(new InvalidFlowError("Invalid 'enabled' field: ", enabled));
       }
 
       let parsed;
@@ -156,17 +157,21 @@ class FlowManager {
         parsed = this.parse(flow);
         delete parsed.nodes; // mongo doesn't like dots on keys
       } catch (e) {
-        reject(new InvalidFlowError());
+        console.log('invalid flow');
+        return reject(new InvalidFlowError());
       }
 
       parsed.enabled = enabledVal;
       parsed.label = label;
       parsed.id = uuid();
+      parsed.created = new Date();
+      parsed.updated = parsed.created;
 
+      console.log('inserting flow');
       this.collection.insert(parsed).then((results) =>{
-        resolve(parsed);
+        return resolve(parsed);
       }).catch((error) => {
-        reject(error);
+        return reject(error);
       });
     });
   }
@@ -175,6 +180,8 @@ class FlowManager {
     return new Promise((resolve, reject) => {
       this.get(flowid).then((oldFlow) => {
         let newFlow = JSON.parse(JSON.stringify(oldFlow));
+        newFlow.created = oldFlow.created;
+        newFlow.updated = new Date();
         newFlow._id = oldFlow._id;
         if (flow) {
           let parsed = this.parse(flow);

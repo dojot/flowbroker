@@ -32,7 +32,7 @@ function authParse(req, res, next) {
 
   const token = rawToken.split('.');
   if (token.length != 3) {
-    console.error("got invalid request: token is malformed", rawToken);
+    console.error("Got invalid request: token is malformed", rawToken);
     return res.status(401).send(new InvalidTokenError());
   }
 
@@ -45,9 +45,16 @@ function authParse(req, res, next) {
 }
 
 function authEnforce(req, res, next) {
+  if (req.path.startsWith('/locales') ||
+      req.path.startsWith('/red') ||
+      req.path.startsWith('/icons') ||
+      req.path.startsWith('/nodes')) {
+    console.log('skipping auth for metadata');
+    return next();
+  }
   if (req.user === undefined || req.user.trim() === "" ) {
     // valid token must be supplied
-    console.error("got invalid request: user is not defined in token", req.header('authorization'));
+    console.error("Got invalid request: user is not defined in token: ", req.header('authorization'));
     return res.status(401).send(new UnauthorizedError());
   }
 
