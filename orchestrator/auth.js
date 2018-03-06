@@ -45,13 +45,11 @@ function authParse(req, res, next) {
 }
 
 function authEnforce(req, res, next) {
-  if (req.path.startsWith('/locales') ||
-      req.path.startsWith('/red') ||
-      req.path.startsWith('/icons') ||
-      req.path.startsWith('/nodes')) {
-    console.log('skipping auth for metadata');
+  if (req.path.match(/(\.png|svg$)|(keymap\.json$)/)){
+    console.log('will ignore ', req.path);
     return next();
   }
+
   if (req.user === undefined || req.user.trim() === "" ) {
     // valid token must be supplied
     console.error("Got invalid request: user is not defined in token: ", req.header('authorization'));

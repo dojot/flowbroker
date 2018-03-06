@@ -22,6 +22,7 @@ app.use(bodyParser.json()); // for parsing application/json
 app.use(authChecker.authParse);
 app.use(authChecker.authEnforce);
 
+// allow FE to retrieve available nodes (node-red API)
 const nodeHandler = new NodeAPI();
 nodeHandler.registerExpress(app);
 

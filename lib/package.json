@@ -2,9 +2,9 @@
   "name": "dojot-node-library",
   "version": "1.0.0",
   "description": "",
-  "main": "CommandHandler.js",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": ""
   },
   "author": "Matheus Magalhaes",
   "license": "GPL-3.0",
