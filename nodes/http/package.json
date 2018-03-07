@@ -9,7 +9,6 @@
   "author": "Eric Baum",
   "license": "GPL-3.0",
   "dependencies": {
-    "dojot-node-library": "file:../lib",
-    "mustache": ""
+    "dojot-node-library": "file:../../lib"
   }
 }

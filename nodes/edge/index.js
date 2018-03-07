@@ -38,10 +38,9 @@ class DataHandler {
      */
     getLocaleData(locale) {
 
-        let path = "locales/" + locale + "/edge.json";
-
-        if (fs.existsSync(path)) {
-            return require(path);
+        let filepath = path.join(__dirname, "locales/" + locale + "/edge.json");
+        if (fs.existsSync(filepath)) {
+            return require(filepath);
         } else {
             return null
         }
@@ -76,10 +75,11 @@ class DataHandler {
         setTimeout(() => {
 
             callback(undefined, [message])
-            
+
         }, 10);
 
     }
 }
 
-var main = new DojotHandler(new DataHandler());
+// var main = new DojotHandler(new DataHandler());
+module.exports = {Handler: DataHandler};

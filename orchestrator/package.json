@@ -11,6 +11,13 @@
   "dependencies": {
     "amqplib": "^0.5.2",
     "argparse": "^1.0.9",
+    "dojot-change-node": "file:../nodes/change",
+    "dojot-edge-node": "file:../nodes/edge",
+    "dojot-email-node": "file:../nodes/email",
+    "dojot-geo-node": "file:../nodes/geo",
+    "dojot-http-node": "file:../nodes/http",
+    "dojot-node-library": "file:../lib",
+    "dojot-switch-node": "file:../nodes/switch",
     "express": "^4.16.2",
     "mongodb": "^3.0.3",
     "uuid": "^3.2.1"

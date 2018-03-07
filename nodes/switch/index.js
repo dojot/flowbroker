@@ -8,6 +8,22 @@ let DojotHandler = require('dojot-node-library');
 // Sample node implementation
 class DataHandler {
     constructor() {
+      this.operators = {
+          'eq': function(a, b) { return a == b; },
+          'neq': function(a, b) { return a != b; },
+          'lt': function(a, b) { return a < b; },
+          'lte': function(a, b) { return a <= b; },
+          'gt': function(a, b) { return a > b; },
+          'gte': function(a, b) { return a >= b; },
+          'btwn': function(a, b, c) { return a >= b && a <= c; },
+          'cont': function(a, b) { return (a + "").indexOf(b) != -1; },
+          'regex': function(a, b, c, d) { return (a + "").match(new RegExp(b,d?'i':'')); },
+          'true': function(a) { return a === true; },
+          'false': function(a) { return a === false; },
+          'null': function(a) { return (typeof a == "undefined" || a === null); },
+          'nnull': function(a) { return (typeof a != "undefined" && a !== null); },
+          'else': function(a) { return a === true; }
+      };
     }
 
     /**
@@ -39,32 +55,14 @@ class DataHandler {
      */
     getLocaleData(locale) {
 
-        let path = "locales/" + locale + "/switch.json";
-
-        if (fs.existsSync(path)) {
-            return require(path);
+        let filepath = path.join(__dirname, "locales/" + locale + "/switch.json");
+        if (fs.existsSync(filepath)) {
+            return require(filepath);
         } else {
             return null
         }
 
     }
-
-    operators = {
-        'eq': function(a, b) { return a == b; },
-        'neq': function(a, b) { return a != b; },
-        'lt': function(a, b) { return a < b; },
-        'lte': function(a, b) { return a <= b; },
-        'gt': function(a, b) { return a > b; },
-        'gte': function(a, b) { return a >= b; },
-        'btwn': function(a, b, c) { return a >= b && a <= c; },
-        'cont': function(a, b) { return (a + "").indexOf(b) != -1; },
-        'regex': function(a, b, c, d) { return (a + "").match(new RegExp(b,d?'i':'')); },
-        'true': function(a) { return a === true; },
-        'false': function(a) { return a === false; },
-        'null': function(a) { return (typeof a == "undefined" || a === null); },
-        'nnull': function(a) { return (typeof a != "undefined" && a !== null); },
-        'else': function(a) { return a === true; }
-    };
 
     /**
      * Check if the node configuration is valid
@@ -237,4 +235,5 @@ class DataHandler {
     }
 }
 
-var main = new DojotHandler(new DataHandler());
+// var main = new DojotHandler(new DataHandler());
+module.exports = {Handler: DataHandler};

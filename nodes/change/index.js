@@ -8,8 +8,6 @@ let DojotHandler = require('dojot-node-library');
 
 // Sample node implementation
 class DataHandler {
-    constructor() {
-    }
 
     /**
      * Returns full path to html file
@@ -39,15 +37,12 @@ class DataHandler {
      * @return {[object]}        Locale settings used by the module
      */
     getLocaleData(locale) {
-
-        let path = "locales/" + locale + "/change.json";
-
-        if (fs.existsSync(path)) {
-            return require(path);
+        let filepath = path.join(__dirname, "locales/" + locale + "/change.json");
+        if (fs.existsSync(filepath)) {
+            return require(filepath);
         } else {
             return null
         }
-
     }
 
     /**
@@ -346,4 +341,5 @@ class DataHandler {
     }
 }
 
-var main = new DojotHandler(new DataHandler());
+// var main = new DojotHandler(new DataHandler());
+module.exports = {Handler: DataHandler};

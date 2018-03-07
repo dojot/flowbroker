@@ -9,7 +9,7 @@
   "author": "Eric Baum",
   "license": "GPL-3.0",
   "dependencies": {
-    "dojot-node-library": "file:../lib",
+    "dojot-node-library": "file:../../lib",
     "jsonata": "^1.5.2"
   }
 }

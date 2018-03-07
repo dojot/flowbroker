@@ -6,6 +6,27 @@ var fs = require('fs');
 var path = require('path');
 var express = require('express');
 
+// TODO remove the following
+var change = require('dojot-change-node').Handler;
+var edge = require('dojot-edge-node').Handler;
+var email = require('dojot-email-node').Handler;
+var geo = require('dojot-geo-node').Handler;
+// var http = require('dojot-http-node').Handler;
+var select = require('dojot-switch-node').Handler;
+// var template = require('dojot-template-node').Handler;
+
+var nodes = {
+  "change": new change(),
+  "edgedetection": new edge(),
+  "email": new email(),
+  "geofence": new geo(),
+  // "http": new http(),
+  "switch": new select(),
+  // "template": new template()
+};
+
+// ---
+
 module.exports = class NodeAPI {
   constructor() {}
 
@@ -29,6 +50,13 @@ module.exports = class NodeAPI {
       } else {
         // maps to node-provided locale file
         // TODO
+
+        const nodeid = resource.match(/[^\/]+$/)[0];
+        if (Object.keys(nodes).includes(nodeid)) {
+          let data = nodes[nodeid].getLocaleData('en-US');
+          console.log(nodeid, data);
+          return res.status(200).send(data);
+        }
 
         const filepath = path.join(__dirname, 'tinker' + resource);
         try {
