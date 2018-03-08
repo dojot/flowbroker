@@ -22,7 +22,7 @@ var nodes = {
   "edgedetection": new edge(),
   "email": new email(),
   "geofence": new geo(),
-  "httprequest_out": new http(),
+  "http_request_out": new http(),
   "switch": new select(),
   "template": new template()
 };
