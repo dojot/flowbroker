@@ -1,0 +1,74 @@
+<script type="text/x-red" data-template-name="device template out">
+  <div class="form-row">
+      <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+      <input type="text" id="node-input-name">
+  </div>
+  <div class="form-row">
+      <label for="node-input-device-template"><i class="fa fa-wifi"></i> Device Template</label>
+      <select id="node-input-device-template" style=""></select>
+  </div>
+  <div style="display:none">
+      <input type='text' id='node-input-device-template-label'/>
+      <input type='text' id='node-input-device-template-id'/>
+  </div>
+</script>
+
+<script type="text/x-red" data-help-name="device template out">
+  <p>Use data retrieved from a previously configured sensor as input to logic.</p>
+</script>
+
+<script type="text/javascript">
+   RED.nodes.registerType('device template out',{
+       category: 'input',      // the palette category
+       defaults: {
+           // defines the editable properties of the node
+
+           // just the UI label displayed back to the user on the flow.
+           name: {value:"", required:false},
+           // name of the device which data is retrieved from.
+           device_template: {value:"", required:true},
+
+           // those are the internal types used when routing data through fiware.
+           _device_template_label: { value:"", required: false},
+           _device_template_id: { value:"", required: false}
+       },
+       inputs:0,                // set the number of inputs - only 0 or 1
+       outputs:1,               // set the number of outputs - 0 to n
+       align: "left",          // align the icon
+       icon: "bridge-dash.png", // set the icon (held in icons dir below where you save the node)
+       color: "#679BF3",        // background-color
+       label: function() {
+           // sets the default label contents
+           return this.name || "device template";
+       },
+       labelStyle: function() {
+           // sets the class to apply to the label
+           return this.name ? "node_label_italic" : "";
+       },
+       oneditprepare: function() {
+         var select = document.getElementById("node-input-device-template");
+         let node = this;
+         util.GET('/template')
+            .then((list) => {
+              list.templates.map((templ) => {
+                select.options[select.options.length] = new Option(templ.label, JSON.stringify({"label" : templ.label, "id": templ.id}));
+              });
+              select.value = templ.label;
+            })
+            .catch((error) => {
+              console.error('Failed to retrieve the list of available devices',error);
+            })
+       },
+
+       oneditsave: function() {
+         if ($('#node-input-device-template').val()) {
+           const deviceData = JSON.parse($('#node-input-device-template').val());
+           $('#node-input-device-template-label').val(deviceData.label);
+           $('#node-input-device-template-id').val(deviceData.id);
+           this._device_template_label = deviceData.label;
+           this._device_template_id = deviceData.id;
+           this.device_template = deviceData;
+         }
+       }
+   });
+</script>

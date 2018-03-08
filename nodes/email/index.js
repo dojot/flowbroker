@@ -37,17 +37,16 @@ class DataHandler {
      * @param  {[string]} locale Locale string, such as "en-US"
      * @return {[object]}        Locale settings used by the module
      */
-    getLocaleData(locale) {
+     getLocaleData(locale) {
 
-        let path = "locales/" + locale + "/email.json";
+         let filepath = path.join(__dirname, "locales/" + locale + "/email.json");
+         if (fs.existsSync(filepath)) {
+             return require(filepath);
+         } else {
+             return null
+         }
 
-        if (fs.existsSync(path)) {
-            return require(path);
-        } else {
-            return null
-        }
-
-    }
+     }
 
     /**
      * Check if the node configuration is valid
@@ -202,4 +201,5 @@ class DataHandler {
     }
 }
 
-var main = new DojotHandler(new DataHandler());
+// var main = new DojotHandler(new DataHandler());
+module.exports = {Handler: DataHandler};

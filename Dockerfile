@@ -5,6 +5,7 @@ RUN mkdir -p /opt/flowbroker
 ADD . /opt/flowbroker
 
 WORKDIR /opt/flowbroker/orchestrator
-RUN npm install
+RUN cd /opt/flowbroker/lib && npm install
+RUN cd /opt/flowbroker/orchestrator && npm install
 
 CMD ["node", "api.js"]

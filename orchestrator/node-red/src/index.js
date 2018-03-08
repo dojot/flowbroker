@@ -6,6 +6,29 @@ var fs = require('fs');
 var path = require('path');
 var express = require('express');
 
+// TODO remove the following
+let DojotHandler = require('dojot-node-library');
+
+var change = require('../../nodes/change/index').Handler;
+var edge = require('../../nodes/edge/index').Handler;
+var email = require('../../nodes/email/index').Handler;
+var geo = require('../../nodes/geo/index').Handler;
+var http = require('../../nodes/http/index').Handler;
+var select = require('../../nodes/switch/index').Handler;
+var template = require('../../nodes/template/index').Handler;
+//
+var nodes = {
+  "change": new change(),
+  "edgedetection": new edge(),
+  "email": new email(),
+  "geofence": new geo(),
+  "http_request_out": new http(),
+  "switch": new select(),
+  "template": new template()
+};
+
+// ---
+
 module.exports = class NodeAPI {
   constructor() {}
 
@@ -27,8 +50,16 @@ module.exports = class NodeAPI {
           return res.status(500).send();
         }
       } else {
+
         // maps to node-provided locale file
         // TODO
+
+        const nodeid = resource.match(/[^\/]+$/)[0];
+        if (Object.keys(nodes).includes(nodeid)) {
+          let data = nodes[nodeid].getLocaleData('en-US');
+          console.log(nodeid, data);
+          return res.status(200).send(data);
+        }
 
         const filepath = path.join(__dirname, 'tinker' + resource);
         try {
@@ -75,7 +106,7 @@ module.exports = class NodeAPI {
             res.status(500).send();
           }
         }
-      })
+      });
     });
   }
 };

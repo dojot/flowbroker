@@ -11,8 +11,9 @@
   "dependencies": {
     "amqplib": "^0.5.2",
     "argparse": "^1.0.9",
+    "dojot-node-library": "file:../lib",
     "express": "^4.16.2",
-    "mongodb": "^3.0.3",
+    "mongodb": "^3.0.4",
     "uuid": "^3.2.1"
   }
 }

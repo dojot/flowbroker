@@ -86,11 +86,11 @@ class DataHandler {
             var nodeUrl = config.url;
             var isTemplatedUrl = (nodeUrl || "").indexOf("{{") != -1;
             var nodeMethod = config.method || "GET";
-    
+
             var ret = config.ret || "txt";
-    
+
             var reqTimeout = 120000
-    
+
             var preRequestTimestamp = process.hrtime();
 
             var url = nodeUrl || message.url;
@@ -267,10 +267,10 @@ class DataHandler {
                             message.payload = message.payload.toString('utf8'); // txt
 
                             if (node.ret === "obj") {
-                                try { 
+                                try {
                                     message.payload = JSON.parse(message.payload);
-                                } catch(e) { 
-                                    callback("httpin.errors.json-error", [message]); 
+                                } catch(e) {
+                                    callback("httpin.errors.json-error", [message]);
                                 }
                             }
                         }
@@ -298,10 +298,11 @@ class DataHandler {
             }
 
             req.end();
-            
+
         }, 10);
 
     }
 }
 
-var main = new DojotHandler(new DataHandler());
+// var main = new DojotHandler(new DataHandler());
+module.exports = {Handler: DataHandler};
