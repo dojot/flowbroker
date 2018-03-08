@@ -106,7 +106,7 @@ module.exports = class NodeAPI {
             res.status(500).send();
           }
         }
-      })
+      });
     });
   }
 };

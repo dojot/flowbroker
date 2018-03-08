@@ -11,8 +11,8 @@
     "version": "0.17.5-git"
   },
   {
-    "id": "node-red-contrib-custom/change",
-    "name": "change",
+    "id": "node-red-contrib-custom/switch",
+    "name": "switch",
     "types": [
       "switch"
     ],
@@ -22,8 +22,8 @@
     "version": "0.0.1"
   },
   {
-    "id": "node-red-contrib-custom/switch",
-    "name": "switch",
+    "id": "node-red-contrib-custom/change",
+    "name": "change",
     "types": [
       "change"
     ],
