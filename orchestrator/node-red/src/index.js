@@ -7,22 +7,24 @@ var path = require('path');
 var express = require('express');
 
 // TODO remove the following
-var change = require('dojot-change-node').Handler;
-var edge = require('dojot-edge-node').Handler;
-var email = require('dojot-email-node').Handler;
-var geo = require('dojot-geo-node').Handler;
-// var http = require('dojot-http-node').Handler;
-var select = require('dojot-switch-node').Handler;
-// var template = require('dojot-template-node').Handler;
+let DojotHandler = require('dojot-node-library');
 
+var change = require('../../nodes/change/index').Handler;
+var edge = require('../../nodes/edge/index').Handler;
+var email = require('../../nodes/email/index').Handler;
+var geo = require('../../nodes/geo/index').Handler;
+var http = require('../../nodes/http/index').Handler;
+var select = require('../../nodes/switch/index').Handler;
+var template = require('../../nodes/template/index').Handler;
+//
 var nodes = {
   "change": new change(),
   "edgedetection": new edge(),
   "email": new email(),
   "geofence": new geo(),
-  // "http": new http(),
+  "httprequest_out": new http(),
   "switch": new select(),
-  // "template": new template()
+  "template": new template()
 };
 
 // ---
@@ -48,6 +50,7 @@ module.exports = class NodeAPI {
           return res.status(500).send();
         }
       } else {
+
         // maps to node-provided locale file
         // TODO
 
