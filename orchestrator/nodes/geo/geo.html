@@ -144,12 +144,12 @@
                     drawControl.addTo(map);
                 });
 
-                new L.Control.GeoSearch({
-                    provider: new L.GeoSearch.Provider.OpenStreetMap(),
-                    position: 'bottomleft',
-                    showMarker: false,
-                    zoomLevel: 12
-                }).addTo(map);
+                // new L.Control.GeoSearch({
+                //     provider: new L.GeoSearch.Provider.OpenStreetMap(),
+                //     position: 'bottomleft',
+                //     showMarker: false,
+                //     zoomLevel: 12
+                // }).addTo(map);
 
                 if (node.points.length >= 3) {
                     var corners = [];
