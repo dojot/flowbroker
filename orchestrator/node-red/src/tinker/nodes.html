@@ -294,7 +294,181 @@
             $("#node-input-rule-container").editableList('height', height);
         }
     });
-</script><!--
+</script><script type="text/x-red" data-template-name="device in">
+   <div class="form-row">
+       <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+       <input type="text" id="node-input-name">
+   </div>
+   <div class="form-row">
+       <label for="node-input-device"><i class="fa fa-wifi"></i> Device</label>
+       <select id="node-input-device" style=""></select>
+   </div>
+   <div class="form-row">
+       <label for="node-input-attrs"><i class="fa fa-cube"></i> Source</label>
+       <input type="text" id="node-input-attrs" style=""></input>
+   </div>
+
+   <div style="display:none">
+       <input type='text' id='node-input-_device_id'/>
+       <input type='text' id='node-input-_device_label'/>
+       <input type='text' id='node-input-_device_type'/>
+   </div>
+</script>
+
+<script type="text/x-red" data-help-name="device in">
+   <p>Set the value of a virtual device, based on the results of the previous operations on the flow.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('device in',{
+        category: 'output',      // the palette category
+        defaults: {              // defines the editable properties of the node
+            name: {value:"", required:false},
+            device: {value:"", required:true},
+            attrs: {value:"", required:true},
+
+            // those are the internal types used when routing data through fiware.
+            _device_id: { value:"", required: false},
+            _device_label: { value:"", required: false},
+            _device_type: { value:"", required: false},
+        },
+        inputs:1,                // set the number of inputs - only 0 or 1
+        outputs:0,               // set the number of outputs - 0 to n
+        align: "right",          // align the icon
+        icon: "bridge-dash.png", // set the icon (held in icons dir below where you save the node)
+        color: "#f3b567",        // background-color
+        label: function() {
+            // sets the default label contents
+            return this.name||"device";
+        },
+        labelStyle: function() {
+            // sets the class to apply to the label
+            return this.name?"node_label_italic":"";
+        },
+        oneditprepare: function() {
+           var select = document.getElementById("node-input-device");
+           let node = this;
+          //  this will only work from the device management interface
+           util.GET('/device')
+              .then((list) => {
+                console.log(list);
+                list.devices.map((dev) => {
+                  select.options[select.options.length] = new Option(dev.label, JSON.stringify({'id': dev.id}));
+                });
+                select.value = node.device;
+              })
+              .catch((error) => {
+                console.error('Failed to retrieve the list of available devices',error);
+              })
+        },
+
+        oneditsave: function() {
+          if ($('#node-input-device').val()) {
+            const deviceData = JSON.parse($('#node-input-device').val());
+            $('#node-input-_device_id').val(deviceData.id);
+            $('#node-input-_device_label').val($('#node-input-device option:selected').text());
+            $('#node-input-_device_type').val(deviceData.type);
+          }
+        }
+    });
+</script>
+<script type="text/x-red" data-template-name="device out">
+   <div class="form-row">
+       <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+       <input type="text" id="node-input-name">
+   </div>
+   <div class="form-row">
+       <label for="node-input-device"><i class="fa fa-wifi"></i> Device</label>
+       <select id="node-input-device" style=""></select>
+   </div>
+   <div style="display:none">
+       <input type='text' id='node-input-_device_id'/>
+       <input type='text' id='node-input-_device_label'/>
+       <input type='text' id='node-input-_device_type'/>
+   </div>
+</script>
+
+<script type="text/x-red" data-help-name="device out">
+   <p>Use data retrieved from a previously configured sensor as input to logic.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('device out',{
+        category: 'input',      // the palette category
+        defaults: {
+            // defines the editable properties of the node
+
+            // just the UI label displayed back to the user on the flow.
+            name: {value:"", required:false},
+            // name of the device which data is retrieved from.
+            device: {value:"", required:true},
+
+            // those are the internal types used when routing data through fiware.
+            _device_id: { value:"", required: false},
+            _device_label: { value:"", required: false},
+            _device_type: { value:"", required: false},
+        },
+        inputs:0,                // set the number of inputs - only 0 or 1
+        outputs:1,               // set the number of outputs - 0 to n
+        align: "left",          // align the icon
+        icon: "bridge-dash.png", // set the icon (held in icons dir below where you save the node)
+        color: "#f3b567",        // background-color
+        label: function() {
+            // sets the default label contents
+            return this.name || "device";
+        },
+        labelStyle: function() {
+            // sets the class to apply to the label
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function() {
+          var select = document.getElementById("node-input-device");
+          // this will only work from the device management interface
+          let node = this;
+          util.GET('/device')
+            .then((list) => {
+              list.devices.map((dev) => {
+                select.options[select.options.length] = new Option(dev.label, JSON.stringify({'id': dev.id}));
+              });
+              select.value = node.device;
+            })
+            .catch((error) => {
+              console.error('Failed to retrieve the list of available devices',error);
+            })
+        },
+
+        oneditsave: function() {
+          if ($('#node-input-device').val()) {
+            const deviceData = JSON.parse($('#node-input-device').val());
+            $('#node-input-_device_id').val(deviceData.id);
+            $('#node-input-_device_label').val($('#node-input-device option:selected').text());
+            $('#node-input-_device_type').val(deviceData.type);
+          }
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="device in">
+   <div class="form-row">
+       <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+       <input type="text" id="node-input-name">
+   </div>
+   <div class="form-row">
+       <label for="node-input-device"><i class="fa fa-wifi"></i> Device</label>
+       <select id="node-input-device" style=""></select>
+   </div>
+   <div class="form-row">
+       <label for="node-input-attrs"><i class="fa fa-cube"></i> Source</label>
+       <input type="text" id="node-input-attrs" style=""></input>
+   </div>
+
+   <div style="display:none">
+       <input type='text' id='node-input-_device_id'/>
+       <input type='text' id='node-input-_device_label'/>
+       <input type='text' id='node-input-_device_type'/>
+   </div>
+</script>
+<!--
   Copyright JS Foundation and other contributors, http://js.foundation
 
   Licensed under the Apache License, Version 2.0 (the "License");
@@ -1354,7 +1528,80 @@
         }
     });
 </script>
+<script type="text/x-red" data-template-name="device template out">
+  <div class="form-row">
+      <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+      <input type="text" id="node-input-name">
+  </div>
+  <div class="form-row">
+      <label for="node-input-device-template"><i class="fa fa-wifi"></i> Device Template</label>
+      <select id="node-input-device-template" style=""></select>
+  </div>
+  <div style="display:none">
+      <input type='text' id='node-input-device-template-label'/>
+      <input type='text' id='node-input-device-template-id'/>
+  </div>
+</script>
 
+<script type="text/x-red" data-help-name="device template out">
+  <p>Use data retrieved from a previously configured sensor as input to logic.</p>
+</script>
+
+<script type="text/javascript">
+   RED.nodes.registerType('device template out',{
+       category: 'input',      // the palette category
+       defaults: {
+           // defines the editable properties of the node
+
+           // just the UI label displayed back to the user on the flow.
+           name: {value:"", required:false},
+           // name of the device which data is retrieved from.
+           device_template: {value:"", required:true},
+
+           // those are the internal types used when routing data through fiware.
+           _device_template_label: { value:"", required: false},
+           _device_template_id: { value:"", required: false}
+       },
+       inputs:0,                // set the number of inputs - only 0 or 1
+       outputs:1,               // set the number of outputs - 0 to n
+       align: "left",          // align the icon
+       icon: "bridge-dash.png", // set the icon (held in icons dir below where you save the node)
+       color: "#679BF3",        // background-color
+       label: function() {
+           // sets the default label contents
+           return this.name || "device template";
+       },
+       labelStyle: function() {
+           // sets the class to apply to the label
+           return this.name ? "node_label_italic" : "";
+       },
+       oneditprepare: function() {
+         var select = document.getElementById("node-input-device-template");
+         let node = this;
+         util.GET('/template')
+            .then((list) => {
+              list.templates.map((templ) => {
+                select.options[select.options.length] = new Option(templ.label, JSON.stringify({"label" : templ.label, "id": templ.id}));
+              });
+              select.value = templ.label;
+            })
+            .catch((error) => {
+              console.error('Failed to retrieve the list of available devices',error);
+            })
+       },
+
+       oneditsave: function() {
+         if ($('#node-input-device-template').val()) {
+           const deviceData = JSON.parse($('#node-input-device-template').val());
+           $('#node-input-device-template-label').val(deviceData.label);
+           $('#node-input-device-template-id').val(deviceData.id);
+           this._device_template_label = deviceData.label;
+           this._device_template_id = deviceData.id;
+           this.device_template = deviceData;
+         }
+       }
+   });
+</script>
 <script type="text/x-red" data-template-name="template">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
