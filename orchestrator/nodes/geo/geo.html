@@ -124,7 +124,7 @@
                     var layer = e.layer;
                     layer.shape = "geofence";
                     drawnItems.addLayer(layer);
-                    drawControl.removeFrom(map);
+                    drawControl.remove();
                     drawControl2.addTo(map);
                 });
 
@@ -140,7 +140,7 @@
                 map.on('draw:deleted', function (e) {
                     console.log("deleted", e);
                     //re-enable drawing
-                    drawControl2.removeFrom(map);
+                    drawControl2.remove();
                     drawControl.addTo(map);
                 });
 
@@ -166,7 +166,7 @@
                             padding: L.point(30, 30)
                         }
                     );
-                    drawControl.removeFrom(map);
+                    drawControl.remove();
                     drawControl2.addTo(map);
                 }
 
