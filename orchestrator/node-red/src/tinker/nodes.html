@@ -323,7 +323,7 @@
             // just the UI label displayed back to the user on the flow.
             name: { value: "", required: false },
             // name of the device which data is retrieved from.
-            device: { value: undefined, required: true },
+            device: { value: "", required: true },
 
             // those are the internal types used when routing data through fiware.
             _device_id: { value: "", required: false },
@@ -363,11 +363,9 @@
             if ($('#node-input-device').val()) {
                 const deviceData = JSON.parse($('#node-input-device').val());
                 $('#node-input-_device_id').val(deviceData.id);
-                // $('#node-input-device').val(deviceData);
                 // $('#node-input-_device_label').val($('#node-input-device option:selected').text());
                 // $('#node-input-_device_type').val(deviceData.type);
                 this._device_id = deviceData.id
-                this.device = deviceData;
             }
         }
     });
@@ -389,6 +387,7 @@
        <input type='text' id='node-input-_device_id'/>
        <input type='text' id='node-input-_device_label'/>
        <input type='text' id='node-input-_device_type'/>
+       <input type='text' id='node-input-_device_templates'/>
    </div>
 </script>
 
@@ -408,6 +407,7 @@
             _device_id: { value: "", required: false },
             _device_label: { value: "", required: false },
             _device_type: { value: "", required: false },
+            _device_templates: { value: [], required: false },
         },
         inputs: 1,                // set the number of inputs - only 0 or 1
         outputs: 0,               // set the number of outputs - 0 to n
@@ -430,7 +430,11 @@
                 .then((list) => {
                     console.log(list);
                     list.devices.map((dev) => {
-                        select.options[select.options.length] = new Option(dev.label, JSON.stringify({ 'id': dev.id }));
+                        let data = {
+                            'id': dev.id,
+                            'templates': dev.templates
+                        }
+                        select.options[select.options.length] = new Option(dev.label, JSON.stringify(data));
                     });
                     select.value = node.device;
                 })
@@ -443,13 +447,11 @@
             if ($('#node-input-device').val()) {
                 const deviceData = JSON.parse($('#node-input-device').val());
                 $('#node-input-_device_id').val(deviceData.id);
+                $('#node-input-_device_templates').val(deviceData.templates);
                 // $('#node-input-_device_label').val($('#node-input-device option:selected').text());
                 // $('#node-input-_device_type').val(deviceData.type);
                 this._device_id = deviceData.id
-                this.argh = { c: deviceData, a: false };
-                this.device = deviceData;
-
-                console.log(this, deviceData);
+                this._device_templates = deviceData.templates;
             }
         }
     });

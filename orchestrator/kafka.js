@@ -15,7 +15,7 @@ const KAFKA_DEFAULTS = {
 const DATA_BROKER_DEFAULT = "http://data-broker:80";
 
 function getToken(tenant) {
-  const payload = { 'service': tenant, 'username': 'iotagent' };
+  const payload = { 'service': tenant, 'username': 'flowbroker' };
   return (new Buffer('jwt schema').toString('base64')) + '.'
           + (new Buffer(JSON.stringify(payload)).toString('base64')) + '.'
           + (new Buffer('dummy signature').toString('base64'));

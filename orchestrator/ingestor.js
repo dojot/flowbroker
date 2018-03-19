@@ -2,6 +2,8 @@ var axios = require("axios");
 var util = require('util');
 var kafka = require('./kafka');
 
+var publisher = require('./publisher');
+
 
 // TODO - remove the following
 var change = require('./nodes/change/index').Handler;
@@ -19,7 +21,19 @@ var nodes = {
   "geofence": new geo(),
   "http_request_out": new http(),
   "switch": new select(),
-  "template": new template()
+  "template": new template(),
+  "device out": {
+    handleMessage: function (config, message, callback, tenant) {
+      let output = {attrs: message, metadata: {}};
+      output.metadata.deviceid = config._device_id;
+      output.metadata.templates = config._device_templates;
+      output.metadata.timestamp = Date.now();
+      output.metadata.tenant = tenant
+      console.log('will publish (device out)', util.inspect(output, {depth: null}));
+      publisher.publish(output);
+      callback();
+    }
+  }
 };
 
 // TODO - this has to be configurable
@@ -156,7 +170,7 @@ module.exports = class DeviceIngestor {
         if (nodes.hasOwnProperty(at.type)) {
           nodes[at.type].handleMessage(at, ctx.message, (error, result) => {
             console.log(`got ${error}:${JSON.stringify(result)} from ${at.type}`);
-          })
+          }, event.metadata.tenant);
         }
         addNext(at, next, event.attrs);
       }
