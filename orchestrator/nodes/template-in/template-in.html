@@ -1,4 +1,4 @@
-<script type="text/x-red" data-template-name="device template out">
+<script type="text/x-red" data-template-name="device template in">
   <div class="form-row">
       <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
       <input type="text" id="node-input-name">
@@ -13,12 +13,12 @@
   </div>
 </script>
 
-<script type="text/x-red" data-help-name="device template out">
+<script type="text/x-red" data-help-name="device template in">
   <p>Use data retrieved from a previously configured sensor as input to logic.</p>
 </script>
 
 <script type="text/javascript">
-   RED.nodes.registerType('device template out',{
+   RED.nodes.registerType('device template in',{
        category: 'input',      // the palette category
        defaults: {
            // defines the editable properties of the node

@@ -8,11 +8,10 @@ var bodyParser = require('body-parser');
 var authChecker = require('./auth');
 var FlowManagerBuilder = require('./flowManager').FlowManagerBuilder;
 var FlowError = require('./flowManager').FlowError;
-var MongoManager = require('./mongodb');
 
 var NodeAPI = require('./node-red/src/index');
 
-var mongoClient;
+// initialized by init()
 var FlowManager;
 
 const app = express();
@@ -202,10 +201,9 @@ app.delete('/v1/flow/:id', (req, res) => {
   });
 });
 
-
-
-MongoManager.get().then((client) => {
-  mongoClient = client;
-  FlowManager = new FlowManagerBuilder(client);
-  app.listen(80, () => {console.log('done');});
-});
+module.exports = {
+  init: (flowManager) => {
+    FlowManager = flowManager;
+    app.listen(80, () => {console.log('[api] Service listening on port 80')});
+  }
+}

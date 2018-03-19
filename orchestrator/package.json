@@ -11,8 +11,10 @@
   "dependencies": {
     "amqplib": "^0.5.2",
     "argparse": "^1.0.9",
+    "axios": "^0.18.0",
     "dojot-node-library": "file:../lib",
     "express": "^4.16.2",
+    "kafka-node": "^2.4.1",
     "mongodb": "^3.0.4",
     "uuid": "^3.2.1"
   }

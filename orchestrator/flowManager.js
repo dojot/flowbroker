@@ -22,6 +22,7 @@ class FlowError extends Error {
 class InvalidFlowError extends FlowError {
   constructor() { super("Given flow is invalid"); }
 }
+
 class UnknownFlowError extends FlowError {
   constructor(id) {
     super("Unknown flow: " + id);
@@ -90,10 +91,18 @@ class FlowManager {
       }
 
       parsed.nodes[node.id] = node;
-      const inputNodes = ["device-in", "template-in"];
-      if (inputNodes.includes(node.type)){
+      const inputNodes = {
+        "device in": (node) => {
+          parsed.devices.push(node._device_id);
+        },
+        "device template in": () => {
+          parsed.templates.push(node._device_template_id);
+        }
+      };
+      if (inputNodes.hasOwnProperty(node.type)){
         // TODO add related device/template id to corresponding list
         parsed.heads.push(node.id);
+        inputNodes[node.type](node);
       }
     }
 
@@ -224,21 +233,19 @@ class FlowManager {
   }
 
   getByDevice(deviceid) {
-    // TODO
-    let result = [];
-    for (let flowid in this.flows) {
-      result.push(this.flows[flowid]);
-    }
-    return result;
+    return new Promise((resolve, reject) => {
+      // we might want to return ids only, but that would be best only if we had a local cache
+      // in place
+      resolve(this.collection.find({ devices: deviceid }).toArray());
+    });
   }
 
   getByTemplate(templateid) {
-    // TODO
-    let result = [];
-    for (let flowid of this.flows) {
-      result.push(this.flows[flowid]);
-    }
-    return result;
+    return new Promise((resolve, reject) => {
+      // we might want to return ids only, but that would be best only if we had a local cache
+      // in place
+      resolve(this.collection.find({templates: templateid}).toArray());
+    });
   }
 }
 
