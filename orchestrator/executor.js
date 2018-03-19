@@ -7,7 +7,7 @@ var amqp = require('amqplib/callback_api');
 
 class AMQPBase {
   constructor(target) {
-    this.target = target || "amqp://amqp";
+    this.target = target || "amqp://rabbitmq";
     this.connection = null;
     this.channel = null;
     this.callbacks = {};

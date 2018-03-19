@@ -3,6 +3,7 @@
 let fs = require('fs');
 let path = require('path');
 let DojotHandler = require('dojot-node-library');
+let mustache = require('mustache');
 
 // Sample node implementation
 class DataHandler {
@@ -71,12 +72,18 @@ class DataHandler {
      * @return {[undefined]}
      */
     handleMessage(config, message, callback) {
-        setTimeout(() => {
-
-            callback(undefined, [message])
-
-        }, 10);
-
+        let data = {payload: {}};
+        for (let key in message) {
+            data.payload[key] = message[key];
+        }
+        let result = mustache.render(config.template, data);
+        let target = config.field.match(/^payload\.(.+)$/);
+        if (target) {
+            message[target[1]] = result;
+            callback(undefined, message);
+        } else {
+            callback(new Error("Failed to parse destination"));
+        }
     }
 }
 

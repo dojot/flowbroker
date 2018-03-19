@@ -57,7 +57,7 @@ module.exports = class NodeAPI {
         const nodeid = resource.match(/[^\/]+$/)[0];
         if (Object.keys(nodes).includes(nodeid)) {
           let data = nodes[nodeid].getLocaleData('en-US');
-          console.log(nodeid, data);
+          // console.log(nodeid, data);
           return res.status(200).send(data);
         }
 

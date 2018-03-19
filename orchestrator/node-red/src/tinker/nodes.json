@@ -70,7 +70,7 @@
     "id": "node-red-contrib-middleware/template",
     "name": "template",
     "types": [
-      "device template out"
+      "device template in"
     ],
     "enabled": true,
     "local": true,

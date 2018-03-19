@@ -5,10 +5,12 @@ var ArgumentParser = require('argparse').ArgumentParser;
 
 const operationQueue = 'task_queue';
 
-var FlowManager = require('./flowManager');
+var FlowManagerBuilder = require('./flowManager').FlowManagerBuilder;
 var Executor = require('./executor');
+var MongoManager = require('./mongodb');
+var APIHandler = require('./api');
+var Ingestor = require('./ingestor');
 
-let flows = new FlowManager();
 let producer = new Executor.AMQPProducer(operationQueue);
 
 class IdleManager {
@@ -88,7 +90,7 @@ parser.addArgument(['-m', '--message'],
                    {help:'Event that should trigger a flow execution run.'});
 parser.addArgument(['-d', '--device'], {help:'Device that generated the event.'});
 parser.addArgument(['-t', '--template'], {help:'Device template that generated the event.'});
-parser.addArgument(['-s', '--server'], {help:'Run as a daemon service (production)'});
+parser.addArgument(['-s', '--server'], {help:'Run as a daemon service (production)', action: "storeTrue"});
 parser.addArgument(['-i', '--kill-idle'],
                    {help:'If no more events are generaed within KILL_IDLE milliseconds, kill ' +
                          'the process'});
@@ -155,3 +157,14 @@ if (!args.server && !hasMessages) {
 for (let i = 0; i < args.workers; i++) {
   initHandler();
 }
+
+if (args.server) {
+  // deviceConsumer.initConsumer();
+  MongoManager.get().then((client) => {
+    let FlowManager = new FlowManagerBuilder(client);
+    APIHandler.init(FlowManager);
+    let ingestor = new Ingestor(FlowManager);
+    ingestor.initConsumer();
+  });
+}
+
