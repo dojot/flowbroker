@@ -8,4 +8,4 @@ WORKDIR /opt/flowbroker/orchestrator
 RUN cd /opt/flowbroker/lib && npm install
 RUN cd /opt/flowbroker/orchestrator && npm install
 
-CMD ["node", "api.js"]
+CMD ["node", "index.js", "-w", "0", "-s"]
