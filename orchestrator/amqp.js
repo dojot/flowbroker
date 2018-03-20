@@ -60,6 +60,7 @@ class AMQPProducer extends AMQPBase {
 
         this.on('channel', (channel) => {
             channel.assertQueue(this.queue, { durable: true });
+            console.log('[amqp] producer ready ... ')
 
             let event = this.backtrack.pop();
             while (event) {
@@ -90,10 +91,13 @@ class AMQPConsumer extends AMQPBase {
         super(target);
         this.queue = queue;
         this.on('channel', (channel) => {
-            console.log('AMQP consumer ready ... ')
+            console.log('[amqp] consumer ready ... ')
             channel.assertQueue(this.queue, { durable: true });
             channel.consume(this.queue, (amqpCtx) => {
-                onMessage(amqpCtx.content.toString(), () => { channel.ack(amqpCtx) });
+                onMessage(amqpCtx.content.toString(), () => {
+                    // console.log('will ack message', new Error().stack);
+                    channel.ack(amqpCtx);
+                });
             });
         });
     }

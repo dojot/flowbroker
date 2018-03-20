@@ -9,6 +9,7 @@ var amqp = require('./amqp');
 var MongoManager = require('./mongodb');
 var APIHandler = require('./api');
 var Ingestor = require('./ingestor');
+var Executor = require('./executor');
 
 let producer = new amqp.AMQPProducer(config.amqp.queue);
 
@@ -155,9 +156,9 @@ if (!args.server && !hasMessages) {
   process.exit(0);
 }
 
-// for (let i = 0; i < args.workers; i++) {
-//   initHandler();
-// }
+for (let i = 0; i < args.workers; i++) {
+  new Executor();
+}
 
 if (args.server) {
   // deviceConsumer.initConsumer();

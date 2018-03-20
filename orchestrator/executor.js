@@ -2,6 +2,7 @@
 
 var amqp = require('./amqp');
 var config = require('./config');
+var util = require('util');
 
 // TODO - remove the following
 var change = require('./nodes/change/index').Handler;
@@ -11,6 +12,8 @@ var geo = require('./nodes/geo/index').Handler;
 var http = require('./nodes/http/index').Handler;
 var select = require('./nodes/switch/index').Handler;
 var template = require('./nodes/template/index').Handler;
+//
+var publisher = require('./publisher');
 //
 var nodes = {
   "change": new change(),
@@ -36,14 +39,17 @@ var nodes = {
 
 module.exports = class Executor {
   constructor() {
+    console.log('[executor] initializing ...');
     this.hop = this.hop.bind(this);
     this.producer = new amqp.AMQPProducer(config.amqp.queue);
     this.consumer = new amqp.AMQPConsumer(config.amqp.queue, this.hop);
   }
 
   hop(data, ack) {
+    let event;
     try {
-      let event = JSON.parse(data);
+      event = JSON.parse(data);
+      console.log('got event', event);
     } catch (error) {
       console.error("[amqp] Received event is not valid JSON. Ignoring");
       return ack();
@@ -52,19 +58,27 @@ module.exports = class Executor {
     const at = event.flow.nodeMap[event.hop];
     console.log(`[executor] will handle node ${at.type}`);
     if (nodes.hasOwnProperty(at.type)) {
-      nodes[at.type].handleMessage(at, ctx.message, (error, result) => {
+      nodes[at.type].handleMessage(at, event.message, (error, result) => {
         console.log(`[executor] got ${error}:${JSON.stringify(result)} from ${at.type}`);
+        if (error) {
+          console.error(`[executor] Node execution failed. ${error}. Aborting flow ${event.flow.id}.`);
+          // TODO notify alarmManager
+          return ack();
+        }
+
         for (let output = 0; output < at.wires.length; output++) {
           for (let newEvent of result[output]) {
             for (let hop of at.wires[output]) {
               this.producer.sendMessage(JSON.stringify({
                 hop: hop,
                 message: newEvent,
-                flow: event.flow
+                flow: event.flow,
+                metadata: event.metadata
               }))
             }
           }
         }
+        return ack();
       }, event.metadata.tenant);
     } else {
       console.error(`[executor] Unknown node ${at.type} detected. Igoring.`)
