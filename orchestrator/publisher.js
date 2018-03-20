@@ -1,4 +1,5 @@
 var kafka = require('./kafka');
+var config = require('./config');
 
 class Publisher {
     constructor() {
@@ -15,8 +16,6 @@ class Publisher {
    */
     checkCompleteMetaFields(deviceid, tenant, metadata) {
         return new Promise((resolve, reject) => {
-
-            console.log('@checks', metadata);
 
             if (!metadata.hasOwnProperty('deviceid')) {
                 metadata["deviceid"] = deviceid;
@@ -37,7 +36,7 @@ class Publisher {
     }
 
     publish(message) {
-        this.producer.sendEvent(message.metadata.tenant, "device-data", message);
+        this.producer.sendEvent(message.metadata.tenant, config.ingestion.subject, message);
     }
 }
 

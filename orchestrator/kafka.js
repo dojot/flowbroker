@@ -1,18 +1,11 @@
 var kafka = require("kafka-node");
 var axios = require("axios");
 var uuid = require("uuid/v4");
+var config = require('./config');
 
 function getRandom() {
   return Math.floor(Math.random() * 10000);
 }
-
-const KAFKA_DEFAULTS = {
-  "kafkaHost": "kafka:9092",
-  "sessionTimeout": "15000",
-  "groupId": 'iotagent-' + getRandom()
-}
-
-const DATA_BROKER_DEFAULT = "http://data-broker:80";
 
 function getToken(tenant) {
   const payload = { 'service': tenant, 'username': 'flowbroker' };
@@ -27,7 +20,7 @@ class TopicManager {
   }
 
   getTopic(subject, tenant, broker, global) {
-    const parsedBroker = broker || DATA_BROKER_DEFAULT;
+    const parsedBroker = broker || config.dataBroker.url;
     const parsedGlobal = global ? "?global=true" : "";
     const key = tenant + ':' + subject;
     return new Promise((resolve, reject) => {
@@ -61,23 +54,20 @@ class Consumer {
     this.tenant = tenant;
     this.subject = subject;
     this.global = global || false;
-    this.brokerManager = brokerManager || DATA_BROKER_DEFAULT;
+    this.brokerManager = brokerManager || config.dataBroker.url;
     this.callbacks = [];
 
     tm.getTopic(this.subject, this.tenant, this.brokerManager, this.global).then((topic) => {
-      // TODO kafka params should come from config
-      let config = KAFKA_DEFAULTS;
-      // config.groupId = uuid();
-      this.consumer = new kafka.ConsumerGroup(KAFKA_DEFAULTS, topic);
+      this.consumer = new kafka.ConsumerGroup(config.kafka, topic);
       let cb = this.callbacks.pop();
       while (cb) {
         this.on(cb.event, cb.callback);
         cb = this.callbacks.pop();
       }
-      console.log('[iota:kafka] Created consumer (%s)[%s : %s]', config.groupId, this.subject, topic)
+      console.log('[kafka] Created consumer (%s)[%s : %s]', config.kafka.groupId, this.subject, topic)
 
     }).catch((error) => {
-      console.error("[iota:kafka] Failed to acquire topic to subscribe from (device events)\n", error);
+      console.error("[kafka] Failed to acquire topic to subscribe from (device events)\n", error);
       process.exit(1);
     })
   }
@@ -96,18 +86,18 @@ class Producer {
   constructor(brokerManager, broker) {
     this.topics = {};
 
-    this.brokerManager = brokerManager || DATA_BROKER_DEFAULT;
+    this.brokerManager = brokerManager || config.dataBroker.url;
 
     this.isReady = false;
     this.initProducer();
   }
 
   initProducer(callback) {
-    let client = new kafka.KafkaClient(KAFKA_DEFAULTS);
+    let client = new kafka.KafkaClient(config.kafka);
     this.producer = new kafka.Producer(client, { requireAcks: 1 });
 
     this.producer.on('ready', () => {
-      console.log("[iota:kafka] Producer ready");
+      console.log("[kafka] Producer ready");
       this.isReady = true;
       if (callback) {
         callback();
@@ -117,13 +107,13 @@ class Producer {
     let scheduled = null;
     this.producer.on("error", (e) => {
       if (scheduled) {
-        console.log("[iota:kafka] An operation was already scheduled. No need to do it again.");
+        console.log("[kafka] An operation was already scheduled. No need to do it again.");
         return;
       }
 
       this.producer.close();
-      console.error("[iota:kafka] Producer error: ", e);
-      console.log("[iota:kafka] Will attempt to reconnect in a few seconds.");
+      console.error("[kafka] Producer error: ", e);
+      console.log("[kafka] Will attempt to reconnect in a few seconds.");
       scheduled = setTimeout(() => {
         this.initDataProducer();
       }, 10000);
@@ -138,7 +128,7 @@ class Producer {
    */
   sendEvent(tenant, subject, eventData) {
     if (this.isReady == false) {
-      console.error('[iota:kafka] Producer is not ready yet');
+      console.error('[kafka] Producer is not ready yet');
       return;
     }
 
@@ -150,7 +140,7 @@ class Producer {
 
       this.producer.send([message], (err, result) => {
         if (err) {
-          console.error("[iota:kafka] Failed to publish data", err);
+          console.error("[kafka] Failed to publish data", err);
         }
       });
     }).catch((error) => {
