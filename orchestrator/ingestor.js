@@ -130,19 +130,19 @@ module.exports = class DeviceIngestor {
     }
 
     for (let head of flow.heads) {
-      const node = nodeMap[head];
+      const node = flow.nodeMap[head];
       // handle input by device
       if (node.hasOwnProperty('_device_id') &&
           (node._device_id == event.metadata.deviceid) &&
           (isTemplate == false)) {
-        this._publish(node, event.attrs, flow, event.metadata);
+        this._publish(node, {payload: event.attrs}, flow, event.metadata);
       }
 
       // handle input by template
       if (node.hasOwnProperty('_device_template_id') &&
           (event.metadata.templates.includes(node._device_template_id)) &&
           (isTemplate == true)) {
-        this._publish(node, event.attrs, flow, event.metadata);
+        this._publish(node, {payload: event.attrs}, flow, event.metadata);
       }
     }
   }

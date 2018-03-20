@@ -155,7 +155,7 @@ class DataHandler {
             }
         }
 
-        return callback(null, [[message]]);
+        return callback(null, [message]);
     }
 }
 

@@ -25,12 +25,28 @@ var nodes = {
   "template": new template(),
   "device out": {
     handleMessage: function (config, message, callback, tenant) {
-      let output = { attrs: message, metadata: {} };
+      if ((config.attrs == undefined) || (config.attrs.length == 0)) {
+        return callback(new Error('Invalid data source: field is mandatory'));
+      }
+
+      let source = config.attrs.match(/([^\.]+)/g)
+      let at = source.shift();
+      let data = message;
+      while (at) {
+        if (!data.hasOwnProperty(at)) {
+          return callback(new Error(`Invalid data source: '${config.attrs}' was not found in message`))
+        }
+
+        data = data[at];
+        at = source.shift();
+      }
+
+      let output = { attrs: data, metadata: {} };
       output.metadata.deviceid = config._device_id;
       output.metadata.templates = config._device_templates;
       output.metadata.timestamp = Date.now();
       output.metadata.tenant = tenant
-      console.log('will publish (device out)', util.inspect(output, { depth: null }));
+      // console.log('will publish (device out)', util.inspect(output, { depth: null }));
       publisher.publish(output);
       callback();
     }
@@ -49,7 +65,6 @@ module.exports = class Executor {
     let event;
     try {
       event = JSON.parse(data);
-      console.log('got event', event);
     } catch (error) {
       console.error("[amqp] Received event is not valid JSON. Ignoring");
       return ack();
@@ -59,22 +74,23 @@ module.exports = class Executor {
     console.log(`[executor] will handle node ${at.type}`);
     if (nodes.hasOwnProperty(at.type)) {
       nodes[at.type].handleMessage(at, event.message, (error, result) => {
-        console.log(`[executor] got ${error}:${JSON.stringify(result)} from ${at.type}`);
         if (error) {
           console.error(`[executor] Node execution failed. ${error}. Aborting flow ${event.flow.id}.`);
           // TODO notify alarmManager
           return ack();
         }
 
+        console.log(`[executor] hop (${at.type}) result: ${JSON.stringify(result)}`);
         for (let output = 0; output < at.wires.length; output++) {
-          for (let newEvent of result[output]) {
+          let newEvent = result[output];
+          if (newEvent) {
             for (let hop of at.wires[output]) {
               this.producer.sendMessage(JSON.stringify({
                 hop: hop,
                 message: newEvent,
                 flow: event.flow,
                 metadata: event.metadata
-              }))
+              }));
             }
           }
         }
