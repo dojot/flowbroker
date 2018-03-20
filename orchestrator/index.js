@@ -3,15 +3,14 @@
 var fs = require("fs");
 var ArgumentParser = require('argparse').ArgumentParser;
 
-const operationQueue = 'task_queue';
-
+var config = require('./config');
 var FlowManagerBuilder = require('./flowManager').FlowManagerBuilder;
 var Executor = require('./executor');
 var MongoManager = require('./mongodb');
 var APIHandler = require('./api');
 var Ingestor = require('./ingestor');
 
-let producer = new Executor.AMQPProducer(operationQueue);
+let producer = new Executor.AMQPProducer(config.amqp.queue);
 
 class IdleManager {
   constructor(interval) {
@@ -37,7 +36,7 @@ class IdleManager {
 var idle = undefined;
 
 function initHandler() {
-  let hopHandler = new Executor.AMQPConsumer(operationQueue, (data, ack) => {
+  let hopHandler = new Executor.AMQPConsumer(config.amqp.queue, (data, ack) => {
     try {
       if (idle) {
         idle.ping();

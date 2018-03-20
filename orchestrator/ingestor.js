@@ -3,6 +3,7 @@ var util = require('util');
 var kafka = require('./kafka');
 
 var publisher = require('./publisher');
+var config = require('./config');
 
 
 // TODO - remove the following
@@ -36,15 +37,6 @@ var nodes = {
   }
 };
 
-// TODO - this has to be configurable
-const TENANCY_MANAGER_DEFAULTS = {
-  "subject": "dojot.tenancy",
-  "manager": "http://auth:5000"
-}
-
-// TODO - this has to be configurable
-const INGESTION_SUBJECT = "device-data";
-
 
 module.exports = class DeviceIngestor {
   /**
@@ -64,7 +56,7 @@ module.exports = class DeviceIngestor {
   listTenants() {
     return new Promise((resolve, reject) => {
       axios({
-        'url': TENANCY_MANAGER_DEFAULTS.manager + '/admin/tenants'
+        'url': config.tenancy.manager + '/admin/tenants'
       }).then((response) => {
         resolve(response.data.tenants);
       }).catch((error) => {
@@ -78,7 +70,7 @@ module.exports = class DeviceIngestor {
    * @return {[undefined]}
    */
   initConsumer() {
-    let consumer = new kafka.Consumer('internal', TENANCY_MANAGER_DEFAULTS.subject, true);
+    let consumer = new kafka.Consumer('internal', config.tenancy.subject, true);
 
     consumer.on('message', (data) => {
       let parsed = null;
@@ -122,7 +114,7 @@ module.exports = class DeviceIngestor {
       return;
     }
 
-    let consumer = new kafka.Consumer(tenant, INGESTION_SUBJECT);
+    let consumer = new kafka.Consumer(tenant, config.ingestion.subject);
     this.consumers[consumerid] = true;
 
     consumer.on('connect', () => {

@@ -4,10 +4,11 @@
  * Feeds messages to the flow engine, mapping received messages to known configured flows
  */
 var amqp = require('amqplib/callback_api');
+var config = require('./config');
 
 class AMQPBase {
   constructor(target) {
-    this.target = target || "amqp://rabbitmq";
+    this.target = target || config.amqp.url;
     this.connection = null;
     this.channel = null;
     this.callbacks = {};

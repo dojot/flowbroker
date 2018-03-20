@@ -3,6 +3,7 @@
 "use strict";
 
 var mongo = require('mongodb');
+var config = require('./config');
 
 class MongoAbstraction {
   constructor() {
@@ -10,13 +11,13 @@ class MongoAbstraction {
   }
 
   get(url) {
-    const target = url || "mongodb://mongodb:27017";
+    const target = url || config.mongodb.url;
 
     return new Promise((resolve, reject) => {
       if (this.clients.hasOwnProperty(target)) {
         resolve(this.clients[target]);
       } else {
-        mongo.MongoClient.connect(target).then((client) => {
+        mongo.MongoClient.connect(target, config.mongodb.opt).then((client) => {
           this.clients[target] = client;
           resolve(client);
         }).catch((error) => {
