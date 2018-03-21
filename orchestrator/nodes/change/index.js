@@ -4,10 +4,13 @@ let os = require('os');
 let fs = require('fs');
 let util = require('util');
 let path = require('path');
-let DojotHandler = require('dojot-node-library');
+let dojot = require('dojot-node-library');
 
 // Sample node implementation
-class DataHandler {
+class DataHandler extends dojot.DataHandlerBase {
+    constructor() {
+        super();
+    }
 
     /**
      * Returns full path to html file
@@ -146,16 +149,29 @@ class DataHandler {
         const rules = config.rules;
         for (let rule of rules) {
             if (rule.t === "set") {
-                const target = rule.p.match(/^payload.(.+)$/);
-                if (target) {
-                    message[target[1]] = rule.to;
-                } else {
-                    return callback(new Error("Failed to parse rule (target is invalid)"));
+                let v2;
+                switch(rule.tot){
+                    case "str":
+                        this._set(rule.p, rule.to, message);
+                        break;
+                    case "num":
+                        this._set(rule.p, Number(rule.to), message);
+                        break;
+                    case "boolean":
+                        v2 = ['1', 'true'].includes(rule.to.tolowercase());
+                        this._set(rule.p, v2, message);
+                        break;
+                    case "msg":
+                        v2 = this._get(rule.to, message);
+                        this._set(rule.p, v2, message);
+                        break;
+                    default:
+                        return callback(new Error('Invalid value type: ' + rule.tot));
                 }
             }
         }
 
-        return callback(null, message);
+        return callback(null, [message]);
     }
 }
 

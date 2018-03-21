@@ -2,41 +2,8 @@ var axios = require("axios");
 var util = require('util');
 var kafka = require('./kafka');
 
-var publisher = require('./publisher');
+var amqp = require('./amqp');
 var config = require('./config');
-
-
-// TODO - remove the following
-var change = require('./nodes/change/index').Handler;
-var edge = require('./nodes/edge/index').Handler;
-var email = require('./nodes/email/index').Handler;
-var geo = require('./nodes/geo/index').Handler;
-var http = require('./nodes/http/index').Handler;
-var select = require('./nodes/switch/index').Handler;
-var template = require('./nodes/template/index').Handler;
-//
-var nodes = {
-  "change": new change(),
-  "edgedetection": new edge(),
-  "email": new email(),
-  "geofence": new geo(),
-  "http_request_out": new http(),
-  "switch": new select(),
-  "template": new template(),
-  "device out": {
-    handleMessage: function (config, message, callback, tenant) {
-      let output = {attrs: message, metadata: {}};
-      output.metadata.deviceid = config._device_id;
-      output.metadata.templates = config._device_templates;
-      output.metadata.timestamp = Date.now();
-      output.metadata.tenant = tenant
-      console.log('will publish (device out)', util.inspect(output, {depth: null}));
-      publisher.publish(output);
-      callback();
-    }
-  }
-};
-
 
 module.exports = class DeviceIngestor {
   /**
@@ -47,6 +14,7 @@ module.exports = class DeviceIngestor {
     // map of active consumers (used to detect topic rebalancing by kafka)
     this.consumers = {};
     this.fmBuiler = fmBuilder;
+    this.amqp = new amqp.AMQPProducer(config.amqp.queue);
   }
 
   /**
@@ -138,50 +106,43 @@ module.exports = class DeviceIngestor {
     });
   }
 
+  _publish(node, message, flow, metadata) {
+    // This should work for single output nodes only!
+    for (let output of node.wires) {
+      for (let hop of output) {
+        this.amqp.sendMessage(JSON.stringify({
+          hop: hop,
+          message: message,
+          flow: flow,
+          metadata: {
+            tenant: metadata.tenant,
+            originator: metadata.deviceid
+          }
+        }));
+      }
+    }
+  }
+
   handleFlow(event, flow, isTemplate) {
-    const nodeMap = {};
+    flow.nodeMap = {};
     for (let node of flow.red) {
-      nodeMap[node.id] = node;
-    }
-
-    function addNext(node, stack, message) {
-      for (let output of node.wires) {
-        for (let hop of output) {
-          stack.push({hop: hop, message: message});
-        }
-      }
-    }
-
-    function iterateHops(node) {
-      let next = [];
-      addNext(node, next, event.attrs);
-      while (next.length > 0) {
-        const ctx = next.pop();
-        const at = nodeMap[ctx.hop];
-        console.log(`will handle node ${at.type}`);
-        if (nodes.hasOwnProperty(at.type)) {
-          nodes[at.type].handleMessage(at, ctx.message, (error, result) => {
-            console.log(`got ${error}:${JSON.stringify(result)} from ${at.type}`);
-          }, event.metadata.tenant);
-        }
-        addNext(at, next, event.attrs);
-      }
+      flow.nodeMap[node.id] = node;
     }
 
     for (let head of flow.heads) {
-      const node = nodeMap[head];
+      const node = flow.nodeMap[head];
       // handle input by device
       if (node.hasOwnProperty('_device_id') &&
           (node._device_id == event.metadata.deviceid) &&
           (isTemplate == false)) {
-        iterateHops(node);
+        this._publish(node, {payload: event.attrs}, flow, event.metadata);
       }
 
       // handle input by template
       if (node.hasOwnProperty('_device_template_id') &&
           (event.metadata.templates.includes(node._device_template_id)) &&
           (isTemplate == true)) {
-        iterateHops(node);
+        this._publish(node, {payload: event.attrs}, flow, event.metadata);
       }
     }
   }
