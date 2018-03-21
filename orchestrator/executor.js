@@ -34,6 +34,17 @@ module.exports = class Executor {
     this.consumer = new amqp.AMQPConsumer(config.amqp.queue, this.hop);
   }
 
+  init() {
+    return new Promise((resolve, reject) => {
+      this.producer.connect().then(() => {
+        this.consumer.connect();
+        resolve();
+      }).catch((error) => {
+        reject(error);
+      })
+    });
+  }
+
   hop(data, ack) {
     let event;
     try {

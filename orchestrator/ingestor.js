@@ -5,6 +5,8 @@ var kafka = require('./kafka');
 var amqp = require('./amqp');
 var config = require('./config');
 
+class InitializationError extends Error {}
+
 module.exports = class DeviceIngestor {
   /**
    * Constructor.
@@ -35,7 +37,7 @@ module.exports = class DeviceIngestor {
 
   /**
    * Initialize iotagent kafka consumers (for tenant and device events)
-   * @return {[undefined]}
+   * @return {Promise}
    */
   initConsumer() {
     let consumer = new kafka.Consumer('internal', config.tenancy.subject, true);
@@ -53,21 +55,28 @@ module.exports = class DeviceIngestor {
     });
 
     consumer.on('connect', () => {
-      if (!this.consumers.hasOwnProperty('tenancy')) {
-        // console.log('got connect event - tenancy');
-        this.listTenants().then((tenants) => {
-          for (let t of tenants) {
-            this.bootstrapTenant(t);
-          }
-        }).catch((error) => {
-          const message = "Failed to acquire existing tenancy contexts"
-          console.error("[ingestor] %s\n", message, error);
-          throw new InitializationError(message);
-        })
+      this.initTenants();
+    });
+
+    return this.amqp.connect();
+  }
+
+  initTenants() {
+    if (!this.consumers.hasOwnProperty('tenancy')) {
+      // console.log('got connect event - tenancy');
+      this.listTenants().then((tenants) => {
+        for (let t of tenants) {
+          this.bootstrapTenant(t);
+        }
         console.log('[ingestor] Tenancy context management initialized');
         this.consumers['tenancy'] = true;
-      }
-    })
+      }).catch((error) => {
+        const message = "Failed to acquire existing tenancy contexts"
+        console.error("[ingestor] %s - %s", message, error.message);
+        setTimeout(() => {this.initTenants();}, 2000);
+        // throw new InitializationError(message);
+      })
+    }
   }
 
   /**
