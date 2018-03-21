@@ -248,8 +248,7 @@ class DataHandler extends dojot.DataHandlerBase {
       callback(undefined, onward)
 
     } catch (err) {
-      console.error(err.stack);
-      callback(err, undefined);
+      return callback(err);
     }
   }
 }
