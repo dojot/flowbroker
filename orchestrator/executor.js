@@ -12,7 +12,7 @@ var geo = require('./nodes/geo/index').Handler;
 var http = require('./nodes/http/index').Handler;
 var select = require('./nodes/switch/index').Handler;
 var template = require('./nodes/template/index').Handler;
-//
+var device_out = require('./nodes/device-out/device-out').Handler;
 var publisher = require('./publisher');
 //
 var nodes = {
@@ -23,34 +23,7 @@ var nodes = {
   "http_request_out": new http(),
   "switch": new select(),
   "template": new template(),
-  "device out": {
-    handleMessage: function (config, message, callback, tenant) {
-      if ((config.attrs == undefined) || (config.attrs.length == 0)) {
-        return callback(new Error('Invalid data source: field is mandatory'));
-      }
-
-      let source = config.attrs.match(/([^\.]+)/g)
-      let at = source.shift();
-      let data = message;
-      while (at) {
-        if (!data.hasOwnProperty(at)) {
-          return callback(new Error(`Invalid data source: '${config.attrs}' was not found in message`))
-        }
-
-        data = data[at];
-        at = source.shift();
-      }
-
-      let output = { attrs: data, metadata: {} };
-      output.metadata.deviceid = config._device_id;
-      output.metadata.templates = config._device_templates;
-      output.metadata.timestamp = Date.now();
-      output.metadata.tenant = tenant
-      // console.log('will publish (device out)', util.inspect(output, { depth: null }));
-      publisher.publish(output);
-      callback();
-    }
-  }
+  "device out": new device_out(publisher)
 };
 
 module.exports = class Executor {
