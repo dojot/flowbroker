@@ -80,7 +80,7 @@ class DataHandler {
         let target = config.field.match(/^payload\.(.+)$/);
         if (target) {
             message[target[1]] = result;
-            callback(undefined, message);
+            callback(undefined, [[message]]);
         } else {
             callback(new Error("Failed to parse destination"));
         }

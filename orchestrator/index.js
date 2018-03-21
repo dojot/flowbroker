@@ -5,12 +5,12 @@ var ArgumentParser = require('argparse').ArgumentParser;
 
 var config = require('./config');
 var FlowManagerBuilder = require('./flowManager').FlowManagerBuilder;
-var Executor = require('./executor');
+var amqp = require('./amqp');
 var MongoManager = require('./mongodb');
 var APIHandler = require('./api');
 var Ingestor = require('./ingestor');
 
-let producer = new Executor.AMQPProducer(config.amqp.queue);
+let producer = new amqp.AMQPProducer(config.amqp.queue);
 
 class IdleManager {
   constructor(interval) {
@@ -35,8 +35,9 @@ class IdleManager {
 
 var idle = undefined;
 
+/*
 function initHandler() {
-  let hopHandler = new Executor.AMQPConsumer(config.amqp.queue, (data, ack) => {
+  let hopHandler = new amqp.AMQPConsumer(operationQueue, (data, ack) => {
     try {
       if (idle) {
         idle.ping();
@@ -78,6 +79,7 @@ function initHandler() {
     }
   });
 }
+*/
 
 let parser = new ArgumentParser({
   description: "Flow manager and executor for dojot"
@@ -153,9 +155,9 @@ if (!args.server && !hasMessages) {
   process.exit(0);
 }
 
-for (let i = 0; i < args.workers; i++) {
-  initHandler();
-}
+// for (let i = 0; i < args.workers; i++) {
+//   initHandler();
+// }
 
 if (args.server) {
   // deviceConsumer.initConsumer();
