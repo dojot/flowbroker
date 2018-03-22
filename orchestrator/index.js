@@ -11,7 +11,11 @@ var APIHandler = require('./api');
 var Ingestor = require('./ingestor');
 var Executor = require('./executor');
 
-let producer = new amqp.AMQPProducer(config.amqp.queue);
+function fail(error) {
+  console.error('[flowbroker] Initialization failed.', error.message);
+  // console.log(error);
+  process.exit(1);
+}
 
 class IdleManager {
   constructor(interval) {
@@ -35,52 +39,6 @@ class IdleManager {
 }
 
 var idle = undefined;
-
-/*
-function initHandler() {
-  let hopHandler = new amqp.AMQPConsumer(operationQueue, (data, ack) => {
-    try {
-      if (idle) {
-        idle.ping();
-      }
-
-      const hop = JSON.parse(data);
-
-      const flow = flows.get(hop.flow);
-      const nodeConfig = flow.nodes[hop.node];
-      if (nodeConfig == undefined) {
-        throw new Error("Invalid node (%s) operation received - node not found in flow", hop.node);
-      }
-
-      if (args.verbose){
-        console.log('handled hop [%s:%s] %s', hop.flow, hop.node, JSON.stringify(hop.msg));
-      }
-
-      ack();
-
-      for (let idx = 0; idx < nodeConfig.wires.length; idx++) {
-        let nextOp = {
-          msg: hop.msg,
-          node: nodeConfig.wires[idx],
-          flow: hop.flow
-        }
-
-        producer.sendMessage(JSON.stringify(nextOp));
-      }
-    } catch (e) {
-      if (e instanceof SyntaxError) {
-        console.error("Received event was not valid json. Ignoring.");
-        // remove from queue
-        ack();
-        return;
-      } else {
-        console.log("Failed to process hop: %s\n", e, e.stack);
-        return;
-      }
-    }
-  });
-}
-*/
 
 let parser = new ArgumentParser({
   description: "Flow manager and executor for dojot"
@@ -127,9 +85,15 @@ if (args.message && args.device) {
     message = JSON.parse(args.message)
   } catch (e) {
     if (e instanceof SyntaxError) {
-      console.error("Given message is not in valid JSON format:" + e);
-      process.exit(1);
+      fail(new Error("Given message is not in valid JSON format:" + e));
     }
+  }
+
+  let producer;
+  try {
+    producer = new amqp.AMQPProducer(config.amqp.queue);
+  } catch (error) {
+    fail(error);
   }
 
   let triggeredFlows = [];
@@ -157,16 +121,25 @@ if (!args.server && !hasMessages) {
 }
 
 for (let i = 0; i < args.workers; i++) {
-  new Executor();
+  let exec = new Executor();
+  exec.init().then(() => {
+    console.log(`[executor] Worker ready.`);
+  }).catch((error) => {
+    fail(error);
+  })
 }
 
 if (args.server) {
-  // deviceConsumer.initConsumer();
-  MongoManager.get().then((client) => {
-    let FlowManager = new FlowManagerBuilder(client);
-    APIHandler.init(FlowManager);
-    let ingestor = new Ingestor(FlowManager);
-    ingestor.initConsumer();
-  });
+  try {
+    MongoManager.get().then((client) => {
+      let FlowManager = new FlowManagerBuilder(client);
+      APIHandler.init(FlowManager);
+      let ingestor = new Ingestor(FlowManager);
+      ingestor.initConsumer();
+    }).catch((error) => {
+      fail(error);
+    });
+  } catch (error) {
+    fail(error);
+  }
 }
-

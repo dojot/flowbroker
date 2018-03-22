@@ -56,20 +56,32 @@ class Consumer {
     this.global = global || false;
     this.brokerManager = brokerManager || config.dataBroker.url;
     this.callbacks = [];
+    this.topic;
 
     tm.getTopic(this.subject, this.tenant, this.brokerManager, this.global).then((topic) => {
-      this.consumer = new kafka.ConsumerGroup(config.kafka, topic);
-      let cb = this.callbacks.pop();
-      while (cb) {
-        this.on(cb.event, cb.callback);
-        cb = this.callbacks.pop();
-      }
-      console.log('[kafka] Created consumer (%s)[%s : %s]', config.kafka.groupId, this.subject, topic)
-
+      this.topic = topic;
+      this.initConsumer();
     }).catch((error) => {
       console.error("[kafka] Failed to acquire topic to subscribe from (device events)\n", error);
       process.exit(1);
     })
+  }
+
+  initConsumer() {
+    this.consumer = new kafka.ConsumerGroup(config.kafka, this.topic);
+    console.log('[kafka] Created consumer (%s)[%s : %s]', config.kafka.groupId, this.subject, this.topic)
+
+    let cb = this.callbacks.pop();
+    while (cb) {
+      this.on(cb.event, cb.callback);
+      cb = this.callbacks.pop();
+    }
+
+    this.consumer.on('error', (e) => {
+      this.consumer.close();
+      console.error("[kafka] Consumer error: ", e.message);
+      process.exit(1);
+    });
   }
 
   on(event, callback) {
@@ -106,17 +118,9 @@ class Producer {
 
     let scheduled = null;
     this.producer.on("error", (e) => {
-      if (scheduled) {
-        console.log("[kafka] An operation was already scheduled. No need to do it again.");
-        return;
-      }
-
       this.producer.close();
-      console.error("[kafka] Producer error: ", e);
-      console.log("[kafka] Will attempt to reconnect in a few seconds.");
-      scheduled = setTimeout(() => {
-        this.initDataProducer();
-      }, 10000);
+      console.error("[kafka] Producer error: ", e.message);
+      process.exit(1);
     });
   }
 
