@@ -105,7 +105,8 @@
                         position: 'topleft',
                         polyline: false,
                         marker: false,
-                        circle: false
+                        circle: false,
+                        circlemarker: false
                     },
                     edit: false
                 });
@@ -221,17 +222,19 @@
 
             map.eachLayer(function (layer) {
                 if (layer.shape === "geofence") {
-                    console.log("GeoJSON");
-                    console.log(layer.toGeoJSON());
+                    // console.log("GeoJSON");
+                    // console.log(layer.toGeoJSON(), layer);
                     n.mode = "polyline";
                     n.points = [];
                     n.rad = 0;
                     n.centre = {};
-                    for (x in layer._latlngs) {
-                        n.points.push({
-                            latitude: layer._latlngs[x].lat,
-                            longitude: layer._latlngs[x].lng
-                        });
+                    for (let x of layer._latlngs) {
+                        for (let y of x) {
+                            n.points.push({
+                                latitude: y.lat,
+                                longitude: y.lng
+                            });
+                        }
                     }
                 }
             });
