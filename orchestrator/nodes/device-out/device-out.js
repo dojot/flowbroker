@@ -35,14 +35,7 @@ class DataHandler extends dojot.DataHandlerBase {
    * @return {[object]}        Locale settings used by the module
    */
   getLocaleData(locale) {
-
-    let filepath = path.join(__dirname, "locales/" + locale + "/template.json");
-    if (fs.existsSync(filepath)) {
-      return require(filepath);
-    } else {
-      return null
-    }
-
+    return {}
   }
 
   handleMessage(config, message, callback, tenant) {

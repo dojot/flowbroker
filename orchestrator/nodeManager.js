@@ -12,6 +12,7 @@ var select = require('./nodes/switch/index').Handler;
 var template = require('./nodes/template/index').Handler;
 var device_in = require('./nodes/device-in/device-in').Handler;
 var device_out = require('./nodes/device-out/device-out').Handler;
+var device_tpl = require('./nodes/template-in/template-in').Handler;
 var publisher = require('./publisher');
 
 class NodeManager {
@@ -20,16 +21,25 @@ class NodeManager {
             "change": new change(),
             "email": new email(),
             "geofence": new geo(),
-            "http_request_out": new http(),
+            "http": new http(),
             "switch": new select(),
             "template": new template(),
             "device in": new device_in,
-            "device out": new device_out(publisher)
+            "device out": new device_out(publisher),
+            "device template in": new device_tpl()
         };
     }
 
     asJson() {
-        return {}
+        let result = [];
+        for (let node in this.nodes) {
+            let data = this.nodes[node].getMetadata();
+            data.enabled = true;
+            data.local = true;
+            data.types = [data.name];
+            result.push(data);
+        }
+        return result;
     }
 
     asHtml() {

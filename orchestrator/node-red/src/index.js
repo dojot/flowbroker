@@ -37,13 +37,15 @@ module.exports = class NodeAPI {
         const nodeid = resource.match(/[^\/]+$/)[0];
         let handler = nodes.getNode(nodeid);
         if (handler) {
-          let data = handler.getLocaleData('en-US');
-          // console.log(nodeid, data);
-          return res.status(200).send(data);
+          return res.status(200).send(handler.getLocaleData('en-US'));
+        }
+
+        handler = nodes.getNode(nodeid.replace(/-/g, ' '));
+        if (handler) {
+          return res.status(200).send(handler.getLocaleData('en-US'));
         }
 
         return res.status(404).send({message:"Unknown node"});
-
       }
       /*
        * For newer node-red GUI versions, a single call to /locales/nodes is perfomred
@@ -66,13 +68,14 @@ module.exports = class NodeAPI {
         },
 
         json: () => {
-          const filepath = path.join(__dirname, 'tinker/nodes.json');
-          try {
-            const data = JSON.parse(fs.readFileSync(filepath));
-            res.status(200).send(data);
-          } catch (e) {
-            res.status(500).send();
-          }
+          res.status(200).send(nodes.asJson());
+          // const filepath = path.join(__dirname, 'tinker/nodes.json');
+          // try {
+          //   const data = JSON.parse(fs.readFileSync(filepath));
+          //   res.status(200).send(data);
+          // } catch (e) {
+          //   res.status(500).send();
+          // }
         }
       });
     });

@@ -26,8 +26,8 @@ class DataHandler {
      */
     getMetadata() {
         return {
-            'id': 'dojot/geo',
-            'name': 'geo',
+            'id': 'dojot/geofence',
+            'name': 'geofence',
             'module': 'dojot',
             'version': '1.0.0',
         }
