@@ -19,3 +19,7 @@ module.exports.inspect = {
 module.exports.remove = {
   options: Joi.object()
 };
+
+module.exports.connect = {
+  options: Joi.object()
+}

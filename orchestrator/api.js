@@ -49,8 +49,8 @@ app.post('/v1/node', (req, res) => {
   nodeManager.addRemote(req.body.image, req.body.id).then(() => {
     return res.status(200).send({message: 'ok'});
   }).catch((error) => {
-    // console.log(error);
-    return res.status(400).send({message: 'failed to add node'});
+    console.log(error);
+    return res.status(400).send({message: 'failed to add node: ' + error.message});
   })
 })
 

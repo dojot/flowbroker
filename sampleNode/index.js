@@ -1,7 +1,8 @@
 "use strict";
 
 var os = require('os');
-var DojotHandler = require('dojot-node-library');
+var path = require('path')
+var DojotHandler = require('dojot-node-library').DojotHandler;
 
 // Sample node implementation
 class DataHandler {
@@ -12,7 +13,7 @@ class DataHandler {
    * @return {[string]} [description]
    */
   getNodeRepresentationPath() {
-    return "/opt/node/node.html";
+    return path.resolve(__dirname, 'sample.html');
   }
 
   /**
@@ -24,7 +25,7 @@ class DataHandler {
     return {
       // ID can actually be any unique human-friendly string
       // on proper node-red modules it is "$module/$name"
-      'id': 'b6b94e0c-0c49-11e8-bf58-1b672af10154',
+      'id': 'sample/dummy',
       // This is usually the name of the node
       'name': 'dummy',
       // This is usually the name of the node (as in npm) module
@@ -41,31 +42,7 @@ class DataHandler {
   getLocaleData(locale) {
     // This is just a sample copied over from node-red-contrib-rpe, as a sample
     // A real implementation might want to parse the contents off a file
-    return {
-      "rbe": {
-        "label": {
-          "func": "Mode",
-          "start": "Start value",
-          "name": "Name"
-        },
-        "placeholder": {
-          "bandgap": "e.g. 10 or 5%",
-          "start": "leave blank to use first data received"
-        },
-        "opts": {
-          "rbe": "block unless value changes",
-          "deadband": "block unless value change is greater than",
-          "deadbandEq": "block unless value change is greater or equal to",
-          "narrowband": "block if value change is greater than",
-          "narrowbandEq": "block if value change is greater or equal to",
-          "in": "compared to last input value",
-          "out": "compared to last valid output value"
-        },
-        "warn": {
-          "nonumber": "no number found in payload"
-        }
-      }
-    };
+    return {};
   }
 
   /**
@@ -91,3 +68,4 @@ class DataHandler {
 }
 
 var main = new DojotHandler(new DataHandler());
+main.init();

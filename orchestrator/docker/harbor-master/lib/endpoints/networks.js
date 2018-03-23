@@ -96,10 +96,10 @@ class NetworksClient {
 
     options = options || {};
 
-    return self.docker._validate(options, schemas.connect.options).then((params) => {
+    // return self.docker._validate(options, schemas.connect.options).then((params) => {
       return self.docker.modem.post({
         url: `/networks/${id}/connect`,
-        qs: params,
+        body: options,
         successCodes: {
           200: 'no error'
         },
@@ -110,7 +110,7 @@ class NetworksClient {
           500: 'server Error'
         }
       });
-    });
+    // });
   }
 
   disconnect(id, options) {

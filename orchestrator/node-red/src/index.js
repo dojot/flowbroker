@@ -31,8 +31,6 @@ module.exports = class NodeAPI {
       } else {
 
         // maps to node-provided locale file
-        // TODO
-
         const nodeid = resource.match(/[^\/]+$/)[0];
         let handler = nodes.getNode(nodeid);
         if (handler) {
@@ -57,24 +55,10 @@ module.exports = class NodeAPI {
       return res.format({
         html: () => {
           res.status(200).send(nodes.asHtml());
-          // const filepath = path.join(__dirname, 'tinker/nodes.html');
-          // try {
-          //   const data = fs.readFileSync(filepath);
-          //   res.status(200).send(data);
-          // } catch (e) {
-          //   res.status(500).send();
-          // }
         },
 
         json: () => {
           res.status(200).send(nodes.asJson());
-          // const filepath = path.join(__dirname, 'tinker/nodes.json');
-          // try {
-          //   const data = JSON.parse(fs.readFileSync(filepath));
-          //   res.status(200).send(data);
-          // } catch (e) {
-          //   res.status(500).send();
-          // }
         }
       });
     });
