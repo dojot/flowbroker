@@ -3,8 +3,8 @@
 var util = require('util');
 var amqp = require('./amqp');
 var config = require('./config');
-var nodeManager = require('./nodeManager');
-var nodes = new nodeManager.Manager();
+var nodes = require('./nodeManager').Manager;
+// var nodes = new nodeManager.Manager();
 
 module.exports = class Executor {
   constructor() {

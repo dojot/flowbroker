@@ -6,8 +6,7 @@ var fs = require('fs');
 var path = require('path');
 var express = require('express');
 
-var nodeManager = require('../../nodeManager');
-var nodes = new nodeManager.Manager();
+var nodes = require('../../nodeManager').Manager;
 
 module.exports = class NodeAPI {
   constructor() {}
