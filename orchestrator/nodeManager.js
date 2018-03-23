@@ -23,12 +23,104 @@ var device_tpl = require('./nodes/template-in/template-in').Handler;
 var device_out = require('./nodes/device-out/device-out').Handler;
 var publisher = require('./publisher');
 
+function makeId(length) {
+  var text = "";
+  var possible = "abcdef0123456789";
+
+  for (var i = 0; i < length; i++)
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+  return text;
+}
 
 class RemoteNode extends dojot.DataHandlerBase {
-  constructor(remoteid) {
+  constructor(image, id) {
     super();
-    this.remote = remoteid;
-    this.target = remoteid.substr(0,12);
+    this.info = {
+      userid: id,
+      image: image,
+      enabled: false
+    }
+
+    // TODO: socket path should be configurable
+    this.client = docker.Client({ socket: '/var/run/docker.sock' });
+  }
+
+  getNetwork() {
+    return new Promise((resolve, reject) => {
+      if (this.targetNetwork) {
+        return resolve(this.targetNetwork);
+      }
+
+      this.client.networks().list().then((results) => {
+        for (let result of results) {
+          let name = result.Name.match(/.+?_flowbroker/);
+          if (name) {
+            this.targetNetwork = name;
+            return resolve(name);
+          }
+        }
+      }).catch((error) => {
+        console.error("failed to acquire target network", error);
+      })
+    })
+  }
+
+  create() {
+    return new Promise((resolve, reject) => {
+      let model = {
+        Image: this.info.image,
+        AttachStdin: false,
+        AttachStdout: false,
+        AttachStderr: true,
+        NetworkDisabled: false,
+        HostConfig: {
+          AutoRemove: true
+        },
+        Tty: true
+      };
+
+      let options = { name: 'flowbroker.' + makeId(7) };
+      this.client.containers().create(model, options).then((container) => {
+        console.log(`[nodes] container ${options.name} was created`);
+        this.client.containers().start(container.Id).then((result) => {
+          // TODO alias config is not working
+          const network_opt = {
+            Container: container.Id
+          };
+          this.info.container = container.Id;
+          this.target = container.Id.substr(0,12);
+          this.getNetwork().then((network) => {
+            this.client.networks().connect(network, network_opt).then((result) => {
+              console.log(`[nodes] container up: ${options.name}:${container.Id}`);
+              return resolve();
+            }).catch((error) => {
+              this.remove();
+              return reject(error);
+            })
+          })
+        }).catch((error) => {
+          this.remove();
+          return reject(new Error(error.body.message));
+        })
+      }).catch((error) => {
+        return reject(new Error(error.body.message));
+      })
+    });
+  }
+
+  remove() {
+    return new Promise((resolve, reject) => {
+      this.client.containers().remove(this.info.container, {force: true}).then((results) => {
+        return resolve();
+      }).catch((error) => {
+        return reject(error);
+      })
+    })
+  }
+
+  update() {
+    // TODO
   }
 
   init() {
@@ -130,55 +222,40 @@ class NodeManager {
 
   addRemote(image, id) {
     return new Promise((resolve, reject) => {
-      let model = {
-        Image: image,
-        AttachStdin: false,
-        AttachStdout: false,
-        AttachStderr: true,
-        NetworkDisabled: false,
-        HostConfig: {
-          AutoRemove: true
-        },
-        Tty: true
-      }
-
-      let client = docker.Client({ socket: '/var/run/docker.sock' });
-
-      let options = { name: uuid() };
-      client.containers().create(model, options).then((container) => {
-        console.log(`[nodes] container ${options.name} was created`);
-        client.containers().start(container.Id).then((result) => {
-          const network_opt = {
-            Container: container.Id
-          };
-          client.networks().connect('dojot_flowbroker', network_opt).then((result) => {
-            console.log(`[nodes] container up: ${options.name}:${container.Id}`);
-            let newNode = new RemoteNode(container.Id);
-            newNode.init().then(() => {
-              let meta = newNode.getMetadata();
-              console.log('[nodes] container meta', JSON.stringify(meta));
-              this.nodes[meta.name] = newNode;
-            }).catch((error) => {
-              // TODO remove container
-              console.error("[nodes] node initialization failed");
-              return reject(new Error('Failed to initialize worker'));
-            })
-
-            return resolve();
-          }).catch((error) => {
-            // TODO remove container
-            // console.log('network', error);
-            return reject(error);
-          })
+      let newNode = new RemoteNode(image, id);
+      newNode.create().then(() => {
+        newNode.init().then(() => {
+          let meta = newNode.getMetadata();
+          console.log('[nodes] container meta', JSON.stringify(meta));
+          this.nodes[meta.name] = newNode;
+          resolve();
         }).catch((error) => {
-          // TODO remove container
-          // console.log('start', error);
-          return reject(new Error(error.body.message));
+          reject(error);
         })
       }).catch((error) => {
-        // console.log('create', error);
-        return reject(new Error(error.body.message));
-      })
+        reject(error);
+      });
+    });
+  }
+
+  delRemote(image, id) {
+    return new Promise((resolve, reject) => {
+      let node = null;
+      for (let n in this.nodes) {
+        if (this.nodes[n].hasOwnProperty('info')) {
+          if (this.nodes[n].info.userid == id) {
+            this.nodes[n].remove().then(() => {
+              delete this.nodes[n];
+              return resolve();
+            }).catch((error) => {
+              return reject(error);
+            })
+            return;
+          }
+        }
+      }
+
+      reject(new Error("No such node found"));
     })
   }
 }

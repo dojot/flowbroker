@@ -50,7 +50,15 @@ app.post('/v1/node', (req, res) => {
     return res.status(200).send({message: 'ok'});
   }).catch((error) => {
     console.log(error);
-    return res.status(400).send({message: 'failed to add node: ' + error.message});
+    return res.status(500).send({message: 'Failed to add node: ' + error.message});
+  })
+})
+
+app.delete('/v1/node/:id', (req, res) => {
+  nodeManager.delRemote(undefined, req.params.id).then(() => {
+    return res.status(200).send({message: 'ok'});
+  }).catch((error) => {
+    return res.status(500).send({message: 'Failed ot remove node.', error: error.message});
   })
 })
 
