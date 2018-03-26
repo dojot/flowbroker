@@ -83,7 +83,7 @@ class RemoteNode extends dojot.DataHandlerBase {
       const options = { name: 'flowbroker.' + makeId(7) };
       const imageOptions = { fromImage: this.info.image };
       this.client.images().create(imageOptions).then((image) => {
-        console.log(`[nodes] image ${this.info.image} created`, image);
+        console.log(`[nodes] image ${this.info.image} created`);
         this.client.containers().create(model, options).then((container) => {
           console.log(`[nodes] container ${options.name} was created`);
           this.client.containers().start(container.Id).then((result) => {
