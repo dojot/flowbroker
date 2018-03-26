@@ -2,7 +2,7 @@
 
 let fs = require('fs');
 let path = require('path');
-let DojotHandler = require('dojot-node-library');
+var dojot = require('@dojot/flow-node');
 
 // TODO:
 
@@ -26,8 +26,8 @@ class DataHandler {
      */
     getMetadata() {
         return {
-            'id': 'dojot/geo',
-            'name': 'geo',
+            'id': 'dojot/geofence',
+            'name': 'geofence',
             'module': 'dojot',
             'version': '1.0.0',
         }

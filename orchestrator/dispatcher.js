@@ -20,14 +20,24 @@ module.exports = function invokeRemote(node, msg) {
    // TODO we could be using a proper zmq async req-rep pattern
    let sock = zmq.socket('req');
    sock.on("message", function(reply) {
-     // console.log('got reply', reply.toString());
+     console.log('[dispatcher] got reply', reply.toString());
+     console.log('[dispatcher] remote [%s] took %dms', node, new Date() - ts);
      sock.close();
-     // console.log('remote took %dms', new Date() - ts);
-     resolve(JSON.parse(reply.toString()));
+
+     let data;
+     try {
+       data = JSON.parse(reply.toString());
+     } catch (error) {
+       return reject(error);
+     }
+
+     resolve(data);
    });
 
    // TODO proper validation of node.type as an address (or host name for that sake)
-   sock.connect("tcp://" + node.type + ":5555");
+  //  console.log('[dispatcher] will connect');
+   sock.connect("tcp://" + node + ":5555");
+  //  console.log('[dispatcher] will send');
    sock.send(JSON.stringify(msg));
  })
 }

@@ -1,30 +1,10 @@
 "use strict";
 
+var util = require('util');
 var amqp = require('./amqp');
 var config = require('./config');
-var util = require('util');
-
-// TODO - remove the following
-var change = require('./nodes/change/index').Handler;
-var edge = require('./nodes/edge/index').Handler;
-var email = require('./nodes/email/index').Handler;
-var geo = require('./nodes/geo/index').Handler;
-var http = require('./nodes/http/index').Handler;
-var select = require('./nodes/switch/index').Handler;
-var template = require('./nodes/template/index').Handler;
-var device_out = require('./nodes/device-out/device-out').Handler;
-var publisher = require('./publisher');
-//
-var nodes = {
-  "change": new change(),
-  "edgedetection": new edge(),
-  "email": new email(),
-  "geofence": new geo(),
-  "http_request_out": new http(),
-  "switch": new select(),
-  "template": new template(),
-  "device out": new device_out(publisher)
-};
+var nodes = require('./nodeManager').Manager;
+// var nodes = new nodeManager.Manager();
 
 module.exports = class Executor {
   constructor() {
@@ -56,8 +36,9 @@ module.exports = class Executor {
 
     const at = event.flow.nodeMap[event.hop];
     console.log(`[executor] will handle node ${at.type}`);
-    if (nodes.hasOwnProperty(at.type)) {
-      nodes[at.type].handleMessage(at, event.message, (error, result) => {
+    let handler = nodes.getNode(at.type);
+    if (handler) {
+      handler.handleMessage(at, event.message, (error, result) => {
         if (error) {
           console.error(`[executor] Node execution failed. ${error}. Aborting flow ${event.flow.id}.`);
           // TODO notify alarmManager

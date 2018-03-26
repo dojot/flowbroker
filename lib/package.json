@@ -1,7 +1,7 @@
 {
-  "name": "dojot-node-library",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@dojot/flow-node",
+  "version": "1.0.2",
+  "description": "Basic interface to dojot's flowbroker",
   "main": "CommandHandler.js",
   "scripts": {
     "test": ""

@@ -3,7 +3,7 @@
 let fs = require('fs');
 let path = require('path');
 // let nodemailer = require("nodemailer");
-let DojotHandler = require('dojot-node-library');
+var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
 class DataHandler {

@@ -14,7 +14,7 @@
   limitations under the License.
 -->
 
-<script type="text/x-red" data-template-name="http-request-out">
+<script type="text/x-red" data-template-name="http">
     <div class="form-row">
         <label for="node-input-method"><i class="fa fa-tasks"></i> <span data-i18n="httpin.label.method"></span></label>
         <select type="text" id="node-input-method" style="width:70%;">
@@ -74,7 +74,7 @@
     <div class="form-tips" id="tip-json" hidden><span data-i18n="httpin.tip.req"></span></div>
 </script>
 
-<script type="text/x-red" data-help-name="http-request-out">
+<script type="text/x-red" data-help-name="http">
     <p>Sends HTTP requests and returns the response.</p>
 
     <h3>Inputs</h3>
@@ -133,7 +133,7 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('http-request-out',{
+    RED.nodes.registerType('http',{
         category: 'output',
         color:"rgb(231, 231, 174)",
         defaults: {

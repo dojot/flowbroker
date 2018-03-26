@@ -4,7 +4,7 @@ let os = require('os');
 let fs = require('fs');
 let util = require('util');
 let path = require('path');
-let dojot = require('dojot-node-library');
+var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
 class DataHandler extends dojot.DataHandlerBase {

@@ -11,7 +11,7 @@ var path = require('path');
 // var cookie = require("cookie");
 // var hashSum = require("hash-sum");
 
-var DojotHandler = require('dojot-node-library');
+var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
 class DataHandler {

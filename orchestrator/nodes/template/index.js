@@ -2,7 +2,7 @@
 
 let fs = require('fs');
 let path = require('path');
-let dojot = require('dojot-node-library');
+var dojot = require('@dojot/flow-node');
 let mustache = require('mustache');
 
 // Sample node implementation

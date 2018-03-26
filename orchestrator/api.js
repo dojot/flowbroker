@@ -11,6 +11,8 @@ var FlowError = require('./flowManager').FlowError;
 
 var NodeAPI = require('./node-red/src/index');
 
+var nodeManager = require('./nodeManager').Manager;
+
 // initialized by init()
 var FlowManager;
 
@@ -42,6 +44,23 @@ function summarizeFlow(flow) {
     'updated': flow.updated.getTime(),
   };
 }
+
+app.post('/v1/node', (req, res) => {
+  nodeManager.addRemote(req.body.image, req.body.id).then(() => {
+    return res.status(200).send({message: 'ok'});
+  }).catch((error) => {
+    console.log(error);
+    return res.status(500).send({message: 'Failed to add node: ' + error.message});
+  })
+})
+
+app.delete('/v1/node/:id', (req, res) => {
+  nodeManager.delRemote(undefined, req.params.id).then(() => {
+    return res.status(200).send({message: 'ok'});
+  }).catch((error) => {
+    return res.status(500).send({message: 'Failed ot remove node.', error: error.message});
+  })
+})
 
 app.get('/v1/flow', (req, res) => {
   let fm = null;
