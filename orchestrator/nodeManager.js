@@ -7,7 +7,7 @@ var uuid = require('uuid/v4');
 // This should be external - but since it's bugged....
 var docker = require('./docker/harbor-master');
 
-var dojot = require('dojot-node-library');
+var dojot = require('@dojot/flow-node');
 var dispatcher = require('./dispatcher');
 
 var change = require('./nodes/change/index').Handler;
@@ -104,7 +104,7 @@ class RemoteNode extends dojot.DataHandlerBase {
           return reject(new Error(error.body.message));
         })
       }).catch((error) => {
-        return reject(new Error(error.body.message));
+        return reject(error);
       })
     });
   }
@@ -164,16 +164,21 @@ class RemoteNode extends dojot.DataHandlerBase {
 
   handleMessage(config, message, callback, tenant) {
     // invoke remote
-    let message = {
+    let command = {
       command: 'message',
       message: message,
       config: config,
     };
-    dispatcher(this.target, message).then((reply) => {
+    dispatcher(this.target, command).then((reply) => {
       if (reply.error) {
-        callback(error);
+        return callback(reply.error);
       }
-      callback(undefined, reply.messages);
+
+      if (Array.isArray(reply)){
+        return callback(undefined, reply);
+      }
+
+      return callback(new Error("Invalid response received from node"));
     }).catch((error) => {
       callback(error);
     })

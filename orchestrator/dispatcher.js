@@ -20,7 +20,7 @@ module.exports = function invokeRemote(node, msg) {
    // TODO we could be using a proper zmq async req-rep pattern
    let sock = zmq.socket('req');
    sock.on("message", function(reply) {
-    //  console.log('[dispatcher] got reply', reply.toString());
+     console.log('[dispatcher] got reply', reply.toString());
      console.log('[dispatcher] remote [%s] took %dms', node, new Date() - ts);
      sock.close();
 

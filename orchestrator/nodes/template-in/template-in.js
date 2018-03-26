@@ -1,5 +1,5 @@
 var path = require('path');
-var dojot = require('dojot-node-library');
+var dojot = require('@dojot/flow-node');
 
 class DataHandler extends dojot.DataHandlerBase {
     constructor(publisher) {

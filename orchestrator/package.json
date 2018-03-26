@@ -9,11 +9,11 @@
   "author": "Matheus Magalhaes",
   "license": "GPL-3.0",
   "dependencies": {
+    "@dojot/flow-node": "^1.0.0",
     "amqplib": "^0.5.2",
     "argparse": "^1.0.9",
     "axios": "^0.18.0",
     "bluebird": "^3.4.7",
-    "dojot-node-library": "file:../lib",
     "express": "^4.16.2",
     "joi": "^10.2.0",
     "kafka-node": "^2.4.1",

@@ -2,11 +2,13 @@
 
 var os = require('os');
 var path = require('path')
-var DojotHandler = require('dojot-node-library').DojotHandler;
+var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
-class DataHandler {
-  constructor() {}
+class DataHandler extends dojot.DataHandlerBase {
+  constructor() {
+    super();
+  }
 
   /**
    * Returns full path to html file
@@ -25,11 +27,11 @@ class DataHandler {
     return {
       // ID can actually be any unique human-friendly string
       // on proper node-red modules it is "$module/$name"
-      'id': 'sample/dummy',
+      'id': 'sample/kelvin',
       // This is usually the name of the node
-      'name': 'dummy',
+      'name': 'kelvin',
       // This is usually the name of the node (as in npm) module
-      'module': 'dummy',
+      'module': 'kelvin',
       'version': '0.0.0',
     }
   }
@@ -59,13 +61,15 @@ class DataHandler {
    * @return {[undefined]}
    */
   handleMessage(config, message, callback) {
-    setTimeout(() => {
-      let response = message;
-      response[os.hostname()] = true;
-      callback(undefined, [response]);
-    }, 10);
+    try {
+      let celcius = this._get(config.in, message);
+      this._set(config.out, celcius + 273.15, message);
+      callback(undefined, [message])
+    } catch (error) {
+      callback(error);
+    }
   }
 }
 
-var main = new DojotHandler(new DataHandler());
+var main = new dojot.DojotHandler(new DataHandler());
 main.init();
