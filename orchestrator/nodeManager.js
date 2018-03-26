@@ -80,28 +80,34 @@ class RemoteNode extends dojot.DataHandlerBase {
         Tty: true
       };
 
-      let options = { name: 'flowbroker.' + makeId(7) };
-      this.client.containers().create(model, options).then((container) => {
-        console.log(`[nodes] container ${options.name} was created`);
-        this.client.containers().start(container.Id).then((result) => {
-          // TODO alias config is not working
-          const network_opt = {
-            Container: container.Id
-          };
-          this.info.container = container.Id;
-          this.target = container.Id.substr(0,12);
-          this.getNetwork().then((network) => {
-            this.client.networks().connect(network, network_opt).then((result) => {
-              console.log(`[nodes] container up: ${options.name}:${container.Id}`);
-              return resolve();
-            }).catch((error) => {
-              this.remove();
-              return reject(error);
+      const options = { name: 'flowbroker.' + makeId(7) };
+      const imageOptions = { fromImage: this.info.image };
+      this.client.images().create(imageOptions).then((image) => {
+        console.log(`[nodes] image ${this.info.image} created`, image);
+        this.client.containers().create(model, options).then((container) => {
+          console.log(`[nodes] container ${options.name} was created`);
+          this.client.containers().start(container.Id).then((result) => {
+            // TODO alias config is not working
+            const network_opt = {
+              Container: container.Id
+            };
+            this.info.container = container.Id;
+            this.target = container.Id.substr(0,12);
+            this.getNetwork().then((network) => {
+              this.client.networks().connect(network, network_opt).then((result) => {
+                console.log(`[nodes] container up: ${options.name}:${container.Id}`);
+                return resolve();
+              }).catch((error) => {
+                this.remove();
+                return reject(error);
+              })
             })
+          }).catch((error) => {
+            this.remove();
+            return reject(new Error(error.body.message));
           })
         }).catch((error) => {
-          this.remove();
-          return reject(new Error(error.body.message));
+          return reject(error);
         })
       }).catch((error) => {
         return reject(error);
