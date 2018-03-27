@@ -29,8 +29,8 @@
            device_template: {value:"", required:true},
 
            // those are the internal types used when routing data through fiware.
-           _device_template_label: { value:"", required: false},
-           _device_template_id: { value:"", required: false}
+           device_template_label: { value:"", required: false},
+           device_template_id: { value:"", required: false}
        },
        inputs:0,                // set the number of inputs - only 0 or 1
        outputs:1,               // set the number of outputs - 0 to n
@@ -53,7 +53,7 @@
               list.templates.map((templ) => {
                 select.options[select.options.length] = new Option(templ.label, JSON.stringify({"label" : templ.label, "id": templ.id}));
               });
-              select.value = templ.label;
+              select.value = JSON.stringify(node.device_template);
             })
             .catch((error) => {
               console.error('Failed to retrieve the list of available devices',error);
