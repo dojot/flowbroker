@@ -1,5 +1,5 @@
 
-<script type="text/x-red" data-template-name="e-mail">
+<script type="text/x-red" data-template-name="email">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-envelope"></i> <span data-i18n="email.label.from"></span></label>
         <input type="text" id="node-input-from" placeholder="email@address.com">
@@ -42,7 +42,7 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="e-mail">
+<script type="text/x-red" data-help-name="email">
     <p>Sends the <code>msg.payload</code> as an email, with a subject of <code>msg.topic</code>.</p>
     <p>The default message recipient can be configured in the node, if it is left
     blank it should be set using the <code>msg.to</code> property of the incoming message. If left blank
