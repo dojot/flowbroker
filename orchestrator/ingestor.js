@@ -152,8 +152,8 @@ module.exports = class DeviceIngestor {
       }
 
       // handle input by template
-      if (node.hasOwnProperty('_device_template_id') &&
-          (event.metadata.templates.includes(node._device_template_id)) &&
+      if (node.hasOwnProperty('device_template_id') &&
+          (event.metadata.templates.includes(node.device_template_id)) &&
           (isTemplate == true)) {
         this._publish(node, {payload: event.attrs}, flow, event.metadata);
       }

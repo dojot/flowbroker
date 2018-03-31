@@ -96,7 +96,7 @@ class FlowManager {
           parsed.devices.push(node._device_id);
         },
         "device template in": () => {
-          parsed.templates.push(node._device_template_id);
+          parsed.templates.push(node.device_template_id);
         }
       };
       if (inputNodes.hasOwnProperty(node.type)){
