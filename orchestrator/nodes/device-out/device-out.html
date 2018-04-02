@@ -54,22 +54,29 @@
         oneditprepare: function () {
             var select = document.getElementById("node-input-device");
             let node = this;
-            //  this will only work from the device management interface
-            util.GET('/device')
-                .then((list) => {
-                    console.log(list);
+            select.value = node.device;
+
+            // this will only work from the device management interface
+            function list_all(page) {
+                extra = `?page_num=${page}`
+                if (page === undefined) {
+                    extra = ''
+                }
+
+                util.GET(`/device${extra}`).then((list) => {
                     list.devices.map((dev) => {
-                        let data = {
-                            'id': dev.id,
-                            'templates': dev.templates
-                        }
-                        select.options[select.options.length] = new Option(dev.label, JSON.stringify(data));
+                        select.options[select.options.length] = new Option(dev.label, JSON.stringify({ 'id': dev.id }));
                     });
-                    select.value = node.device;
-                })
-                .catch((error) => {
+                    if (list.pagination.has_next) {
+                        list_all(list.pagination.next_page);
+                    }
+                }).catch((error) => {
                     console.error('Failed to retrieve the list of available devices', error);
-                })
+                });
+
+            }
+
+            list_all();
         },
 
         oneditsave: function () {
