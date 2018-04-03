@@ -2,9 +2,10 @@ var kafka = require('./kafka');
 var config = require('./config');
 
 class Publisher {
-  constructor() {
+  constructor(subject) {
     this.producer = new kafka.Producer();
     this.producer.initProducer();
+    this.subject = subject || config.ingestion.subject;
   }
 
   /**
@@ -36,8 +37,9 @@ class Publisher {
   }
 
   publish(message) {
-    this.producer.sendEvent(message.metadata.tenant, config.ingestion.subject, message);
+    console.log(`will produce to ${this.subject}`);
+    this.producer.sendEvent(message.metadata.tenant, this.subject, message);
   }
 }
 
-module.exports = new Publisher();
+module.exports = Publisher;
