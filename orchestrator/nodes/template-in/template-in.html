@@ -7,6 +7,13 @@
       <label for="node-input-device-template"><i class="fa fa-wifi"></i> Device Template</label>
       <select id="node-input-device-template" style=""></select>
   </div>
+  <div class="form-row">
+       <label for="node-input-status"><i class="fa fa-bell" /> Status</label>
+       <select id="node-input-status" value='false' style="width: 70%;">
+            <option value='false'>exclude device status changes</option>
+            <option value='true'>include device status changes</option>
+        </select>
+   </div>
   <div style="display:none">
       <input type='text' id='node-input-device-template-label'/>
       <input type='text' id='node-input-device-template-id'/>
@@ -27,6 +34,7 @@
            name: {value:"", required:false},
            // name of the device which data is retrieved from.
            device_template: {value:"", required:true},
+           status: {value:'false', required:true},
 
            // those are the internal types used when routing data through fiware.
            device_template_label: { value:"", required: false},
