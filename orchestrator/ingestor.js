@@ -120,6 +120,13 @@ module.exports = class DeviceIngestor {
   }
 
   _publish(node, message, flow, metadata) {
+    if ((node.status.toLowerCase() != 'true') &&
+        metadata.hasOwnProperty('reason') &&
+        (metadata.reason == 'statusUpdate')) {
+      console.log(`[ingestor] ignoring device status update ${metadata.deviceid} ${flow.id}`);
+      return;
+    }
+
     // This should work for single output nodes only!
     for (let output of node.wires) {
       for (let hop of output) {
@@ -153,6 +160,7 @@ module.exports = class DeviceIngestor {
 
       // handle input by template
       if (node.hasOwnProperty('device_template_id') &&
+          event.metadata.hasOwnProperty('templates') &&
           (event.metadata.templates.includes(node.device_template_id)) &&
           (isTemplate == true)) {
         this._publish(node, {payload: event.attrs}, flow, event.metadata);
