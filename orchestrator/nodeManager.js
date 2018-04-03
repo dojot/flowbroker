@@ -19,9 +19,10 @@ var select = require('./nodes/switch/index').Handler;
 var template = require('./nodes/template/index').Handler;
 var device_in = require('./nodes/device-in/device-in').Handler;
 var device_tpl = require('./nodes/template-in/template-in').Handler;
+var actuate = require('./nodes/actuate/actuate').Handler;
 
 var device_out = require('./nodes/device-out/device-out').Handler;
-var publisher = require('./publisher');
+var Publisher = require('./publisher');
 
 function makeId(length) {
   var text = "";
@@ -201,8 +202,9 @@ class NodeManager {
       "switch": new select(),
       "template": new template(),
       "device in": new device_in,
-      "device out": new device_out(publisher),
-      "device template in": new device_tpl()
+      "device out": new device_out(new Publisher()),
+      "device template in": new device_tpl(),
+      "actuate": new actuate(new Publisher('dojot.device-manager.device'))
     };
   }
 
