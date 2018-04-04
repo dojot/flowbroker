@@ -1,216 +1,208 @@
-# Group Flow
+# Flow
 
 ## Flows [/v1/flow]
 
 ### Get the current configured flows [GET]
 Returns all currently configured flows
-+ Request
-  + Headers:
-    Authorization: Bearer JWT
-+ Response 200 (application/json)
++ Request (application/json; charset=utf-8)
+  + Headers
+
+            authorization: Bearer JWT
+
++ Response 200 (application/json; charset=utf-8)
   + Body
-    [
-      {
-        "id" : "8476897",
-        "enabled" : "true",
-        "created" : "1498482705349",
-        "updated" : "1498482705349",
-        "service" : "admin",
-        "servicePath" : "/",
-        "perseoRules" : {
-          "headers" {
-            "service": "admin",
-            "servicePath" : "/"
-          },
-          "rules" : [
-            "rule_939851_1",
-            "rule_939851_2"
-          ]
-        },
-        "flow" : {
-          // Flow description as in input
-        }
-      }
-    ]
+
+            {
+              "flows": [
+                {
+                  "name": "firstflow",
+                  "enabled": true,
+                  "id": "dddddddd",
+                  "flow": [],
+                  "created": 1523303385798,
+                  "updated": 1523303385798
+                }
+              ]
+            }
+
 + Response 500
-  {
-    "msg" : "failed to retrieve data"
-  }
+
+        {
+          "message": "Failed to list flows"
+        }
 
 
 ### Configure a new flow [POST]
 Adds a new flow.
-+ Request (application/json)
-  + Headers:
-    Authorization: Bearer JWT
++ Request (application/json; charset=utf-8)
+  + Headers
+
+            authorization: Bearer JWT
+
   + Body
-    {
-      "id" : "8476897",
-      "service" : "admin",
-      "servicePath" : "/",
-      "flow" : {
-        // Flow description directly from mashup
-      }
-    }
-+ Response 200
-  {
-    "msg" : "flow created",
-    "flow" : {
-      "id" : "8476897",
-      "enabled" : "true",
-      "created" : "1498482705349",
-      "updated" : "1498482705349",
-      "service" : "admin",
-      "servicePath" : "/",
-      "perseoRules" : {
-        "headers" {
-          "service": "admin",
-          "servicePath" : "/"
-        },
-        "rules" : [
-          "rule_939851_1",
-          "rule_939851_2"
-        ]
-      },
-      "flow" : {
-        // Flow description as in input
-      }
-    }
-  }
+
+            {
+              "id" : "8476897",
+              "service" : "admin",
+              "servicePath" : "/",
+              "flow" : [],
+              "name" : "firstflow"
+            }
+
++ Response 200 (application/json; charset=utf-8)
+
+        {
+          "message": "ok",
+          "flow": {
+            "name": "firstflow",
+            "enabled": true,
+            "id": "bbbbbbbb",
+            "flow": [],
+            "created": 1523303385798,
+            "updated": 1523303385798
+          }
+        }
+
 + Response 400
-  {
-    "msg" : "missing flow data"
-  }
+
+        {
+          "msg" : "missing flow data"
+        }
+
 + Response 500
-  {
-    "msg" : "failed to insert data"
-  }
+
+        {
+          "msg" : "failed to insert data"
+        }
 
 ### Removes all flows [DELETE]
 Removes all flows and their configurations.
-+ Request (application/json)
-  + Headers:
-    Authorization: Bearer JWT
++ Request (application/json; charset=utf-8)
+  + Headers
+
+            authorization: Bearer JWT
 
 + Response 200
-  {
-    "msg" : "all flows removed"
-  }
+
+        {
+          "message" : "All flows removed"
+        }
 
 ## Flows [/v1/flow/{id}]
-  + Parameters
-    + id The identifier associated to the flow
-### Get the current configured flows [GET]
++ Parameters
+    + id : aaaaaaaa (required, string)- The identifier associated to the flow
+
+### Get the current configured flow [GET]
 Returns the configuration of a particular flow
-+ Request
-  + Headers:
-    Authorization: Bearer JWT
-+ Response 200 (application/json)
-  + Body
-    {
-      "msg" : "ok",
-      "flow" : {
-        "id" : "8476897",
-        "enabled" : "true",
-        "created" : "1498482705349",
-        "updated" : "1498482705349",
-        "service" : "admin",
-        "servicePath" : "/",
-        "perseoRules" : {
-          "headers" {
-            "service": "admin",
-            "servicePath" : "/"
-          },
-          "rules" : [
-            "rule_939851_1",
-            "rule_939851_2"
-          ]
-        },
-        "flow" : {
-          // Flow description as in input
++ Request (application/json; charset=utf-8)
+  + Headers
+
+            authorization: Bearer JWT
+
++ Response 200 (application/json; charset=utf-8)
+
+        {
+          "message": "ok",
+          "flow": {
+            "name": "zeroflow",
+            "enabled": true,
+            "id": "aaaaaaaa",
+            "flow": [],
+            "created": 1390402619301,
+            "updated": 1390402619301
+          }
         }
-      }
-    }
+
 + Response 500
-  {
-    "msg" : "failed to retrieve data"
-  }
+
+        {
+          "msg" : "failed to retrieve data"
+        }
 
 
 ### Reconfigure a specific flow [PUT]
 Reconfigure a particular flow - the old config will be removed and the new one will be deployed.
-+ Request (application/json)
-  + Headers:
-    Authorization: Bearer JWT
++ Request (application/json; charset=utf-8)
+  + Headers
+
+            authorization: Bearer JWT
+
   + Body
-    {
-      "id" : "8476897",
-      "service" : "admin",
-      "servicePath" : "/",
-      "flow" : {
-        // Flow description directly from mashup
-      }
-    }
-+ Response 200
-  {
-    "msg" : "flow updated",
-    "flow" : {
-      "id" : "8476897",
-      "enabled" : "true",
-      "created" : "1498482705349",
-      "updated" : "1498482705349",
-      "service" : "admin",
-      "servicePath" : "/",
-      "perseoRules" : {
-        "headers" {
-          "service": "admin",
-          "servicePath" : "/"
-        },
-        "rules" : [
-          "rule_939851_1",
-          "rule_939851_2"
-        ]
-      },
-      "flow" : {
-        // Flow description as in input
-      }
-    }
-  }
+
+                {
+                  "created" : 123456,
+                  "enabled" : true,
+                  "flow" : [],
+                  "id" : "aaaaaaaa",
+                  "name" : "emaema",
+                  "updated" : 123456
+                }
+
++ Response 200 (application/json; charset=utf-8)
+
+        {
+          "message": "ok",
+          "flow": {
+            "name": "emaema",
+            "enabled": true,
+            "id": "aaaaaaaa",
+            "flow": [],
+            "created": 1390402619301,
+            "updated": 1523391323270
+          }
+        }
+
 + Response 400
-  {
-    "msg" : "missing flow data"
-  }
+
+        {
+          "message": "Unknown flow: d7fa79ef",
+          "flow": "d7fa79ef"
+        }
 + Response 404
-  {
-    "msg" : "given flow is unknown"
-  }
+
+        {
+          "msg" : "given flow is unknown"
+        }
 + Response 500
-  {
-    "msg" : "failed to remove flow"
-  }
+
+        {
+          "msg" : "failed to remove flow"
+        }
 + Response 500
-  {
-    "msg" : "failed to insert data"
-  }
+
+        {
+          "msg" : "failed to insert data"
+        }
 
 ### Remove the flow [DELETE]
 Removes the flow and its configuration.
-+ Request (application/json)
-  + Headers:
-    Authorization: Bearer JWT
++ Request (application/json; charset=utf-8)
+  + Headers
+
+            authorization: Bearer JWT
 
 + Response 200
-  {
-    "msg" : "flow removed",
-    "id" : "8476897"
-  }
+
+        {
+          "message": "flow removed",
+          "flow": {
+            "name": "emaema",
+            "enabled": true,
+            "id": "aaaaaaaa",
+            "flow": [],
+            "created": 1390402619301,
+            "updated": 1523461760729
+          }
+        }
 
 + Response 500
-  {
-    "msg" : "failed to remove flow"
-  }
+
+        {
+          "msg" : "failed to remove flow"
+        }
 
 + Response 404
-  {
-    "msg" : "given flow is unknown"
-  }
+
+        {
+          "msg" : "given flow is unknown"
+        }

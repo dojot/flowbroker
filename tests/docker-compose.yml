@@ -1,0 +1,150 @@
+version: '2.1'
+services:
+
+  mongodb:
+    image: "mongo:3.2"
+    restart: always
+    user: "mongodb"
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+
+  # orion replacement component
+  data-broker:
+    image: dojot/data-broker
+    restart: always
+    depends_on:
+      - kafka
+      - data-broker-redis
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+
+  data-broker-redis:
+    image: redis
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+
+  flowbroker:
+    image: flowbroker-tests
+    restart: always
+    depends_on:
+      - rabbitmq
+      - kafka
+      - mongodb
+      - data-broker
+      - auth
+    networks:
+      - default
+      - flowbroker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:Z
+
+  rabbitmq:
+    image: rabbitmq
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+
+  zookeeper:
+    image: "zookeeper:3.4"
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+
+  kafka:
+    image: "ches/kafka:0.10.1.1"
+    depends_on:
+      - zookeeper
+    environment:
+      ZOOKEEPER_IP: zookeeper
+      KAFKA_NUM_PARTITIONS: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+
+  auth-redis:
+    image: redis
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+
+  auth:
+    image: dojot/auth:latest
+    restart: always
+    depends_on:
+      - auth-redis
+      - postgres
+      - apigw
+    environment:
+      AUTH_DB_HOST: "postgres"
+      AUTH_DB_USER: "kong"
+      AUTH_KONG_URL: "http://apigw:8001"
+      AUTH_CACHE_HOST: "auth-redis"
+      # This is used to select the type of cache to be used. Allowed values are "redis" or "nocache"
+      AUTH_CACHE_NAME: "redis"
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+
+  postgres:
+    image: "postgres:9.4"
+    restart: always
+    environment:
+      POSTGRES_USER: "kong"
+      POSTGRES_DB: "kong"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+
+  kong-migration:
+    image: dojot/kong:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - KONG_DATABASE=postgres
+      - KONG_PG_HOST=postgres
+    command: kong migrations up
+    restart: on-failure
+
+  apigw:
+    image: dojot/kong:latest
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kong-migration:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    environment:
+      KONG_DATABASE: "postgres"
+      KONG_PG_HOST: "postgres"
+    volumes:
+      - ./apigw/plugins/pep-kong:/plugins/pep-kong:Z
+      - ./apigw/plugins/mutualauthentication:/plugins/mutualauthentication:Z
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+networks:
+  flowbroker:
