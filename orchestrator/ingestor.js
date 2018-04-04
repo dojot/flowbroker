@@ -120,7 +120,8 @@ module.exports = class DeviceIngestor {
   }
 
   _publish(node, message, flow, metadata) {
-    if ((node.status.toLowerCase() != 'true') &&
+    if (node.hasOwnProperty('status') &&
+        (node.status.toLowerCase() != 'true') &&
         metadata.hasOwnProperty('reason') &&
         (metadata.reason == 'statusUpdate')) {
       console.log(`[ingestor] ignoring device status update ${metadata.deviceid} ${flow.id}`);

@@ -58,7 +58,6 @@
         oneditprepare: function () {
             var select = document.getElementById("node-input-device");
             let node = this;
-            select.value = node.device;
 
             // this will only work from the device management interface
             function list_all(page) {
@@ -73,6 +72,8 @@
                     });
                     if (list.pagination.has_next) {
                         list_all(list.pagination.next_page);
+                    } else {
+                        select.value = node.device;
                     }
                 }).catch((error) => {
                     console.error('Failed to retrieve the list of available devices', error);
