@@ -25,7 +25,7 @@ class InvalidTokenError {
 }
 
 function authParse(req, res, next) {
-  const rawToken = req.header('authorization');
+  const rawToken = req.get('authorization');
   if (rawToken === undefined) {
     return next();
   }
@@ -52,7 +52,7 @@ function authEnforce(req, res, next) {
 
   if (req.user === undefined || req.user.trim() === "" ) {
     // valid token must be supplied
-    console.error("Got invalid request: user is not defined in token: ", req.header('authorization'));
+    console.error("Got invalid request: user is not defined in token: ", req.get('authorization'));
     return res.status(401).send(new UnauthorizedError());
   }
 
