@@ -2,12 +2,13 @@
 
 let fs = require('fs');
 let path = require('path');
-// let nodemailer = require("nodemailer");
+let nodemailer = require("nodemailer");
 var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
-class DataHandler {
+class DataHandler extends dojot.DataHandlerBase {
     constructor() {
+        super();
     }
 
     /**
@@ -37,21 +38,22 @@ class DataHandler {
      * @param  {[string]} locale Locale string, such as "en-US"
      * @return {[object]}        Locale settings used by the module
      */
-     getLocaleData(locale) {
+    getLocaleData(locale) {
 
-         let filepath = path.join(__dirname, "locales/" + locale + "/email.json");
-         if (fs.existsSync(filepath)) {
-             return require(filepath);
-         } else {
-             return null
-         }
+        let filepath = path.join(__dirname, "locales/" + locale + "/email.json");
+        if (fs.existsSync(filepath)) {
+            return require(filepath);
+        } else {
+            return null
+        }
 
-     }
+    }
 
     /**
      * Check if the node configuration is valid
      * @param {object} config  Configuration data for the node
-     * @return {[boolean, object]} Boolean variable stating if the configuration is valid or not and error message
+     * @return {[boolean, object]} Boolean variable stating if the configuration is valid
+     *                             or not and error message
      */
     checkConfig(config) {
 
@@ -87,119 +89,112 @@ class DataHandler {
      * @return {[undefined]}
      */
     handleMessage(config, message, callback) {
-    //     setTimeout(() => {
-    //
-    //         let smtpOptions = {
-    //             host: config.outserver,
-    //             port: config.outport,
-    //             secure: config.secure
-    //         };
-    //
-    //         if (config.credentials.userid && config.credentials.password) {
-    //             smtpOptions.auth = {
-    //                 user: config.credentials.userid,
-    //                 pass: config.credentials.password
-    //             };
-    //         }
-    //
-    //         let smtpTransport = nodemailer.createTransport(smtpOptions);
-    //
-    //
-    //         if (message.hasOwnProperty("payload")) {
-    //             if (smtpTransport) {
-    //
-    //                 let sendopts = {from: ((message.from) ? message.from : config.credentials.userid)};
-    //
-    //                 sendopts.subject = config.subject;
-    //                 sendopts.to = config.name || message.to;
-    //
-    //                 if (config.name === "") {
-    //                     sendopts.cc = message.cc;
-    //                     sendopts.bcc = message.bcc;
-    //                 }
-    //
-    //                 sendopts.subject = message.topic || message.title || "Message from Node-RED"; // subject line
-    //
-    //                 if (message.hasOwnProperty("envelope")) {
-    //                     sendopts.envelope = message.envelope;
-    //                 }
-    //                 if (Buffer.isBuffer(message.payload)) { // if it's a buffer in the payload then auto create an attachment instead
-    //                     if (!message.filename) {
-    //                         let fe = "bin";
-    //                         if ((message.payload[0] === 0xFF) && (message.payload[1] === 0xD8)) {
-    //                             fe = "jpg";
-    //                         }
-    //                         if ((message.payload[0] === 0x47) && (message.payload[1] === 0x49)) {
-    //                             fe = "gif";
-    //                         } //46
-    //                         if ((message.payload[0] === 0x42) && (message.payload[1] === 0x4D)) {
-    //                             fe = "bmp";
-    //                         }
-    //                         if ((message.payload[0] === 0x89) && (message.payload[1] === 0x50)) {
-    //                             fe = "png";
-    //                         } //4E
-    //                         message.filename = "attachment." + fe;
-    //                     }
-    //
-    //                     let fname = message.filename.replace(/^.*[\\\/]/, '') || "file.bin";
-    //
-    //                     sendopts.attachments = [{content: message.payload, filename: fname}];
-    //
-    //                     if (message.hasOwnProperty("headers") && message.headers.hasOwnProperty("content-type")) {
-    //                         sendopts.attachments[0].contentType = message.headers["content-type"];
-    //                     }
-    //
-    //                     // Create some body text..
-    //                     // TODO: Use locales for this
-    //                     sendopts.text = "email.default-message";
-    //
-    //                 } else {
-    //
-    //                     let payload = ensureString(message.payload);
-    //
-    //                     sendopts.text = payload; // plaintext body
-    //
-    //                     if (/<[a-z][\s\S]*>/i.test(payload)) {
-    //                         sendopts.html = payload;
-    //                     } // html body
-    //
-    //                     if (message.attachments) {
-    //                         sendopts.attachments = message.attachments;
-    //                     } // add attachments
-    //                 }
-    //
-    //                 smtpTransport.sendMail(sendopts, function (error, info) {
-    //                     if (error) {
-    //                         callback(error, [message]);
-    //                     } else {
-    //                         callback(undefined, []);
-    //                     }
-    //                 });
-    //             }
-    //             else {
-    //                 callback("email.errors.nosmtptransport", []);
-    //             }
-    //         }
-    //         else {
-    //             callback("email.errors.nopayload", []);
-    //         }
-    //
-    //         callback(undefined, []);
-    //     }, 10);
-    //
-    //     function ensureString(o) {
-    //         if (Buffer.isBuffer(o)) {
-    //             return o.toString();
-    //         } else if (typeof o === "object") {
-    //             return JSON.stringify(o);
-    //         } else if (typeof o === "string") {
-    //             return o;
-    //         }
-    //         return "" + o;
-    //     }
 
+        let smtpOptions = {
+            host: config.server,
+            port: config.port,
+            secure: config.secure
+        };
+
+        if (config.hasOwnProperty('credentials')) {
+            if (config.credentials.userid && config.credentials.password) {
+                smtpOptions.auth = {
+                    user: config.credentials.userid,
+                    pass: config.credentials.password
+                };
+            }
+        }
+
+        let smtpTransport = nodemailer.createTransport(smtpOptions);
+        if (message.hasOwnProperty("payload")) {
+            if (smtpTransport) {
+
+                let sendopts = {
+                    subject: config.subject,
+                    to: (config.to || message.to),
+                    from: ((message.from) ? message.from : (config.from || "dojot@noemail.com"))
+                };
+
+                if (message.hasOwnProperty("envelope")) {
+                    sendopts.envelope = message.envelope;
+                }
+
+                let body = this._get(config.body, message);
+                if (Buffer.isBuffer(body)) {
+                    // if it's a buffer in the payload then auto create an attachment instead
+                    if (!message.filename) {
+                        let fe = "bin";
+                        if ((body[0] === 0xFF) && (body[1] === 0xD8)) {
+                            fe = "jpg";
+                        }
+                        if ((body[0] === 0x47) && (body[1] === 0x49)) {
+                            fe = "gif";
+                        } //46
+                        if ((body[0] === 0x42) && (body[1] === 0x4D)) {
+                            fe = "bmp";
+                        }
+                        if ((body[0] === 0x89) && (body[1] === 0x50)) {
+                            fe = "png";
+                        } //4E
+                        message.filename = "attachment." + fe;
+                    }
+
+                    let fname = message.filename.replace(/^.*[\\\/]/, '') || "file.bin";
+
+                    sendopts.attachments = [{ content: body, filename: fname }];
+
+                    if (message.hasOwnProperty("headers") && message.headers.hasOwnProperty("content-type")) {
+                        sendopts.attachments[0].contentType = message.headers["content-type"];
+                    }
+
+                    // Create some body text..
+                    // TODO: Use locales for this
+                    sendopts.text = "email.default-message";
+
+                } else {
+
+                    let payload = ensureString(body);
+
+                    // plaintext body
+                    sendopts.text = payload;
+                    // html body
+                    if (/<[a-z][\s\S]*>/i.test(payload)) {
+                        sendopts.html = payload;
+                    }
+                    // add attachments
+                    if (message.attachments) {
+                        sendopts.attachments = message.attachments;
+                    }
+                }
+
+                smtpTransport.sendMail(sendopts, function (error, info) {
+                    if (error) {
+                        callback(error);
+                    } else {
+                        callback(undefined, []);
+                    }
+                });
+            }
+            else {
+                callback(new Error("email.errors.nosmtptransport"));
+            }
+        }
+        else {
+            callback(new Error("email.errors.nopayload"));
+        }
+
+        function ensureString(o) {
+            if (Buffer.isBuffer(o)) {
+                return o.toString();
+            } else if (typeof o === "object") {
+                return JSON.stringify(o);
+            } else if (typeof o === "string") {
+                return o;
+            }
+            return "" + o;
+        }
     }
 }
 
 // var main = new DojotHandler(new DataHandler());
-module.exports = {Handler: DataHandler};
+module.exports = { Handler: DataHandler };
