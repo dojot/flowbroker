@@ -35,6 +35,13 @@ module.exports = class Executor {
     }
 
     const at = event.flow.nodeMap[event.hop];
+    // sanity check on received hop
+    if (!at.hasOwnProperty('type')) {
+      console.error(`[executor] Node execution failed. ${error}. Aborting flow ${event.flow.id}.`);
+      // TODO notify alarmManager
+      return ack();
+    }
+
     console.log(`[executor] will handle node ${at.type}`);
     let handler = nodes.getNode(at.type);
     if (handler) {

@@ -1,8 +1,6 @@
 "use strict";
 
 var fs = require('fs');
-var util = require('util');
-var uuid = require('uuid/v4');
 
 // This should be external - but since it's bugged....
 var docker = require('./docker/harbor-master');
@@ -11,7 +9,6 @@ var dojot = require('@dojot/flow-node');
 var dispatcher = require('./dispatcher');
 
 var change = require('./nodes/change/index').Handler;
-var edge = require('./nodes/edge/index').Handler;
 var email = require('./nodes/email/index').Handler;
 var geo = require('./nodes/geo/index').Handler;
 var http = require('./nodes/http/index').Handler;
@@ -63,6 +60,7 @@ class RemoteNode extends dojot.DataHandlerBase {
         }
       }).catch((error) => {
         console.error("failed to acquire target network", error);
+        return reject(error);
       })
     })
   }
@@ -83,11 +81,11 @@ class RemoteNode extends dojot.DataHandlerBase {
 
       const options = { name: 'flowbroker.' + makeId(7) };
       const imageOptions = { fromImage: this.info.image };
-      this.client.images().create(imageOptions).then((image) => {
+      this.client.images().create(imageOptions).then(() => {
         console.log(`[nodes] image ${this.info.image} created`);
         this.client.containers().create(model, options).then((container) => {
           console.log(`[nodes] container ${options.name} was created`);
-          this.client.containers().start(container.Id).then((result) => {
+          this.client.containers().start(container.Id).then(() => {
             // TODO alias config is not working
             const network_opt = {
               Container: container.Id
@@ -95,7 +93,7 @@ class RemoteNode extends dojot.DataHandlerBase {
             this.info.container = container.Id;
             this.target = container.Id.substr(0,12);
             this.getNetwork().then((network) => {
-              this.client.networks().connect(network, network_opt).then((result) => {
+              this.client.networks().connect(network, network_opt).then(() => {
                 console.log(`[nodes] container up: ${options.name}:${container.Id}`);
                 return resolve();
               }).catch((error) => {
@@ -118,7 +116,7 @@ class RemoteNode extends dojot.DataHandlerBase {
 
   remove() {
     return new Promise((resolve, reject) => {
-      this.client.containers().remove(this.info.container, {force: true}).then((results) => {
+      this.client.containers().remove(this.info.container, {force: true}).then(() => {
         return resolve();
       }).catch((error) => {
         return reject(error);
@@ -253,7 +251,6 @@ class NodeManager {
 
   delRemote(image, id) {
     return new Promise((resolve, reject) => {
-      let node = null;
       for (let n in this.nodes) {
         if (this.nodes[n].hasOwnProperty('info')) {
           if (this.nodes[n].info.userid == id) {
