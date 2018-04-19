@@ -83,7 +83,6 @@ class DataHandler {
         var nodeMethod = config.method || "GET";
         var ret = config.ret || "txt";
         var reqTimeout = 120000
-        var preRequestTimestamp = process.hrtime();
         var url = nodeUrl || message.url;
 
         if (isTemplatedUrl) {
@@ -200,10 +199,10 @@ class DataHandler {
                     if (Array.isArray(message.payload)) {
                         // Convert the payload to the required return type
                         message.payload = Buffer.concat(message.payload); // bin
-                        if (config.ret !== "bin") {
+                        if (ret !== "bin") {
                             message.payload = message.payload.toString('utf8'); // txt
 
-                            if (config.ret === "obj") {
+                            if (ret === "obj") {
                                 try {
                                     message.payload = JSON.parse(message.payload);
                                 } catch (e) {
@@ -216,14 +215,12 @@ class DataHandler {
                 });
             });
 
-            if (config.hasOwnProperty('reqTimeout')){
-                req.setTimeout(config.reqTimeout, function () {
-                    setTimeout(function () {
-                        callback(new Error("common.notification.errors.no-response"));
-                    }, 10);
-                    req.abort();
-                });
-            }
+            req.setTimeout(reqTimeout, function () {
+                setTimeout(function () {
+                    callback(new Error("common.notification.errors.no-response"));
+                }, 10);
+                req.abort();
+            });
 
             req.on('error', function (err) {
                 callback(err)
