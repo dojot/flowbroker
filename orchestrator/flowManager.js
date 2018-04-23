@@ -85,6 +85,10 @@ class FlowManager {
     };
 
     for (let node of flow) {
+      if (!node.hasOwnProperty('type')) {
+        throw new InvalidFlowError();
+      }
+
       if ((node.type == 'tab') || (node.wires == undefined)) {
         // ignore tab node (used to identify flow by node-red front-end)
         continue;
@@ -121,7 +125,7 @@ class FlowManager {
 
   removeAll() {
     return new Promise((resolve, reject) => {
-      this.collection.deleteMany({}).then((results) => {
+      this.collection.deleteMany({}).then(() => {
         resolve();
       }).catch((error) => {
         reject(error);
@@ -177,7 +181,7 @@ class FlowManager {
       parsed.updated = parsed.created;
 
       console.log('inserting flow');
-      this.collection.insert(parsed).then((results) =>{
+      this.collection.insert(parsed).then(() =>{
         return resolve(parsed);
       }).catch((error) => {
         return reject(error);
@@ -233,7 +237,7 @@ class FlowManager {
   }
 
   getByDevice(deviceid) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       // we might want to return ids only, but that would be best only if we had a local cache
       // in place
       resolve(this.collection.find({ devices: deviceid }).toArray());
@@ -241,7 +245,7 @@ class FlowManager {
   }
 
   getByTemplate(templateid) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       // we might want to return ids only, but that would be best only if we had a local cache
       // in place
       resolve(this.collection.find({templates: templateid}).toArray());

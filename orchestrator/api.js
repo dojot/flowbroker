@@ -49,7 +49,9 @@ app.post('/v1/node', (req, res) => {
   nodeManager.addRemote(req.body.image, req.body.id).then(() => {
     return res.status(200).send({message: 'ok'});
   }).catch((error) => {
-    console.log(error);
+    if (error instanceof InvalidFlowError) {
+      return res.status(400).send({message: error.message});
+    }
     return res.status(500).send({message: 'Failed to add node: ' + error.message});
   })
 })
