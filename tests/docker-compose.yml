@@ -31,7 +31,7 @@ services:
         max-size: 100m
 
   flowbroker:
-    image: flowbroker-tests
+    image: dojot/flowbroker
     restart: always
     depends_on:
       - rabbitmq
@@ -44,6 +44,9 @@ services:
       - flowbroker
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:Z
+
+  tester:
+    image: tests/flowbroker
 
   rabbitmq:
     image: rabbitmq
