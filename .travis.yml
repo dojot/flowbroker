@@ -7,10 +7,10 @@ cache:
 install:
   - npm install aglio
 script:
-  - docker build -t flowbroker-tests . -f ./tests/Dockerfile
-  - docker-compose -f tests/docker-compose.yml up -d kafka rabbitmq data-broker mongodb auth
-  - docker-compose -f ./tests/docker-compose.yml run flowbroker
   - docker build -t dojot/flowbroker .
+  - docker build -t tests/flowbroker -f ./tests/Dockerfile .
+  - docker-compose -f tests/docker-compose.yml up -d kafka rabbitmq data-broker mongodb auth flowbroker
+  - docker-compose -f ./tests/docker-compose.yml run --rm tester
 
 after_success:
   - travis/publish.sh
