@@ -11,8 +11,9 @@ var mustache = require("mustache");
 var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
-class DataHandler {
+class DataHandler extends dojot.DataHandlerBase {
     constructor() {
+        super();
     }
 
     /**
@@ -84,7 +85,7 @@ class DataHandler {
         var ret = config.ret || "txt";
         var reqTimeout = 120000
         var url = nodeUrl || message.url;
-        var requestPayload = this._get(config.payload, message);
+        var requestPayload = this._get(config.body, message);
 
         if (isTemplatedUrl) {
             url = mustache.render(nodeUrl, messsage);
