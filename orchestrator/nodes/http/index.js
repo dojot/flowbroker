@@ -11,8 +11,9 @@ var mustache = require("mustache");
 var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
-class DataHandler {
+class DataHandler extends dojot.DataHandlerBase {
     constructor() {
+        super();
     }
 
     /**
@@ -84,6 +85,7 @@ class DataHandler {
         var ret = config.ret || "txt";
         var reqTimeout = 120000
         var url = nodeUrl || message.url;
+        var requestPayload = this._get(config.body, message);
 
         if (isTemplatedUrl) {
             url = mustache.render(nodeUrl, messsage);
@@ -136,14 +138,14 @@ class DataHandler {
             }
 
             var payload = null;
-            if (typeof message.payload !== "undefined" && (method == "POST" || method == "PUT" || method == "PATCH")) {
+            if (typeof requestPayload !== "undefined" && (method == "POST" || method == "PUT" || method == "PATCH")) {
 
-                if (typeof message.payload === "string" || Buffer.isBuffer(message.payload)) {
-                    payload = message.payload;
-                } else if (typeof message.payload == "number") {
-                    payload = message.payload + "";
+                if (typeof requestPayload === "string" || Buffer.isBuffer(requestPayload)) {
+                    payload = requestPayload;
+                } else if (typeof requestPayload == "number") {
+                    payload = requestPayload + "";
                 } else {
-                    payload = JSON.stringify(message.payload);
+                    payload = JSON.stringify(requestPayload);
                     if (opts.headers['content-type'] == null) {
                         opts.headers[ctSet] = "application/json";
                     }
@@ -177,6 +179,7 @@ class DataHandler {
                 message.statusCode = res.statusCode;
                 message.headers = res.headers;
                 message.responseUrl = res.responseUrl;
+                // Should the answer be cleared or appended?
                 message.payload = [];
 
                 // msg.url = url;   // revert when warning above finally removed
