@@ -6,7 +6,6 @@ var express = require('express');
 var bodyParser = require('body-parser');
 
 var authChecker = require('./auth');
-var FlowManagerBuilder = require('./flowManager').FlowManagerBuilder;
 var FlowError = require('./flowManager').FlowError;
 
 var NodeAPI = require('./node-red/src/index');
