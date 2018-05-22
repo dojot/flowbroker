@@ -80,29 +80,34 @@ class DataHandler extends dojot.DataHandlerBase {
     handleMessage(config, message, callback) {
 
         var nodeUrl = config.url;
-        var isTemplatedUrl = (nodeUrl || "").indexOf("{{") != -1;
+        var isTemplatedUrl = (nodeUrl || "").indexOf("{{") !== -1;
         var nodeMethod = config.method || "GET";
         var ret = config.ret || "txt";
-        var reqTimeout = 120000
+        var reqTimeout = 120000;
         var url = nodeUrl || message.url;
         var requestPayload = this._get(config.body, message);
 
+
+        // Pre-process URL.
+
+        // First, resolve URL if it uses a mustache string.
         if (isTemplatedUrl) {
-            url = mustache.render(nodeUrl, messsage);
+            url = mustache.render(nodeUrl, message);
         }
 
         if (!url) {
-            callback("httpin.errors.no-url", [])
+            callback("httpin.errors.no-url", []);
             return;
         }
 
-        // url must start http:// or https:// so assume http:// if not set
+        // Then, check whether it is correctly set - starts with http:// or https://
         if (url.indexOf("://") !== -1 && url.indexOf("http") !== 0) {
-            callback("httpin.errors.invalid-transport", [])
+            callback("httpin.errors.invalid-transport", []);
             return;
         }
 
-        if (!(url.indexOf("http://") === 0)) {
+        // If no transport protocol was set, then assume http.
+        if ((url.indexOf("http://") !== 0) && (url.indexOf("https://") !== 0)) {
             url = "http://" + url;
         }
 
@@ -113,6 +118,8 @@ class DataHandler extends dojot.DataHandlerBase {
         }
 
         try {
+
+            // Fill opts variable. It will be used to send the request.
             var opts = urllib.parse(url);
             opts.method = method;
             opts.headers = {};
@@ -120,25 +127,23 @@ class DataHandler extends dojot.DataHandlerBase {
             var clSet = "Content-Length";
 
             if (message.headers) {
-                if (message.headers) {
-                    for (var v in message.headers) {
-                        if (message.headers.hasOwnProperty(v)) {
-                            var name = v.toLowerCase();
-                            if (name !== "content-type" && name !== "content-length") {
-                                // only normalise the known headers used later in this
-                                // function. Otherwise leave them alone.
-                                name = v;
-                            }
-                            else if (name === 'content-type') { ctSet = v; }
-                            else { clSet = v; }
-                            opts.headers[name] = message.headers[v];
+                for (var v in message.headers) {
+                    if (message.headers.hasOwnProperty(v)) {
+                        var name = v.toLowerCase();
+                        if (name !== "content-type" && name !== "content-length") {
+                            // only normalise the known headers used later in this
+                            // function. Otherwise leave them alone.
+                            name = v;
                         }
+                        else if (name === 'content-type') { ctSet = v; }
+                        else { clSet = v; }
+                        opts.headers[name] = message.headers[v];
                     }
                 }
             }
-
+ 
             var payload = null;
-            if (typeof requestPayload !== "undefined" && (method == "POST" || method == "PUT" || method == "PATCH")) {
+            if (typeof requestPayload !== "undefined" && (method === "POST" || method === "PUT" || method === "PATCH")) {
 
                 if (typeof requestPayload === "string" || Buffer.isBuffer(requestPayload)) {
                     payload = requestPayload;
