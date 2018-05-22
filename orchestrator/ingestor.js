@@ -5,7 +5,7 @@ var kafka = require('./kafka');
 var amqp = require('./amqp');
 var config = require('./config');
 
-class InitializationError extends Error {}
+// class InitializationError extends Error {}
 
 module.exports = class DeviceIngestor {
   /**
@@ -116,6 +116,7 @@ module.exports = class DeviceIngestor {
 
     consumer.on('error', (error) => {
       console.error('[ingestor:kafka] Consumer for tenant "%s" is errored.', tenant);
+      console.error('[ingestor:kafka] Error is: %s', error);
     });
   }
 
