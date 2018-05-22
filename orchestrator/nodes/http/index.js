@@ -100,16 +100,17 @@ class DataHandler extends dojot.DataHandlerBase {
             return;
         }
 
+        // If no transport protocol was set, then assume http.
+        if (!/^.*:\/\//.test(url)) {
+            url = "http://" + url;
+        }
+
         // Then, check whether it is correctly set - starts with http:// or https://
-        if (url.indexOf("://") !== -1 && url.indexOf("http") !== 0) {
+        if (!/^(http|https):\/\//.test(url)) {
             callback("httpin.errors.invalid-transport", []);
             return;
         }
 
-        // If no transport protocol was set, then assume http.
-        if ((url.indexOf("http://") !== 0) && (url.indexOf("https://") !== 0)) {
-            url = "http://" + url;
-        }
 
         var method = nodeMethod.toUpperCase() || "GET";
 
