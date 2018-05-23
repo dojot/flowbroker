@@ -1,8 +1,8 @@
 "use strict";
 
-let os = require('os');
+// let os = require('os');
 let fs = require('fs');
-let util = require('util');
+// let util = require('util');
 let path = require('path');
 var dojot = require('@dojot/flow-node');
 
@@ -31,7 +31,7 @@ class DataHandler extends dojot.DataHandlerBase {
       'name': 'change',
       'module': 'dojot',
       'version': '1.0.0',
-    }
+    };
   }
 
   /**
@@ -44,7 +44,7 @@ class DataHandler extends dojot.DataHandlerBase {
     if (fs.existsSync(filepath)) {
       return require(filepath);
     } else {
-      return null
+      return null;
     }
   }
 

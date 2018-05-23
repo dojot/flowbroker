@@ -1,17 +1,19 @@
+'use strict';
+
 var kafka = require("kafka-node");
 var axios = require("axios");
-var uuid = require("uuid/v4");
+// var uuid = require("uuid/v4");
 var config = require('./config');
 
-function getRandom() {
-  return Math.floor(Math.random() * 10000);
-}
+// function getRandom() {
+//   return Math.floor(Math.random() * 10000);
+// }
 
 function getToken(tenant) {
   const payload = { 'service': tenant, 'username': 'flowbroker' };
-  return (new Buffer('jwt schema').toString('base64')) + '.'
-          + (new Buffer(JSON.stringify(payload)).toString('base64')) + '.'
-          + (new Buffer('dummy signature').toString('base64'));
+  return (new Buffer('jwt schema').toString('base64')) + '.' +
+    (new Buffer(JSON.stringify(payload)).toString('base64')) + '.' +
+    (new Buffer('dummy signature').toString('base64'));
 }
 
 class TopicManager {
@@ -37,8 +39,8 @@ class TopicManager {
         resolve(response.data.topic);
       }).catch((error) => {
         reject(error);
-      })
-    })
+      });
+    });
   }
 }
 var tm = new TopicManager();
@@ -56,7 +58,7 @@ class Consumer {
     this.global = global || false;
     this.brokerManager = brokerManager || config.dataBroker.url;
     this.callbacks = [];
-    this.topic;
+    this.topic = "";
 
     tm.getTopic(this.subject, this.tenant, this.brokerManager, this.global).then((topic) => {
       this.topic = topic;
@@ -64,12 +66,12 @@ class Consumer {
     }).catch((error) => {
       console.error("[kafka] Failed to acquire topic to subscribe from (device events)\n", error);
       process.exit(1);
-    })
+    });
   }
 
   initConsumer() {
     this.consumer = new kafka.ConsumerGroup(config.kafka, this.topic);
-    console.log('[kafka] Created consumer (%s)[%s : %s]', config.kafka.groupId, this.subject, this.topic)
+    console.log('[kafka] Created consumer (%s)[%s : %s]', config.kafka.groupId, this.subject, this.topic);
 
     let cb = this.callbacks.pop();
     while (cb) {
@@ -95,7 +97,7 @@ class Consumer {
 }
 
 class Producer {
-  constructor(brokerManager, broker) {
+  constructor(brokerManager) {
     this.topics = {};
 
     this.brokerManager = brokerManager || config.dataBroker.url;
@@ -116,7 +118,7 @@ class Producer {
       }
     });
 
-    let scheduled = null;
+    // let scheduled = null;
     this.producer.on("error", (e) => {
       this.producer.close();
       console.error("[kafka] Producer error: ", e.message);
@@ -131,7 +133,7 @@ class Producer {
    * @param  {[type]} eventData Event to be sent
    */
   sendEvent(tenant, subject, eventData) {
-    if (this.isReady == false) {
+    if (this.isReady === false) {
       console.error('[kafka] Producer is not ready yet');
       return;
     }
@@ -142,14 +144,14 @@ class Producer {
         "messages": [JSON.stringify(eventData)]
       };
 
-      this.producer.send([message], (err, result) => {
+      this.producer.send([message], (err) => {
         if (err) {
           console.error("[kafka] Failed to publish data", err);
         }
       });
     }).catch((error) => {
-      console.error("[iota] Failed to ascertain topic for event", error)
-    })
+      console.error("[iota] Failed to ascertain topic for event", error);
+    });
   }
 }
 

@@ -38,7 +38,7 @@ class IdleManager {
   }
 }
 
-var idle = undefined;
+var flows = FlowManagerBuilder.get("admin");
 
 let parser = new ArgumentParser({
   description: "Flow manager and executor for dojot"
@@ -65,8 +65,8 @@ parser.addArgument(['-v', '--verbose'], {action: 'storeTrue'});
 var args = parser.parseArgs();
 
 if (args.flow) {
-  const rawFlow = JSON.parse(fs.readFileSync(args.flow))
-  const parsed = flows.set(rawFlow);
+  var rawFlow = JSON.parse(fs.readFileSync(args.flow));
+  flows.set(rawFlow);
 }
 
 if (args.kill_idle) {
@@ -75,14 +75,14 @@ if (args.kill_idle) {
     process.exit(1);
   }
 
-  idle = new IdleManager(args.kill_idle);
+  new IdleManager(args.kill_idle);
 }
 
 let hasMessages = false;
 if (args.message && args.device) {
   let message = null;
   try {
-    message = JSON.parse(args.message)
+    message = JSON.parse(args.message);
   } catch (e) {
     if (e instanceof SyntaxError) {
       fail(new Error("Given message is not in valid JSON format:" + e));
@@ -110,13 +110,19 @@ if (args.message && args.device) {
   hasMessages = triggeredFlows.length > 0;
   for (let flow of triggeredFlows) {
     for (let node in flow.heads) {
-      producer.sendMessage(JSON.stringify({msg: message, node: node, flow: flow.id}));
+      if (flow.heads.hasOwnProperty(node)) {
+        producer.sendMessage(JSON.stringify({
+          msg: message,
+          node: node,
+          flow: flow.id
+        }));
+      }
     }
   }
 }
 
 if (!args.server && !hasMessages) {
-  console.log('Nothing to do: run with either [-s] or [-f <flow> -m <message> [-d <device> | -t <template>]]')
+  console.log('Nothing to do: run with either [-s] or [-f <flow> -m <message> [-d <device> | -t <template>]]');
   process.exit(0);
 }
 
@@ -126,7 +132,7 @@ for (let i = 0; i < args.workers; i++) {
     console.log(`[executor] Worker ready.`);
   }).catch((error) => {
     fail(error);
-  })
+  });
 }
 
 if (args.server) {

@@ -1,6 +1,6 @@
 "use strict";
 
-var util = require('util');
+// var util = require('util');
 var amqp = require('./amqp');
 var config = require('./config');
 var nodes = require('./nodeManager').Manager;
@@ -21,7 +21,7 @@ module.exports = class Executor {
         resolve();
       }).catch((error) => {
         reject(error);
-      })
+      });
     });
   }
 
@@ -37,7 +37,7 @@ module.exports = class Executor {
     const at = event.flow.nodeMap[event.hop];
     // sanity check on received hop
     if (!at.hasOwnProperty('type')) {
-      console.error(`[executor] Node execution failed. ${error}. Aborting flow ${event.flow.id}.`);
+      console.error(`[executor] Node execution failed. Missing node type. Aborting flow ${event.flow.id}.`);
       // TODO notify alarmManager
       return ack();
     }
@@ -69,8 +69,8 @@ module.exports = class Executor {
         return ack();
       }, event.metadata.tenant);
     } else {
-      console.error(`[executor] Unknown node ${at.type} detected. Igoring.`)
+      console.error(`[executor] Unknown node ${at.type} detected. Igoring.`);
       return ack();
     }
   }
-}
+};

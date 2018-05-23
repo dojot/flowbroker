@@ -35,4 +35,4 @@ module.exports = {
         subject: process.env.TENANCY_SUBJECT || "dojot.tenancy",
         manager: process.env.TENANCY_MANAGER || "http://auth:5000"
     }
-}
+};

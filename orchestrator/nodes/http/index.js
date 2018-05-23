@@ -35,7 +35,7 @@ class DataHandler extends dojot.DataHandlerBase {
             'name': 'http',
             'module': 'dojot',
             'version': '1.0.0',
-        }
+        };
     }
 
     /**
@@ -49,7 +49,7 @@ class DataHandler extends dojot.DataHandlerBase {
         if (fs.existsSync(filepath)) {
             return require(filepath);
         } else {
-            return null
+            return null;
         }
 
     }
@@ -59,7 +59,7 @@ class DataHandler extends dojot.DataHandlerBase {
      * @param {object} config  Configuration data for the node
      * @return {[boolean, object]} Boolean variable stating if the configuration is valid or not and error message
      */
-    checkConfig(config) {
+    checkConfig() {
 
         return [true, null];
     }
@@ -148,16 +148,16 @@ class DataHandler extends dojot.DataHandlerBase {
 
                 if (typeof requestPayload === "string" || Buffer.isBuffer(requestPayload)) {
                     payload = requestPayload;
-                } else if (typeof requestPayload == "number") {
+                } else if (typeof requestPayload === "number") {
                     payload = requestPayload + "";
                 } else {
                     payload = JSON.stringify(requestPayload);
-                    if (opts.headers['content-type'] == null) {
+                    if (opts.headers['content-type'] === null) {
                         opts.headers[ctSet] = "application/json";
                     }
                 }
 
-                if (opts.headers['content-length'] == null) {
+                if (opts.headers['content-length'] === null) {
                     if (Buffer.isBuffer(payload)) {
                         opts.headers[clSet] = payload.length;
                     } else {
@@ -219,7 +219,7 @@ class DataHandler extends dojot.DataHandlerBase {
                                 }
                             }
                         }
-                        callback(undefined, [message])
+                        callback(undefined, [message]);
                     }
                 });
             });
@@ -232,7 +232,7 @@ class DataHandler extends dojot.DataHandlerBase {
             });
 
             req.on('error', function (err) {
-                callback(err)
+                callback(err);
             });
 
             if (payload) {

@@ -33,7 +33,7 @@ class UnknownFlowError extends FlowError {
     return {
       'message': this.message,
       'flow': this.flowid
-    }
+    };
   }
 }
 
@@ -89,7 +89,7 @@ class FlowManager {
         throw new InvalidFlowError();
       }
 
-      if ((node.type == 'tab') || (node.wires == undefined)) {
+      if ((node.type === 'tab') || (node.wires === undefined)) {
         // ignore tab node (used to identify flow by node-red front-end)
         continue;
       }
@@ -136,8 +136,9 @@ class FlowManager {
   get(flowid) {
     return new Promise((resolve, reject) => {
       this.collection.findOne({id: flowid}).then((flow) => {
-        if (!flow)
+        if (!flow) {
           reject(new UnknownFlowError(flowid));
+        }
 
         resolve(flow);
       }).catch((error) => {
@@ -150,18 +151,19 @@ class FlowManager {
 
   create(label, enabled, flow) {
     return new Promise((resolve, reject) => {
-      if (!label)
+      if (!label) {
         return reject(new InvalidFlowError("Label field is required"));
+      }
 
       let enabledVal;
       if ((enabled === undefined) || (enabled === null)) {
         enabledVal = true;
       } else if (enabled instanceof String) {
         enabledVal = (enabled.lower() in ['true', '1']);
-      } else if ((enabled instanceof Boolean) || (typeof enabled == 'boolean')) {
+      } else if ((enabled instanceof Boolean) || (typeof enabled === 'boolean')) {
         enabledVal = enabled;
       } else {
-        console.log('invalid', enabled, enabled instanceof Boolean, typeof enabled)
+        console.log('invalid', enabled, enabled instanceof Boolean, typeof enabled);
         return reject(new InvalidFlowError("Invalid 'enabled' field: ", enabled));
       }
 
@@ -200,7 +202,9 @@ class FlowManager {
           let parsed = this.parse(flow);
           delete parsed.nodes; // mongo doesn't like dots on keys
           for (let k in parsed) {
-            newFlow[k] = parsed[k];
+            if (parsed.hasOwnProperty(k)) {
+              newFlow[k] = parsed[k];
+            }
           }
         }
         if (label) { newFlow.label = label; }
@@ -223,7 +227,7 @@ class FlowManager {
   remove(flowid) {
     return new Promise((resolve, reject) => {
       this.collection.findOneAndDelete({id: flowid}).then((flow) => {
-        if (flow.value == null) {
+        if (flow.value === null) {
           reject(new UnknownFlowError(flowid));
         } else if (flow.ok === 1) {
           resolve(flow.value);

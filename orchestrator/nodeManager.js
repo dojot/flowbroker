@@ -25,9 +25,9 @@ function makeId(length) {
   var text = "";
   var possible = "abcdef0123456789";
 
-  for (var i = 0; i < length; i++)
+  for (var i = 0; i < length; i++) {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
-
+  }
   return text;
 }
 
@@ -38,7 +38,7 @@ class RemoteNode extends dojot.DataHandlerBase {
       userid: id,
       image: image,
       enabled: false
-    }
+    };
 
     // TODO: socket path should be configurable
     this.client = docker.Client({ socket: '/var/run/docker.sock' });
@@ -61,8 +61,8 @@ class RemoteNode extends dojot.DataHandlerBase {
       }).catch((error) => {
         console.error("failed to acquire target network", error);
         return reject(error);
-      })
-    })
+      });
+    });
   }
 
   create() {
@@ -99,18 +99,18 @@ class RemoteNode extends dojot.DataHandlerBase {
               }).catch((error) => {
                 this.remove();
                 return reject(error);
-              })
-            })
+              });
+            });
           }).catch((error) => {
             this.remove();
             return reject(new Error(error.body.message));
-          })
+          });
         }).catch((error) => {
           return reject(error);
-        })
+        });
       }).catch((error) => {
         return reject(error);
-      })
+      });
     });
   }
 
@@ -120,8 +120,8 @@ class RemoteNode extends dojot.DataHandlerBase {
         return resolve();
       }).catch((error) => {
         return reject(error);
-      })
-    })
+      });
+    });
   }
 
   update() {
@@ -163,11 +163,11 @@ class RemoteNode extends dojot.DataHandlerBase {
    * @param  {[string]} locale Locale string, such as "en-US"
    * @return {[object]}        Locale settings used by the module
    */
-  getLocaleData(locale) {
+  getLocaleData() {
     return this.locale;
   }
 
-  handleMessage(config, message, callback, tenant) {
+  handleMessage(config, message, callback) {
     // invoke remote
     let command = {
       command: 'message',
@@ -186,7 +186,7 @@ class RemoteNode extends dojot.DataHandlerBase {
       return callback(new Error("Invalid response received from node"));
     }).catch((error) => {
       callback(error);
-    })
+    });
   }
 }
 
@@ -199,7 +199,7 @@ class NodeManager {
       "http": new http(),
       "switch": new select(),
       "template": new template(),
-      "device in": new device_in,
+      "device in": new device_in(),
       "device out": new device_out(new Publisher()),
       "device template in": new device_tpl(),
       "actuate": new actuate(new Publisher('dojot.device-manager.device'))
@@ -209,11 +209,13 @@ class NodeManager {
   asJson() {
     let result = [];
     for (let node in this.nodes) {
-      let data = this.nodes[node].getMetadata();
-      data.enabled = true;
-      data.local = true;
-      data.types = [data.name];
-      result.push(data);
+      if (this.nodes.hasOwnProperty(node)) {
+        let data = this.nodes[node].getMetadata();
+        data.enabled = true;
+        data.local = true;
+        data.types = [data.name];
+        result.push(data);
+      }
     }
     return result;
   }
@@ -221,8 +223,10 @@ class NodeManager {
   asHtml() {
     let result = "";
     for (let node in this.nodes) {
-      let data = fs.readFileSync(this.nodes[node].getNodeRepresentationPath());
-      result = result + '\n' + data;
+      if (this.nodes.hasOwnProperty(node)) {
+        let data = fs.readFileSync(this.nodes[node].getNodeRepresentationPath());
+        result = result + '\n' + data;
+      }
     }
     return result;
   }
@@ -242,7 +246,7 @@ class NodeManager {
           resolve();
         }).catch((error) => {
           reject(error);
-        })
+        });
       }).catch((error) => {
         reject(error);
       });
@@ -251,22 +255,32 @@ class NodeManager {
 
   delRemote(image, id) {
     return new Promise((resolve, reject) => {
+
+      // This is a wrapper function to properly remove the attribute and to
+      // call resolve() inside a loop.
+      let processRemoveOk = (n) => {
+          return () => {
+          delete this.nodes[n];
+          return resolve();
+        };
+      };
+
+      let processRemoveError = (error) => {
+        return reject(error);
+      };
+
       for (let n in this.nodes) {
         if (this.nodes[n].hasOwnProperty('info')) {
-          if (this.nodes[n].info.userid == id) {
-            this.nodes[n].remove().then(() => {
-              delete this.nodes[n];
-              return resolve();
-            }).catch((error) => {
-              return reject(error);
-            })
+          if (this.nodes[n].info.userid === id) {
+            this.nodes[n].remove().then(processRemoveOk(n))
+              .catch(processRemoveError);
             return;
           }
         }
       }
 
       reject(new Error("No such node found"));
-    })
+    });
   }
 }
 

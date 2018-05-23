@@ -22,8 +22,10 @@ class AMQPBase {
         }
 
         this.connection = connection;
-        for (let callback in this.callbacks['connection']) {
-          callback(this.connection);
+        for (let callback in this.callbacks.connection) {
+          if (this.callbacks.connection.hasOwnProperty(callback)) {
+            callback(this.connection);
+          }
         }
 
         this.connection.createChannel((error, channel) => {
@@ -32,15 +34,15 @@ class AMQPBase {
           }
 
           this.channel = channel;
-          let list = this.callbacks['channel'];
+          let list = this.callbacks.channel;
           for (let i = 0; i < list.length; i++) {
             list[i](channel);
           }
 
           return resolve();
-        })
-      })
-    })
+        });
+      });
+    });
   }
 
   on(event, callback) {
@@ -66,7 +68,7 @@ class AMQPProducer extends AMQPBase {
 
     this.on('channel', (channel) => {
       channel.assertQueue(this.queue, { durable: true });
-      console.log('[amqp] producer ready ... ')
+      console.log('[amqp] producer ready ... ');
 
       let event = this.backtrack.pop();
       while (event) {
@@ -98,7 +100,7 @@ class AMQPConsumer extends AMQPBase {
     super(target);
     this.queue = queue;
     this.on('channel', (channel) => {
-      console.log('[amqp] consumer ready ... ')
+      console.log('[amqp] consumer ready ... ');
       channel.assertQueue(this.queue, { durable: true });
       channel.consume(this.queue, (amqpCtx) => {
         onMessage(amqpCtx.content.toString(), () => {
@@ -113,4 +115,4 @@ class AMQPConsumer extends AMQPBase {
 module.exports = {
   AMQPConsumer: AMQPConsumer,
   AMQPProducer: AMQPProducer
-}
+};
