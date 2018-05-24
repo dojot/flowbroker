@@ -2,7 +2,8 @@
 
 let fs = require('fs');
 let path = require('path');
-var dojot = require('@dojot/flow-node');
+var logger = require("../../logger").logger;
+// var dojot = require('@dojot/flow-node');
 
 var geolib = require('geolib');
 
@@ -30,7 +31,7 @@ class DataHandler {
       'name': 'geofence',
       'module': 'dojot',
       'version': '1.0.0',
-    }
+    };
   }
 
   /**
@@ -44,7 +45,7 @@ class DataHandler {
     if (fs.existsSync(filepath)) {
       return require(filepath);
     } else {
-      return null
+      return null;
     }
 
   }
@@ -54,7 +55,7 @@ class DataHandler {
    * @param {object} config  Configuration data for the node
    * @return {[boolean, object]} Boolean variable stating if the configuration is valid or not and error message
    */
-  checkConfig(config) {
+  checkConfig() {
 
     return [true, null];
   }
@@ -74,19 +75,24 @@ class DataHandler {
    * @return {[undefined]}
    */
   handleMessage(config, message, callback) {
-
-    let loc = undefined;
+    logger.debug("Executing geo node...");
+    let loc;
     for (let attr in message.payload) {
-      try {
-        let parsed = (message.payload[attr]).match(/([+-]?\d+(.\d+)?)[ ]*,[ ]*([+-]?\d+(.\d+)?)/);
-        if (parsed) {
-          loc = {
-            latitude: parsed[1],
-            longitude: parsed[3]
+      if (message.payload.hasOwnProperty(attr)) {
+        try {
+          let parsed = (message.payload[attr]).match(/([+-]?\d+(.\d+)?)[ ]*,[ ]*([+-]?\d+(.\d+)?)/);
+          if (parsed) {
+            loc = {
+              latitude: parsed[1],
+              longitude: parsed[3]
+            };
+            break;
           }
-          break;
+        } catch (error) {
+          // message.payload[attr] might not be a string, so this would cause
+          // an exception to be thrown. But that's fine.
         }
-      } catch (error) {}
+      }
     }
 
     if (loc) {
@@ -99,16 +105,25 @@ class DataHandler {
           message.location.isat = message.location.isat || [];
           message.location.isat.push(config.name);
         }
+        logger.debug("... geo node was successfully executed.");
+        logger.debug("Its test had a hit.");
         return callback(undefined, [message]);
       }
 
       if (!inout && (config.filter === "outside")) {
+        logger.debug("... geo node was successfully executed.");
+        logger.debug("Its test had a hit.");
         return callback(undefined, [message]);
       }
 
+
+      logger.debug("... geo node was successfully executed.");
+      logger.debug("Its test didn't have a hit.");
       return callback(undefined, []);
     }
-
+    
+    logger.debug("... geo node was not successfully executed.");
+    logger.error("Message has no geographic position attached.");
     callback(new Error("Message has no geographic position attached"));
   }
 }

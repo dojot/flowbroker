@@ -2,6 +2,8 @@
 
 let fs = require('fs');
 let path = require('path');
+var logger = require("../../logger").logger;
+var util = require('util');
 var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
@@ -9,19 +11,19 @@ class DataHandler extends dojot.DataHandlerBase {
   constructor() {
     super();
     this.operators = {
-      'eq': function (a, b) { return a == b; },
-      'neq': function (a, b) { return a != b; },
+      'eq': function (a, b) { return a === b; },
+      'neq': function (a, b) { return a !== b; },
       'lt': function (a, b) { return a < b; },
       'lte': function (a, b) { return a <= b; },
       'gt': function (a, b) { return a > b; },
       'gte': function (a, b) { return a >= b; },
       'btwn': function (a, b, c) { return a >= b && a <= c; },
-      'cont': function (a, b) { return (a + "").indexOf(b) != -1; },
+      'cont': function (a, b) { return (a + "").indexOf(b) !== -1; },
       'regex': function (a, b, c, d) { return (a + "").match(new RegExp(b, d ? 'i' : '')); },
       'true': function (a) { return a === true; },
       'false': function (a) { return a === false; },
-      'null': function (a) { return (typeof a == "undefined" || a === null); },
-      'nnull': function (a) { return (typeof a != "undefined" && a !== null); },
+      'null': function (a) { return (typeof a === "undefined" || a === null); },
+      'nnull': function (a) { return (typeof a !== "undefined" && a !== null); },
       'else': function (a) { return a === true; }
     };
   }
@@ -45,7 +47,7 @@ class DataHandler extends dojot.DataHandlerBase {
       'name': 'switch',
       'module': 'dojot',
       'version': '1.0.0',
-    }
+    };
   }
 
   /**
@@ -59,7 +61,7 @@ class DataHandler extends dojot.DataHandlerBase {
     if (fs.existsSync(filepath)) {
       return require(filepath);
     } else {
-      return null
+      return null;
     }
 
   }
@@ -153,7 +155,7 @@ class DataHandler extends dojot.DataHandlerBase {
   /**
  *
  * @param {string} value Path to field to be read
- * @param {string} type Expected type (js) to be returned
+ * @param {string} type Expected type (js) to be rconfigturned
  * @returns {*} Evalueted value
  */
   _getTyped(value, type) {
@@ -169,9 +171,9 @@ class DataHandler extends dojot.DataHandlerBase {
 
 
   /**
-   * Statelessly handle a single given message, using given node configuration parameters
+   * Statelessly handle a single given message, usconfigng given node configuration parameters
    *
-   * This method should perform all computation required by the node, transforming its inputs
+   * This method should perform all computation reconfiguired by the node, transforming its inputs
    * into outputs. When such processing is done, the node should issue a call to the provided
    * callback, notifying either failure to process the message with given config, or the set
    * of transformed messages to be sent to the flow's next hop.
@@ -182,10 +184,19 @@ class DataHandler extends dojot.DataHandlerBase {
    * @return {[undefined]}
    */
   handleMessage(config, message, callback) {
+    logger.debug("Executing switch node...");
     let onward = [];
     try {
-      let value = this._get(config.property, message);
-      let prop = this._getTyped(value, config.propertyType);
+      let value;
+      let prop;
+      try {
+        value = this._get(config.property, message);
+      } catch (error) {
+        logger.debug("... switch node was not successfully executed.");
+        logger.error(`Error while retrieving variables from switch node: ${error}`);
+        return callback(error);
+      }
+      prop = this._getTyped(value, config.propertyType);
 
       // if (config.propertyType === 'jsonata') {
       //     prop = config.property.evaluate({msg: message});
@@ -206,9 +217,9 @@ class DataHandler extends dojot.DataHandlerBase {
           try {
             v1 = rule.v.evaluate({ msg: message });
           } catch (err) {
-
-            callback(err, undefined);
-            return;
+            logger.debug("... switch node was not successfully executed.");
+            logger.error(`Error while evaluating value in jsonata first test: ${err}`);
+            return callback(err, undefined);
           }
         } else {
           v1 = this._getTyped(rule.v, rule.vt);
@@ -223,15 +234,16 @@ class DataHandler extends dojot.DataHandlerBase {
           try {
             v2 = rule.v2.evaluate({ msg: message });
           } catch (err) {
-            callback(err, undefined);
-            return;
+            logger.debug("... switch node was not successfully executed.");
+            logger.error(`Error while evaluating value in jsonata second test: ${err}`);
+            return callback(err, undefined);
           }
         } else if (typeof v2 !== 'undefined') {
           v2 = this._getTyped(rule.v2, rule.v2t);
           // v2 = util.evaluateNodeProperty(rule.v2, rule.v2t, config, message);
         }
 
-        if (rule.t == "else") {
+        if (rule.t === "else") {
           test = elseflag;
           elseflag = true;
         }
@@ -239,15 +251,18 @@ class DataHandler extends dojot.DataHandlerBase {
         if (this.operators[rule.t](test, v1, v2, rule.case)) {
           onward.push(message);
           elseflag = false;
-          if (config.checkall == "false") { break; }
+          if (config.checkall === "false") { break; }
         } else {
           onward.push(null);
         }
       }
       config.previousValue = prop;
-      callback(undefined, onward)
+      logger.debug("... switch node was successfully executed.");
+      return callback(undefined, onward);
 
     } catch (err) {
+      logger.debug("... switch node was not successfully executed.");
+      logger.error(`Error while executing switch node: ${err}`);
       return callback(err);
     }
   }

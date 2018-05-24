@@ -4,6 +4,7 @@ let fs = require('fs');
 let path = require('path');
 var dojot = require('@dojot/flow-node');
 let mustache = require('mustache');
+var logger = require("../../logger").logger;
 
 // Sample node implementation
 class DataHandler extends dojot.DataHandlerBase {
@@ -30,7 +31,7 @@ class DataHandler extends dojot.DataHandlerBase {
       'name': 'template',
       'module': 'dojot',
       'version': '1.0.0',
-    }
+    };
   }
 
   /**
@@ -44,7 +45,7 @@ class DataHandler extends dojot.DataHandlerBase {
     if (fs.existsSync(filepath)) {
       return require(filepath);
     } else {
-      return null
+      return null;
     }
 
   }
@@ -54,7 +55,7 @@ class DataHandler extends dojot.DataHandlerBase {
    * @param {object} config  Configuration data for the node
    * @return {[boolean, object]} Boolean variable stating if the configuration is valid or not and error message
    */
-  checkConfig(config) {
+  checkConfig() {
 
     return [true, null];
   }
@@ -73,11 +74,15 @@ class DataHandler extends dojot.DataHandlerBase {
    * @return {[undefined]}
    */
   handleMessage(config, message, callback) {
+    logger.debug("Executing template node...");
     try {
       let result = mustache.render(config.template, message);
       this._set(config.field, result, message);
+      logger.debug("... template node was successfully executed.");
       return callback(undefined, [message]);
     } catch (error) {
+      logger.debug("... template node was not successfully executed.");
+      logger.error(`Error while executing template node: ${error}`);
       return callback(error);
     }
   }

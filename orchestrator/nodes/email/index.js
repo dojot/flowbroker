@@ -3,6 +3,8 @@
 let fs = require('fs');
 let path = require('path');
 let nodemailer = require("nodemailer");
+var logger = require("../../logger").logger;
+var util = require('util');
 var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
@@ -30,7 +32,7 @@ class DataHandler extends dojot.DataHandlerBase {
             'name': 'email',
             'module': 'dojot',
             'version': '1.0.0',
-        }
+        };
     }
 
     /**
@@ -44,7 +46,7 @@ class DataHandler extends dojot.DataHandlerBase {
         if (fs.existsSync(filepath)) {
             return require(filepath);
         } else {
-            return null
+            return null;
         }
 
     }
@@ -61,14 +63,14 @@ class DataHandler extends dojot.DataHandlerBase {
             return [false, {
                 error_type: "email.errors.nouserid",
                 error_data: {}
-            }]
+            }];
         }
 
         if (!config.credentials.hasOwnProperty("password")) {
             return [false, {
                 error_type: "email.errors.nopassword",
                 error_data: {}
-            }]
+            }];
         }
 
         return [true, null];
@@ -89,12 +91,56 @@ class DataHandler extends dojot.DataHandlerBase {
      * @return {[undefined]}
      */
     handleMessage(config, message, callback) {
+        logger.debug("Executing e-mail node...");
 
+        // Sanity checks
+        if (!message.hasOwnProperty("payload")) {
+            logger.debug("... e-mail node was not successfully executed.");
+            logger.error("E-mail node has no payload.");
+            return callback(new Error("email.errors.nopayload"));
+        }
+        // End of sanity checks
+
+        logger.debug("Preparing e-mail options...");
+        let sendopts = {
+            subject: config.subject,
+            to: (config.to || message.to),
+            from: ((message.from) ? message.from : (config.from || "dojot@noemail.com"))
+        };
+
+        if (message.hasOwnProperty("envelope")) {
+            sendopts.envelope = message.envelope;
+        }
+
+        let body;
+        try {
+            body = this._get(config.body, message);
+        } catch (e) {
+            logger.debug("... e-mail node was not successfully executed.");
+            logger.error(`Error while retrieving e-mail body: ${e}`);
+            return callback(new Error("email.errors.nobody"));
+        }
+
+        // plaintext body
+        sendopts.text = ensureString(body);
+        // html body
+        if (/<[a-z][\s\S]*>/i.test(sendopts.text)) {
+            sendopts.html = sendopts.text;
+        }
+
+        logger.debug("... e-mail options were successfully build");
+        logger.debug("E-mail will be sent as: ");
+        logger.debug(`${util.inspect(sendopts, {depth: null})}`);
+
+
+        logger.debug("Preparing SMTP transport handler...");
         let smtpOptions = {
             host: config.server,
             port: config.port,
             secure: config.secure
         };
+
+        logger.debug(`Using e-mail config: ${util.inspect(smtpOptions, {depth: null})}`);
 
         if (config.hasOwnProperty('credentials')) {
             if (config.credentials.userid && config.credentials.password) {
@@ -102,86 +148,36 @@ class DataHandler extends dojot.DataHandlerBase {
                     user: config.credentials.userid,
                     pass: config.credentials.password
                 };
+                logger.debug(`Sending e-mail on behalf of ${smtpOptions.auth.user}`);
+            } else {
+                logger.debug("No user and no password were set.");
             }
         }
 
         let smtpTransport = nodemailer.createTransport(smtpOptions);
-        if (message.hasOwnProperty("payload")) {
-            if (smtpTransport) {
 
-                let sendopts = {
-                    subject: config.subject,
-                    to: (config.to || message.to),
-                    from: ((message.from) ? message.from : (config.from || "dojot@noemail.com"))
-                };
-
-                if (message.hasOwnProperty("envelope")) {
-                    sendopts.envelope = message.envelope;
-                }
-
-                let body = this._get(config.body, message);
-                if (Buffer.isBuffer(body)) {
-                    // if it's a buffer in the payload then auto create an attachment instead
-                    if (!message.filename) {
-                        let fe = "bin";
-                        if ((body[0] === 0xFF) && (body[1] === 0xD8)) {
-                            fe = "jpg";
-                        }
-                        if ((body[0] === 0x47) && (body[1] === 0x49)) {
-                            fe = "gif";
-                        } //46
-                        if ((body[0] === 0x42) && (body[1] === 0x4D)) {
-                            fe = "bmp";
-                        }
-                        if ((body[0] === 0x89) && (body[1] === 0x50)) {
-                            fe = "png";
-                        } //4E
-                        message.filename = "attachment." + fe;
-                    }
-
-                    let fname = message.filename.replace(/^.*[\\\/]/, '') || "file.bin";
-
-                    sendopts.attachments = [{ content: body, filename: fname }];
-
-                    if (message.hasOwnProperty("headers") && message.headers.hasOwnProperty("content-type")) {
-                        sendopts.attachments[0].contentType = message.headers["content-type"];
-                    }
-
-                    // Create some body text..
-                    // TODO: Use locales for this
-                    sendopts.text = "email.default-message";
-
-                } else {
-
-                    let payload = ensureString(body);
-
-                    // plaintext body
-                    sendopts.text = payload;
-                    // html body
-                    if (/<[a-z][\s\S]*>/i.test(payload)) {
-                        sendopts.html = payload;
-                    }
-                    // add attachments
-                    if (message.attachments) {
-                        sendopts.attachments = message.attachments;
-                    }
-                }
-
-                smtpTransport.sendMail(sendopts, function (error, info) {
-                    if (error) {
-                        callback(error);
-                    } else {
-                        callback(undefined, []);
-                    }
-                });
-            }
-            else {
-                callback(new Error("email.errors.nosmtptransport"));
-            }
+        if (!smtpTransport) {
+            logger.debug("... e-mail transport was not successfully created.");
+            logger.debug("... e-mail node was not successfully executed.");
+            logger.error("Could not create SMTP transport.");
+            return callback(new Error("email.errors.nosmtptransport"));
+        } else {
+            logger.debug("... e-mail transport was successfully created.");
         }
-        else {
-            callback(new Error("email.errors.nopayload"));
-        }
+
+        logger.debug("Sending e-mail...");
+        smtpTransport.sendMail(sendopts, function (error) {
+            if (error) {
+                logger.debug("... e-mail node was not successfully executed.");
+                logger.error(`Error while executing e-mail node: ${error}`);
+                return callback(error);
+            } else {
+                logger.debug("... e-mail was successfully sent.");
+                logger.debug("... e-mail node was successfully executed.");
+                return callback(undefined, []);
+            }
+        });
+
 
         function ensureString(o) {
             if (Buffer.isBuffer(o)) {

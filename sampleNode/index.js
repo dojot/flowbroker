@@ -1,7 +1,7 @@
 "use strict";
 
-var os = require('os');
-var path = require('path')
+// var os = require('os');
+var path = require('path');
 var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
@@ -33,7 +33,7 @@ class DataHandler extends dojot.DataHandlerBase {
       // This is usually the name of the node (as in npm) module
       'module': 'kelvin',
       'version': '0.0.0',
-    }
+    };
   }
 
   /**
@@ -41,7 +41,7 @@ class DataHandler extends dojot.DataHandlerBase {
    * @param  {[string]} locale Locale string, such as "en-US"
    * @return {[object]}        Locale settings used by the module
    */
-  getLocaleData(locale) {
+  getLocaleData() {
     // This is just a sample copied over from node-red-contrib-rpe, as a sample
     // A real implementation might want to parse the contents off a file
     return {};
@@ -64,7 +64,7 @@ class DataHandler extends dojot.DataHandlerBase {
     try {
       let celcius = this._get(config.in, message);
       this._set(config.out, celcius + 273.15, message);
-      callback(undefined, [message])
+      callback(undefined, [message]);
     } catch (error) {
       callback(error);
     }

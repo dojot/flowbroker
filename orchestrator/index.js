@@ -1,6 +1,8 @@
 'use strict';
 
 var fs = require("fs");
+var logger = require('./logger').logger;
+
 var ArgumentParser = require('argparse').ArgumentParser;
 
 var config = require('./config');
@@ -12,8 +14,7 @@ var Ingestor = require('./ingestor');
 var Executor = require('./executor');
 
 function fail(error) {
-  console.error('[flowbroker] Initialization failed.', error.message);
-  // console.log(error);
+  logger.error('[flowbroker] Initialization failed.', error.message);
   process.exit(1);
 }
 
@@ -30,7 +31,7 @@ class IdleManager {
       this.watchdog = setInterval(() => {
         const now = new Date();
         if ((now - this.last) > this.interval) {
-          console.log('Process has been idle for too long. Exiting.');
+          logger.info('Process has been idle for too long. Exiting.');
           process.exit(0);
         }
       });
@@ -38,7 +39,11 @@ class IdleManager {
   }
 }
 
-var flows = FlowManagerBuilder.get("admin");
+
+logger.error("Building new FlowManager...");
+
+logger.info("... FlowManager was built.");
+logger.warn("And this is a warning");
 
 let parser = new ArgumentParser({
   description: "Flow manager and executor for dojot"
@@ -65,13 +70,14 @@ parser.addArgument(['-v', '--verbose'], {action: 'storeTrue'});
 var args = parser.parseArgs();
 
 if (args.flow) {
+  var flows = FlowManagerBuilder.get("admin");
   var rawFlow = JSON.parse(fs.readFileSync(args.flow));
   flows.set(rawFlow);
 }
 
 if (args.kill_idle) {
   if (args.server) {
-    console.log("--kill-idle cannot be used together with --server");
+    logger.info("--kill-idle cannot be used together with --server");
     process.exit(1);
   }
 
@@ -103,7 +109,7 @@ if (args.message && args.device) {
     triggeredFlows = flows.getByTemplate(args.template);
   } else {
     // invalid command
-    console.log("Message can only be used with either [-m | --message] or [-t | --template]");
+    logger.info("Message can only be used with either [-m | --message] or [-t | --template]");
     process.exit(1);
   }
 
@@ -122,14 +128,14 @@ if (args.message && args.device) {
 }
 
 if (!args.server && !hasMessages) {
-  console.log('Nothing to do: run with either [-s] or [-f <flow> -m <message> [-d <device> | -t <template>]]');
+  logger.info('Nothing to do: run with either [-s] or [-f <flow> -m <message> [-d <device> | -t <template>]]');
   process.exit(0);
 }
 
 for (let i = 0; i < args.workers; i++) {
   let exec = new Executor();
   exec.init().then(() => {
-    console.log(`[executor] Worker ready.`);
+    logger.info(`[executor] Worker ready.`);
   }).catch((error) => {
     fail(error);
   });

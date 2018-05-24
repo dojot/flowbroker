@@ -1,3 +1,4 @@
+"use strict";
 /**
  * Copyright JS Foundation and other contributors, http://js.foundation
  *
@@ -32,7 +33,7 @@ function normalisePropertyExpression(str) {
         let c = str[i];
         if (!inString) {
             if (c === "'" || c === '"') {
-                if (i != start) {
+                if (i !== start) {
                     throw new Error("Invalid property expression: unexpected " + c + " at position " + i);
                 }
                 inString = true;
@@ -42,7 +43,7 @@ function normalisePropertyExpression(str) {
                 if (i === 0) {
                     throw new Error("Invalid property expression: unexpected . at position 0");
                 }
-                if (start != i) {
+                if (start !== i) {
                     v = str.substring(start, i);
                     if (/^\d+$/.test(v)) {
                         parts.push(parseInt(v));
@@ -62,7 +63,7 @@ function normalisePropertyExpression(str) {
                 if (i === 0) {
                     throw new Error("Invalid property expression: unexpected " + c + " at position " + i);
                 }
-                if (start != i) {
+                if (start !== i) {
                     parts.push(str.substring(start, i));
                 }
                 if (i === length - 1) {
@@ -78,7 +79,7 @@ function normalisePropertyExpression(str) {
                 if (!inBox) {
                     throw new Error("Invalid property expression: unexpected " + c + " at position " + i);
                 }
-                if (start != i) {
+                if (start !== i) {
                     v = str.substring(start, i);
                     if (/^\d+$/.test(v)) {
                         parts.push(parseInt(v));
@@ -168,7 +169,7 @@ function setMessageProperty(msg, prop, value, createMissing) {
                     }
                     obj = obj[key];
                 } else {
-                    return null
+                    return null;
                 }
             } else {
                 obj = obj[key];
@@ -180,7 +181,7 @@ function setMessageProperty(msg, prop, value, createMissing) {
         if (typeof key === 'number' && Array.isArray(obj)) {
             obj.splice(key, 1);
         } else {
-            delete obj[key]
+            delete obj[key];
         }
     } else {
         obj[key] = value;

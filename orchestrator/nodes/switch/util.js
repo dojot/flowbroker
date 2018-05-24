@@ -1,3 +1,4 @@
+"use strict";
 /**
  * Copyright JS Foundation and other contributors, http://js.foundation
  *
@@ -34,7 +35,7 @@ function normalisePropertyExpression(str) {
         var c = str[i];
         if (!inString) {
             if (c === "'" || c === '"') {
-                if (i != start) {
+                if (i !== start) {
                     throw new Error("Invalid property expression: unexpected " + c + " at position " + i);
                 }
                 inString = true;
@@ -44,7 +45,7 @@ function normalisePropertyExpression(str) {
                 if (i === 0) {
                     throw new Error("Invalid property expression: unexpected . at position 0");
                 }
-                if (start != i) {
+                if (start !== i) {
                     v = str.substring(start, i);
                     if (/^\d+$/.test(v)) {
                         parts.push(parseInt(v));
@@ -64,7 +65,7 @@ function normalisePropertyExpression(str) {
                 if (i === 0) {
                     throw new Error("Invalid property expression: unexpected " + c + " at position " + i);
                 }
-                if (start != i) {
+                if (start !== i) {
                     parts.push(str.substring(start, i));
                 }
                 if (i === length - 1) {
@@ -80,7 +81,7 @@ function normalisePropertyExpression(str) {
                 if (!inBox) {
                     throw new Error("Invalid property expression: unexpected " + c + " at position " + i);
                 }
-                if (start != i) {
+                if (start !== i) {
                     v = str.substring(start, i);
                     if (/^\d+$/.test(v)) {
                         parts.push(parseInt(v));
@@ -126,7 +127,6 @@ function getMessageProperty(msg, expr) {
         expr = expr.substring(4);
     }
     var msgPropParts = normalisePropertyExpression(expr);
-    var m;
     msgPropParts.reduce(function (obj, key) {
         result = (typeof obj[key] !== "undefined" ? obj[key] : undefined);
         return result;

@@ -1,5 +1,7 @@
 var path = require('path');
 var dojot = require('@dojot/flow-node');
+var logger = require("../../logger").logger;
+var util = require("util");
 
 class DataHandler extends dojot.DataHandlerBase {
   constructor(publisher) {
@@ -26,7 +28,7 @@ class DataHandler extends dojot.DataHandlerBase {
       'name': 'actuate',
       'module': 'dojot',
       'version': '1.0.0',
-    }
+    };
   }
 
   /**
@@ -34,12 +36,15 @@ class DataHandler extends dojot.DataHandlerBase {
    * @param  {[string]} locale Locale string, such as "en-US"
    * @return {[object]}        Locale settings used by the module
    */
-  getLocaleData(locale) {
-    return {}
+  getLocaleData() {
+    return {};
   }
 
   handleMessage(config, message, callback, tenant) {
-    if ((config.attrs == undefined) || (config.attrs.length == 0)) {
+    logger.debug("Executing actuate node...");
+    if ((config.attrs === undefined) || (config.attrs.length === 0)) {
+      logger.debug("... actuate node was not successfully executed.");
+      logger.error("Message has no fields to be changed.");
       return callback(new Error('Invalid data source: field is mandatory'));
     }
 
@@ -57,12 +62,17 @@ class DataHandler extends dojot.DataHandlerBase {
           attrs: this._get(config.attrs, message),
           id: config._device_id
         }
-      }
-      // console.log('will publish (device out)', util.inspect(output, { depth: null }));
+      };
+      logger.debug(`Sending message... `);
+      logger.debug(`Message is: ${util.inspect(output, { depth: null })}`);
       this.publisher.publish(output);
-      callback();
+      logger.debug(`... message was sent.`);
+      logger.debug("... actuate node was successfully executed.");
+      return callback();
     } catch (error) {
-      callback(error);
+      logger.debug("... actuate node was not successfully executed.");
+      logger.error(`Error while executing actuate node: ${error}`);
+      return callback(error);
     }
   }
 }

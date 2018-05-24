@@ -2,7 +2,7 @@
 
 let fs = require('fs');
 let path = require('path');
-var dojot = require('@dojot/flow-node');
+// var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
 class DataHandler {
@@ -28,7 +28,7 @@ class DataHandler {
             'name': 'edge',
             'module': 'dojot',
             'version': '1.0.0',
-        }
+        };
     }
 
     /**
@@ -42,7 +42,7 @@ class DataHandler {
         if (fs.existsSync(filepath)) {
             return require(filepath);
         } else {
-            return null
+            return null;
         }
 
     }
@@ -52,7 +52,7 @@ class DataHandler {
      * @param {object} config  Configuration data for the node
      * @return {[boolean, object]} Boolean variable stating if the configuration is valid or not and error message
      */
-    checkConfig(config) {
+    checkConfig() {
 
         return [true, null];
     }
@@ -74,7 +74,7 @@ class DataHandler {
     handleMessage(config, message, callback) {
         setTimeout(() => {
 
-            callback(undefined, [message])
+            callback(undefined, [message]);
 
         }, 10);
 
