@@ -3,7 +3,6 @@
 let fs = require('fs');
 let path = require('path');
 var logger = require("../../logger").logger;
-var util = require('util');
 var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
