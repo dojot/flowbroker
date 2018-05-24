@@ -1,7 +1,7 @@
 'use strict';
 
 const Joi        = require('joi');
-const Promise    = require('bluebird');
+const BlueBirdPromise = require('bluebird');
 const modem      = require('./modem');
 const schemas    = require('./schemas/system');
 const configs    = require('./endpoints/configs');
@@ -191,7 +191,7 @@ class DockerClient {
 
   _validate(value, schema) {
 
-    return new Promise((resolve, reject) => {
+    return new BlueBirdPromise((resolve, reject) => {
 
       Joi.validate(value, schema, {}, (err, value) => {
         if(!err) {

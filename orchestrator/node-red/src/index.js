@@ -31,7 +31,7 @@ module.exports = class NodeAPI {
       } else {
 
         // maps to node-provided locale file
-        const nodeid = resource.match(/[^\/]+$/)[0];
+        const nodeid = resource.match(/[^/]+$/)[0];
         let handler = nodes.getNode(nodeid);
         if (handler) {
           return res.status(200).send(handler.getLocaleData('en-US'));
@@ -51,7 +51,7 @@ module.exports = class NodeAPI {
     });
 
     app.get('/nodes', (req, res) => {
-      const expectedResponseType = req.accepts(['application/json', 'text/html']);
+      // const expectedResponseType = req.accepts(['application/json', 'text/html']);
       return res.format({
         html: () => {
           res.status(200).send(nodes.asHtml());

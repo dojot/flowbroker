@@ -179,13 +179,16 @@ module.exports = class DeviceIngestor {
       }
     });
 
+
+    let okCallback = (flowlist) => {
+      for (let flow of flowlist) {
+        this.handleFlow(event, flow, true);
+      }
+    };
+    
     if (event.metadata.hasOwnProperty('templates')) {
       for (let template of event.metadata.templates) {
-        flowManager.getByTemplate(template).then((flowlist) => {
-          for (let flow of flowlist) {
-            this.handleFlow(event, flow, true);
-          }
-        });
+        flowManager.getByTemplate(template).then(okCallback);
       }
     }
   }

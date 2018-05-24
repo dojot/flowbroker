@@ -22,4 +22,4 @@ module.exports.remove = {
 
 module.exports.connect = {
   options: Joi.object()
-}
+};

@@ -132,13 +132,17 @@ if (!args.server && !hasMessages) {
   process.exit(0);
 }
 
+let loggerCallback = () => {
+  logger.info(`[executor] Worker ready.`);
+};
+
+let errorCallback = (error) => {
+  fail(error);
+};
+
 for (let i = 0; i < args.workers; i++) {
   let exec = new Executor();
-  exec.init().then(() => {
-    logger.info(`[executor] Worker ready.`);
-  }).catch((error) => {
-    fail(error);
-  });
+  exec.init().then(loggerCallback).catch(errorCallback);
 }
 
 if (args.server) {
