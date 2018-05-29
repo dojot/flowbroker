@@ -1,7 +1,7 @@
 'use strict';
 
 const EventEmitter = require('events');
-const Promise      = require('bluebird');
+const BlueBirdPromise      = require('bluebird');
 const request      = require('request');
 const _            = require('lodash');
 
@@ -46,7 +46,7 @@ class Modem {
 
   stream(method, path, params, headers) {
 
-    return new Promise((resolve) => {
+    return new BlueBirdPromise((resolve) => {
       const dest = new EventEmitter();
       const src = this._request(method, path, params, headers);
 

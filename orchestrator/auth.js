@@ -2,8 +2,6 @@
 /* jshint esversion: 6 */
 "use strict";
 
-var express = require('express');
-
 function b64decode(data) {
   if (typeof Buffer.from === "function") {
     return Buffer.from(data, 'base64').toString();
@@ -31,7 +29,7 @@ function authParse(req, res, next) {
   }
 
   const token = rawToken.split('.');
-  if (token.length != 3) {
+  if (token.length !== 3) {
     console.error("Got invalid request: token is malformed", rawToken);
     return res.status(401).send(new InvalidTokenError());
   }

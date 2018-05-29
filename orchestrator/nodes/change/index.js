@@ -1,8 +1,7 @@
 "use strict";
 
-let os = require('os');
 let fs = require('fs');
-let util = require('util');
+var logger = require("../../logger").logger;
 let path = require('path');
 var dojot = require('@dojot/flow-node');
 
@@ -31,7 +30,7 @@ class DataHandler extends dojot.DataHandlerBase {
       'name': 'change',
       'module': 'dojot',
       'version': '1.0.0',
-    }
+    };
   }
 
   /**
@@ -44,7 +43,7 @@ class DataHandler extends dojot.DataHandlerBase {
     if (fs.existsSync(filepath)) {
       return require(filepath);
     } else {
-      return null
+      return null;
     }
   }
 
@@ -145,6 +144,7 @@ class DataHandler extends dojot.DataHandlerBase {
    * @return {[undefined]}
    */
   handleMessage(config, message, callback) {
+    logger.debug("Executing change node...");
     try {
       for (let rule of config.rules) {
         if (rule.t === "set") {
@@ -161,16 +161,28 @@ class DataHandler extends dojot.DataHandlerBase {
               this._set(rule.p, v2, message);
               break;
             case "msg":
-              v2 = this._get(rule.to, message);
-              this._set(rule.p, v2, message);
+              try {
+                // This function might throw an exception
+                v2 = this._get(rule.to, message);
+                this._set(rule.p, v2, message);
+              } catch (e) {
+                logger.error("... change node was not successfully executed.");
+                logger.error(`Error while executing change node: ${e}`);
+                return callback(e);
+              }
               break;
             default:
+              logger.debug("... change node was not successfully executed.");
+              logger.error(`Change node has invalid value type: ${rule.tot}`);
               return callback(new Error('Invalid value type: ' + rule.tot));
           }
         }
       }
+      logger.debug("... change node was successfully executed.");
       return callback(undefined, [message]);
     } catch (error) {
+      logger.debug("... change node was not successfully executed.");
+      logger.error(`Error while executing change node: ${error}`);
       return callback(error);
     }
   }

@@ -26,7 +26,7 @@ class DataHandler extends dojot.DataHandlerBase {
             'name': 'device in',
             'module': 'dojot',
             'version': '1.0.0',
-        }
+        };
     }
 
     /**
@@ -34,11 +34,11 @@ class DataHandler extends dojot.DataHandlerBase {
      * @param  {[string]} locale Locale string, such as "en-US"
      * @return {[object]}        Locale settings used by the module
      */
-    getLocaleData(locale) {
+    getLocaleData() {
         return {};
     }
 
-    handleMessage(config, message, callback, tenant) {
+    handleMessage() {
         // This is actually not needed, and handled by "ingestor.js"
     }
 }

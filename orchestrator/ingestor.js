@@ -31,8 +31,8 @@ module.exports = class DeviceIngestor {
         resolve(response.data.tenants);
       }).catch((error) => {
         reject(error);
-      })
-    })
+      });
+    });
   }
 
   /**
@@ -69,13 +69,13 @@ module.exports = class DeviceIngestor {
           this.bootstrapTenant(t);
         }
         console.log('[ingestor] Tenancy context management initialized');
-        this.consumers['tenancy'] = true;
+        this.consumers.tenancy = true;
       }).catch((error) => {
-        const message = "Failed to acquire existing tenancy contexts"
+        const message = "Failed to acquire existing tenancy contexts";
         console.error("[ingestor] %s - %s", message, error.message);
         setTimeout(() => {this.initTenants();}, 2000);
         // throw new InitializationError(message);
-      })
+      });
     }
   }
 
@@ -96,7 +96,7 @@ module.exports = class DeviceIngestor {
 
     consumer.on('connect', () => {
       console.log(`[ingestor] Device consumer ready for tenant: ${tenant}`);
-    })
+    });
 
     consumer.on('message', (data) => {
       let parsed = null;
@@ -122,9 +122,9 @@ module.exports = class DeviceIngestor {
 
   _publish(node, message, flow, metadata) {
     if (node.hasOwnProperty('status') &&
-        (node.status.toLowerCase() != 'true') &&
+        (node.status.toLowerCase() !== 'true') &&
         metadata.hasOwnProperty('reason') &&
-        (metadata.reason == 'statusUpdate')) {
+        (metadata.reason === 'statusUpdate')) {
       console.log(`[ingestor] ignoring device status update ${metadata.deviceid} ${flow.id}`);
       return;
     }
@@ -155,8 +155,8 @@ module.exports = class DeviceIngestor {
       const node = flow.nodeMap[head];
       // handle input by device
       if (node.hasOwnProperty('_device_id') &&
-          (node._device_id == event.metadata.deviceid) &&
-          (isTemplate == false)) {
+          (node._device_id === event.metadata.deviceid) &&
+          (isTemplate === false)) {
         this._publish(node, {payload: event.attrs}, flow, event.metadata);
       }
 
@@ -164,7 +164,7 @@ module.exports = class DeviceIngestor {
       if (node.hasOwnProperty('device_template_id') &&
           event.metadata.hasOwnProperty('templates') &&
           (event.metadata.templates.includes(node.device_template_id)) &&
-          (isTemplate == true)) {
+          (isTemplate === true)) {
         this._publish(node, {payload: event.attrs}, flow, event.metadata);
       }
     }
@@ -177,16 +177,19 @@ module.exports = class DeviceIngestor {
       for (let flow of flowlist) {
         this.handleFlow(event, flow, false);
       }
-    })
+    });
 
+
+    let okCallback = (flowlist) => {
+      for (let flow of flowlist) {
+        this.handleFlow(event, flow, true);
+      }
+    };
+    
     if (event.metadata.hasOwnProperty('templates')) {
       for (let template of event.metadata.templates) {
-        flowManager.getByTemplate(template).then((flowlist) => {
-          for (let flow of flowlist) {
-            this.handleFlow(event, flow, true);
-          }
-        })
+        flowManager.getByTemplate(template).then(okCallback);
       }
     }
   }
-}
+};

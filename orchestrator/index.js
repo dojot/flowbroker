@@ -1,6 +1,8 @@
 'use strict';
 
 var fs = require("fs");
+var logger = require('./logger').logger;
+
 var ArgumentParser = require('argparse').ArgumentParser;
 
 var config = require('./config');
@@ -12,8 +14,7 @@ var Ingestor = require('./ingestor');
 var Executor = require('./executor');
 
 function fail(error) {
-  console.error('[flowbroker] Initialization failed.', error.message);
-  // console.log(error);
+  logger.error('[flowbroker] Initialization failed.', error.message);
   process.exit(1);
 }
 
@@ -30,15 +31,13 @@ class IdleManager {
       this.watchdog = setInterval(() => {
         const now = new Date();
         if ((now - this.last) > this.interval) {
-          console.log('Process has been idle for too long. Exiting.');
+          logger.info('Process has been idle for too long. Exiting.');
           process.exit(0);
         }
       });
     }
   }
 }
-
-var idle = undefined;
 
 let parser = new ArgumentParser({
   description: "Flow manager and executor for dojot"
@@ -65,24 +64,25 @@ parser.addArgument(['-v', '--verbose'], {action: 'storeTrue'});
 var args = parser.parseArgs();
 
 if (args.flow) {
-  const rawFlow = JSON.parse(fs.readFileSync(args.flow))
-  const parsed = flows.set(rawFlow);
+  var flows = FlowManagerBuilder.get("admin");
+  var rawFlow = JSON.parse(fs.readFileSync(args.flow));
+  flows.set(rawFlow);
 }
 
 if (args.kill_idle) {
   if (args.server) {
-    console.log("--kill-idle cannot be used together with --server");
+    logger.info("--kill-idle cannot be used together with --server");
     process.exit(1);
   }
 
-  idle = new IdleManager(args.kill_idle);
+  new IdleManager(args.kill_idle);
 }
 
 let hasMessages = false;
 if (args.message && args.device) {
   let message = null;
   try {
-    message = JSON.parse(args.message)
+    message = JSON.parse(args.message);
   } catch (e) {
     if (e instanceof SyntaxError) {
       fail(new Error("Given message is not in valid JSON format:" + e));
@@ -103,30 +103,40 @@ if (args.message && args.device) {
     triggeredFlows = flows.getByTemplate(args.template);
   } else {
     // invalid command
-    console.log("Message can only be used with either [-m | --message] or [-t | --template]");
+    logger.info("Message can only be used with either [-m | --message] or [-t | --template]");
     process.exit(1);
   }
 
   hasMessages = triggeredFlows.length > 0;
   for (let flow of triggeredFlows) {
     for (let node in flow.heads) {
-      producer.sendMessage(JSON.stringify({msg: message, node: node, flow: flow.id}));
+      if (flow.heads.hasOwnProperty(node)) {
+        producer.sendMessage(JSON.stringify({
+          msg: message,
+          node: node,
+          flow: flow.id
+        }));
+      }
     }
   }
 }
 
 if (!args.server && !hasMessages) {
-  console.log('Nothing to do: run with either [-s] or [-f <flow> -m <message> [-d <device> | -t <template>]]')
+  logger.info('Nothing to do: run with either [-s] or [-f <flow> -m <message> [-d <device> | -t <template>]]');
   process.exit(0);
 }
 
+let loggerCallback = () => {
+  logger.info(`[executor] Worker ready.`);
+};
+
+let errorCallback = (error) => {
+  fail(error);
+};
+
 for (let i = 0; i < args.workers; i++) {
   let exec = new Executor();
-  exec.init().then(() => {
-    console.log(`[executor] Worker ready.`);
-  }).catch((error) => {
-    fail(error);
-  })
+  exec.init().then(loggerCallback).catch(errorCallback);
 }
 
 if (args.server) {

@@ -16,24 +16,25 @@ class Publisher {
  * @return {[object]}          Updated metadata (if fields were missing)
  */
   checkCompleteMetaFields(deviceid, tenant, metadata) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
 
       if (!metadata.hasOwnProperty('deviceid')) {
-        metadata["deviceid"] = deviceid;
+        metadata.deviceid = deviceid;
       }
 
       if (!metadata.hasOwnProperty('tenant')) {
-        metadata['tenant'] = tenant;
+        metadata.tenant = tenant;
       }
 
       if (!metadata.hasOwnProperty('timestamp')) {
-        metadata['timestamp'] = Date.now();
+        metadata.timestamp = Date.now();
       }
 
       if (!metadata.hasOwnProperty('templates')) {
         metadata.templates = [];
       }
-    })
+      resolve();
+    });
   }
 
   publish(message) {

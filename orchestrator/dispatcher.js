@@ -39,5 +39,5 @@ module.exports = function invokeRemote(node, msg) {
    sock.connect("tcp://" + node + ":5555");
   //  console.log('[dispatcher] will send');
    sock.send(JSON.stringify(msg));
- })
-}
+ });
+};

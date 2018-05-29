@@ -1,12 +1,13 @@
-/* jshint node: true */
-/* jshint esversion: 6 */
 "use strict";
+
 /**
  * Manages flows configured by the application
  */
 
 var mongo = require('mongodb');
 var uuid = require('uuid/v4');
+var util = require('util');
+var logger = require('./logger').logger;
 
 class FlowError extends Error {
   constructor(...params) {
@@ -33,7 +34,7 @@ class UnknownFlowError extends FlowError {
     return {
       'message': this.message,
       'flow': this.flowid
-    }
+    };
   }
 }
 
@@ -45,6 +46,16 @@ class MongoError extends FlowError {
   constructor() {
     super("Database operation failed");
     this.httpStatus = 500;
+  }
+}
+
+class ParsedFlow {
+  constructor(flow) {
+    this.heads = [];
+    this.devices = [];
+    this.templates = [];
+    this.nodes = {}; // nodes dict should be used on cache only: mongo doesn't like dots on keys
+    this.red = flow;
   }
 }
 
@@ -68,48 +79,51 @@ class FlowManager {
 
   }
 
+
+  
   /**
    * Given a flow representation (json, node-red schema), perform initial validation
-   * and parsing
+   * and parsing.
+   * 
+   * This function will ignore any 'tab' and undefined nodes.
    *
    * @param  {[type]} flow [description]
-   * @return {[type]}      [description]
+   * @returns {ParsedFlow} A structure containing the parsed flow
+   * @throws InvalidFlowError If any node has no 'type' attribute.
    */
   parse(flow) {
-    let parsed = {
-      heads: [],
-      devices: [],
-      templates: [],
-      nodes: {}, // nodes dict should be used on cache only: mongo doesn't like dots on keys
-      red: flow
-    };
+    logger.debug("Parsing new flow...");
+    let parsed = new ParsedFlow(flow);
+    logger.debug(`New flow: ${util.inspect(parsed, {depth: null})}`);
 
     for (let node of flow) {
       if (!node.hasOwnProperty('type')) {
+        logger.debug(`Node ${util.inspect(node, {depth: null})} has no 'type' attribute.`);
         throw new InvalidFlowError();
       }
 
-      if ((node.type == 'tab') || (node.wires == undefined)) {
+      if ((node.type === 'tab') || (node.wires === undefined)) {
         // ignore tab node (used to identify flow by node-red front-end)
+        logger.debug(`Ignoring 'tab' node.`);
         continue;
       }
 
       parsed.nodes[node.id] = node;
-      const inputNodes = {
-        "device in": (node) => {
+
+      // Properly add the head nodes.
+      switch (node.type) {
+        case "device in":
+          parsed.heads.push(node.id);
           parsed.devices.push(node._device_id);
-        },
-        "device template in": () => {
+        break;
+        case "device template in":
+          parsed.heads.push(node.id);
           parsed.templates.push(node.device_template_id);
-        }
-      };
-      if (inputNodes.hasOwnProperty(node.type)){
-        // TODO add related device/template id to corresponding list
-        parsed.heads.push(node.id);
-        inputNodes[node.type](node);
+        break;
       }
     }
 
+    logger.debug("... flow was successfully parsed.");
     return parsed;
   }
 
@@ -136,8 +150,9 @@ class FlowManager {
   get(flowid) {
     return new Promise((resolve, reject) => {
       this.collection.findOne({id: flowid}).then((flow) => {
-        if (!flow)
+        if (!flow) {
           reject(new UnknownFlowError(flowid));
+        }
 
         resolve(flow);
       }).catch((error) => {
@@ -150,27 +165,32 @@ class FlowManager {
 
   create(label, enabled, flow) {
     return new Promise((resolve, reject) => {
-      if (!label)
+      logger.debug("Creating new flow...");
+      if (!label) {
+        logger.error("Flow has no label.");
         return reject(new InvalidFlowError("Label field is required"));
+      }
 
+      logger.debug("Checking 'enabled' field...");
       let enabledVal;
       if ((enabled === undefined) || (enabled === null)) {
         enabledVal = true;
       } else if (enabled instanceof String) {
         enabledVal = (enabled.lower() in ['true', '1']);
-      } else if ((enabled instanceof Boolean) || (typeof enabled == 'boolean')) {
+      } else if ((enabled instanceof Boolean) || (typeof enabled === 'boolean')) {
         enabledVal = enabled;
       } else {
-        console.log('invalid', enabled, enabled instanceof Boolean, typeof enabled)
+        logger.error("Invalid 'enabled' field: ", enabled, enabled instanceof Boolean, typeof enabled);
         return reject(new InvalidFlowError("Invalid 'enabled' field: ", enabled));
       }
+      logger.debug("... 'enabled' field was checked.");
 
       let parsed;
       try {
         parsed = this.parse(flow);
         delete parsed.nodes; // mongo doesn't like dots on keys
       } catch (e) {
-        console.log('invalid flow');
+        logger.info("... new flow has errors - it was not created.");
         return reject(new InvalidFlowError());
       }
 
@@ -180,10 +200,12 @@ class FlowManager {
       parsed.created = new Date();
       parsed.updated = parsed.created;
 
-      console.log('inserting flow');
+      logger.debug('Inserting flow into the database...');
       this.collection.insert(parsed).then(() =>{
+        logger.debug("... new flow was successfully inserted into the database.");
         return resolve(parsed);
       }).catch((error) => {
+        logger.debug(`... new flow was not inserted into the database. Error is ${error}`);
         return reject(error);
       });
     });
@@ -200,7 +222,9 @@ class FlowManager {
           let parsed = this.parse(flow);
           delete parsed.nodes; // mongo doesn't like dots on keys
           for (let k in parsed) {
-            newFlow[k] = parsed[k];
+            if (parsed.hasOwnProperty(k)) {
+              newFlow[k] = parsed[k];
+            }
           }
         }
         if (label) { newFlow.label = label; }
@@ -223,7 +247,7 @@ class FlowManager {
   remove(flowid) {
     return new Promise((resolve, reject) => {
       this.collection.findOneAndDelete({id: flowid}).then((flow) => {
-        if (flow.value == null) {
+        if (flow.value === null) {
           reject(new UnknownFlowError(flowid));
         } else if (flow.ok === 1) {
           resolve(flow.value);

@@ -1,4 +1,6 @@
 var path = require('path');
+var util = require('util');
+var logger = require("../../logger").logger;
 var dojot = require('@dojot/flow-node');
 
 class DataHandler extends dojot.DataHandlerBase {
@@ -26,7 +28,7 @@ class DataHandler extends dojot.DataHandlerBase {
       'name': 'device out',
       'module': 'dojot',
       'version': '1.0.0',
-    }
+    };
   }
 
   /**
@@ -34,26 +36,43 @@ class DataHandler extends dojot.DataHandlerBase {
    * @param  {[string]} locale Locale string, such as "en-US"
    * @return {[object]}        Locale settings used by the module
    */
-  getLocaleData(locale) {
-    return {}
+  getLocaleData() {
+    return {};
   }
 
   handleMessage(config, message, callback, tenant) {
-    if ((config.attrs == undefined) || (config.attrs.length == 0)) {
+    logger.debug("Executing device-out node...");
+    if ((config.attrs === undefined) || (config.attrs.length === 0)) {
+      logger.debug("... device-out node was not successfully executed.");
+      logger.error("Node has no output field set.");
       return callback(new Error('Invalid data source: field is mandatory'));
     }
 
     try {
-      let output = { attrs: this._get(config.attrs, message), metadata: {} };
+      let output = { attrs: {}, metadata: {} };
+
+      try {
+        output.attrs = this._get(config.attrs, message);
+      } catch (e) {
+        logger.debug("... device-out node was not successfully executed.");
+        logger.error(`Error while executing device-out node: ${e}`);
+        return callback(e);
+      }
       output.metadata.deviceid = config._device_id;
       output.metadata.templates = config._device_templates;
       output.metadata.timestamp = Date.now();
-      output.metadata.tenant = tenant
-      // console.log('will publish (device out)', util.inspect(output, { depth: null }));
+      output.metadata.tenant = tenant;
+
+      logger.debug("Updating device... ");
+      logger.debug(`Message is: ${util.inspect(output, { depth: null })}`);
       this.publisher.publish(output);
-      callback();
+      logger.debug("... device was updated.");
+      logger.debug("... device-out node was successfully executed.");
+      return callback();
     } catch (error) {
-      callback(error);
+      logger.debug("... device-out node was not successfully executed.");
+      logger.error(`Error while executing device-out node: ${error}`);
+      return callback(error);
     }
   }
 }
