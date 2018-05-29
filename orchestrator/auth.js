@@ -2,8 +2,6 @@
 /* jshint esversion: 6 */
 "use strict";
 
-// var express = require('express');
-
 function b64decode(data) {
   if (typeof Buffer.from === "function") {
     return Buffer.from(data, 'base64').toString();

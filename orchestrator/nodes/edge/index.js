@@ -2,7 +2,6 @@
 
 let fs = require('fs');
 let path = require('path');
-// var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
 class DataHandler {
@@ -82,4 +81,4 @@ class DataHandler {
 }
 
 // var main = new DojotHandler(new DataHandler());
-module.exports = {Handler: DataHandler};
+module.exports = { Handler: DataHandler };

@@ -39,12 +39,6 @@ class IdleManager {
   }
 }
 
-
-logger.error("Building new FlowManager...");
-
-logger.info("... FlowManager was built.");
-logger.warn("And this is a warning");
-
 let parser = new ArgumentParser({
   description: "Flow manager and executor for dojot"
 });
