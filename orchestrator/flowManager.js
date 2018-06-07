@@ -294,5 +294,6 @@ class FlowManagerBuilder {
 
 module.exports = {
   FlowManagerBuilder: FlowManagerBuilder,
-  FlowError: FlowError
+  FlowError: FlowError,
+  InvalidFlowError: InvalidFlowError
 };
