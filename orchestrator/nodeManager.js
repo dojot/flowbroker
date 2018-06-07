@@ -134,7 +134,7 @@ class RemoteNode extends dojot.DataHandlerBase {
       dispatcher(this.target, {command: 'metadata'}).then((meta) => {
         this.metadata = meta.payload;
         dispatcher(this.target, { command: 'html' }).then((html) => {
-          this.html = '/tmp/' + this.remote;
+          this.html = '/tmp/' + this.target;
           fs.writeFileSync(this.html, html.payload);
           dispatcher(this.target, { command: 'locale', locale: 'en-US' }).then((reply) => {
             this.locale = reply.payload;
