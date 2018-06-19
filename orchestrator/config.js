@@ -39,7 +39,8 @@ module.exports = {
     'deploy': {
         engine: process.env.DEPLOY_ENGINE || "kubernetes",
         kubernetes: {
-            url: `https://${process.env.KUBERNETES_SERVICE_HOST}:${process.env.KUBERNETES_PORT_443_TCP_PORT}`
+            url: `https://${process.env.KUBERNETES_SERVICE_HOST}:${process.env.KUBERNETES_PORT_443_TCP_PORT}`,
+            token: process.env.KUBERNETES_TOKEN || ""
         }
     }
 };
