@@ -34,5 +34,12 @@ module.exports = {
     'tenancy': {
         subject: process.env.TENANCY_SUBJECT || "dojot.tenancy",
         manager: process.env.TENANCY_MANAGER || "http://auth:5000"
+    },
+
+    'deploy': {
+        engine: process.env.DEPLOY_ENGINE || "kubernetes",
+        kubernetes: {
+            url: `https://${process.env.KUBERNETES_SERVICE_HOST}:${process.env.KUBERNETES_PORT_443_TCP_PORT}`
+        }
     }
 };
