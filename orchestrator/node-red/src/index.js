@@ -53,11 +53,11 @@ module.exports = class NodeAPI {
         app.get('/nodes', (req, res) => {
             return res.format({
                 html: () => {
-                    res.status(200).send(nodes.asHtml());
+                    res.status(200).send(nodes.asHtml(req.service));
                 },
 
                 json: () => {
-                    res.status(200).send(nodes.asJson());
+                    res.status(200).send(nodes.asJson(req.service));
                 }
             });
         });

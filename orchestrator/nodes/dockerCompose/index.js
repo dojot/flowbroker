@@ -3,10 +3,10 @@
 var fs = require('fs');
 
 // This should be external - but since it's bugged....
-var docker = require('./docker/harbor-master');
+var docker = require('../../docker/harbor-master');
 
 var dojot = require('@dojot/flow-node');
-var dispatcher = require('./dispatcher');
+var dispatcher = require('../../dispatcher');
 
 function makeId(length) {
   var text = "";

@@ -15,12 +15,18 @@ var device_out = require('./nodes/device-out/device-out').Handler;
 var dockerRemote = require('./nodes/dockerCompose/index').Handler;
 var k8sRemote = require('./nodes/kubernetes/index').Handler;
 var Publisher = require('./publisher');
+var logger = require('./logger').logger;
 
 var config = require("./config");
 
 class NodeManager {
   constructor() {
-    this.nodes = {
+    this.nodes = {};
+    this.addTenant("admin");
+  }
+
+  addTenant(tenant) {
+    this.nodes[tenant] = {
       "change": new change(),
       "email": new email(),
       "geofence": new geo(),
@@ -34,11 +40,15 @@ class NodeManager {
     };
   }
 
-  asJson() {
+  asJson(tenant) {
     let result = [];
-    for (let node in this.nodes) {
-      if (this.nodes.hasOwnProperty(node)) {
-        let data = this.nodes[node].getMetadata();
+    if (!(tenant in this.nodes)) {
+      return result;
+    }
+
+    for (let node in this.nodes[tenant]) {
+      if (this.nodes[tenant].hasOwnProperty(node)) {
+        let data = this.nodes[tenant][node].getMetadata();
         data.enabled = true;
         data.local = true;
         data.types = [data.name];
@@ -48,28 +58,37 @@ class NodeManager {
     return result;
   }
 
-  asHtml() {
+  asHtml(tenant) {
+    logger.debug(`Getting HTML for tenant ${tenant}`);
     let result = "";
-    for (let node in this.nodes) {
-      if (this.nodes.hasOwnProperty(node)) {
-        let data = fs.readFileSync(this.nodes[node].getNodeRepresentationPath());
+    if (!(tenant in this.nodes)) {
+      logger.debug("Could not find nodes for this tenant");
+      return "";
+    }
+
+    for (let node in this.nodes[tenant]) {
+      if (this.nodes[tenant].hasOwnProperty(node)) {
+        let data = fs.readFileSync(this.nodes[tenant][node].getNodeRepresentationPath());
         result = result + '\n' + data;
       }
     }
     return result;
   }
 
-  getNode(type) {
-    return this.nodes[type];
+  getNode(type, tenant) {
+    if (!(tenant in this.nodes)) {
+      return null;
+    }
+    return this.nodes[tenant][type];
   }
 
-  addRemote(image, id) {
+  addRemote(image, id, tenant) {
     return new Promise((resolve, reject) => {
       let newNode;
       if (config.deploy.engine === "docker-compose") {
-        newNode = new dockerRemote(image, id);
+        newNode = new dockerRemote(image, tenant + id);
       } else if (config.deploy.engine === "kubernetes") {
-        newNode = new k8sRemote(image, id);
+        newNode = new k8sRemote(image, tenant + id);
       }
       if (newNode === undefined) {
         return;
@@ -79,7 +98,11 @@ class NodeManager {
         newNode.init().then(() => {
           let meta = newNode.getMetadata();
           console.log('[nodes] container meta', JSON.stringify(meta));
-          this.nodes[meta.name] = newNode;
+          if (!(tenant in this.nodes))
+          {
+            this.nodes[tenant] = {};
+          }
+          this.nodes[tenant][meta.name] = newNode;
           resolve();
         }).catch((error) => {
           reject(error);
@@ -90,14 +113,14 @@ class NodeManager {
     });
   }
 
-  delRemote(image, id) {
+  delRemote(image, id, tenant) {
     return new Promise((resolve, reject) => {
 
       // This is a wrapper function to properly remove the attribute and to
       // call resolve() inside a loop.
       let processRemoveOk = (n) => {
           return () => {
-          delete this.nodes[n];
+          delete this.nodes[tenant][n];
           return resolve();
         };
       };
@@ -106,13 +129,15 @@ class NodeManager {
         return reject(error);
       };
 
-      for (let n in this.nodes) {
-        if (this.nodes[n].hasOwnProperty('info')) {
-          if (this.nodes[n].info.userid === id) {
-            this.nodes[n].remove().then(processRemoveOk(n))
-              .catch(processRemoveError);
-            return;
-          }
+      if (!(tenant in this.nodes)) {
+        return reject("Tenant not found");
+      }
+
+      for (let n in this.nodes[tenant]) {
+        if (n === id) {
+          this.nodes[tenant][n].remove().then(processRemoveOk(n))
+            .catch(processRemoveError);
+          return;
         }
       }
 

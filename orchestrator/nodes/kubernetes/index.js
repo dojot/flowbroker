@@ -9,7 +9,7 @@ var logger = require("../../logger").logger;
 var config = require("../../config");
 
 
-const DEPLOY_TEMPLATE = JSON.string({
+const DEPLOY_TEMPLATE = JSON.stringify({
   "apiVersion": "extensions/v1beta1",
   "kind": "Deployment",
   "metadata": {
@@ -76,6 +76,7 @@ class DataHandler extends dojot.DataHandlerBase {
     logger.debug(`Selected engine: ${config.deploy.engine} `);
     if (config.deploy.engine === "kubernetes" && config.deploy.kubernetes) {
       this.host = config.deploy.kubernetes.url;
+      this.token = config.deploy.kubernetes.token;
       if (this.token === "") {
         this.token = fs.readFileSync("/var/run/secrets/kubernetes.io/serviceaccount/token");
       }
