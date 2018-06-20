@@ -12,8 +12,8 @@ var device_in = require('./nodes/device-in/device-in').Handler;
 var device_tpl = require('./nodes/template-in/template-in').Handler;
 var actuate = require('./nodes/actuate/actuate').Handler;
 var device_out = require('./nodes/device-out/device-out').Handler;
-var dockerRemote = require('./nodes/dockerCompose/index').Handler;
-var k8sRemote = require('./nodes/kubernetes/index').Handler;
+var dockerRemote = require('./nodes/dockerComposeRemoteNode/index').Handler;
+var k8sRemote = require('./nodes/kubernetesRemoteNode/index').Handler;
 var Publisher = require('./publisher');
 var logger = require('./logger').logger;
 

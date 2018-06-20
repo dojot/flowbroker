@@ -18,6 +18,7 @@ module.exports = class NodeAPI {
         app.get('/locales/*', (req, res) => {
             // '/locales/'.lenth = 9
             const resource = req.path.slice(9);
+            const service = req.service;
 
             let data;
             if (['editor', 'jsonata', 'infotips', 'node-red'].includes(resource)) {
@@ -32,12 +33,12 @@ module.exports = class NodeAPI {
 
                 // maps to node-provided locale file
                 const nodeid = resource.match(/[^/]+$/)[0];
-                let handler = nodes.getNode(nodeid);
+                let handler = nodes.getNode(nodeid, service);
                 if (handler) {
                     return res.status(200).send(handler.getLocaleData('en-US'));
                 }
 
-                handler = nodes.getNode(nodeid.replace(/-/g, ' '));
+                handler = nodes.getNode(nodeid.replace(/-/g, ' '), service);
                 if (handler) {
                     return res.status(200).send(handler.getLocaleData('en-US'));
                 }

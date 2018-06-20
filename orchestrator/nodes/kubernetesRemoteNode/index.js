@@ -3,10 +3,9 @@
 var fs = require('fs');
 var k8s = require("kubernetes-client");
 var util = require("util");
-var dojot = require('@dojot/flow-node');
-var dispatcher = require('../../dispatcher');
 var logger = require("../../logger").logger;
 var config = require("../../config");
+var RemoteNode = require("../remoteNode/index").Handler;
 
 
 const DEPLOY_TEMPLATE = JSON.stringify({
@@ -61,7 +60,7 @@ const SCALEDOWN_TEMPLATE = JSON.stringify({
   }
 });
 
-class DataHandler extends dojot.DataHandlerBase {
+class DataHandler extends RemoteNode {
 
   /**
    * Constructor
@@ -315,67 +314,6 @@ class DataHandler extends dojot.DataHandlerBase {
 
   update() {
     logger.debug(`Update not yet implemented for kubernetes remote node`);
-  }
-
-
-  init() {
-    // Fetch all meta information from newly created remote impl
-    return new Promise((resolve, reject) => {
-      dispatcher(this.target, {command: 'metadata'}).then((meta) => {
-        this.metadata = meta.payload;
-        dispatcher(this.target, { command: 'html' }).then((html) => {
-          this.html = '/tmp/' + this.target;
-          fs.writeFileSync(this.html, html.payload);
-          dispatcher(this.target, { command: 'locale', locale: 'en-US' }).then((reply) => {
-            this.locale = reply.payload;
-            return resolve();
-          }).catch((error) => { return reject(error); });
-        }).catch((error) => { return reject(error); });
-      }).catch((error) => { return reject(error); });
-    });
-  }
-  getNodeRepresentationPath() {
-    return this.html;
-  }
-
-  /**
-   * Returns node metadata information
-   * This may be used by orchestrator as a liveliness check
-   * @return {object} Metadata object
-   */
-  getMetadata() {
-    return this.metadata;
-  }
-
-  /**
-   * Returns object with locale data (for the given locale)
-   * @param  {[string]} locale Locale string, such as "en-US"
-   * @return {[object]}        Locale settings used by the module
-   */
-  getLocaleData() {
-    return this.locale;
-  }
-
-  handleMessage(config, message, callback) {
-    // invoke remote
-    let command = {
-      command: 'message',
-      message: message,
-      config: config,
-    };
-    dispatcher(this.target, command).then((reply) => {
-      if (reply.error) {
-        return callback(reply.error);
-      }
-
-      if (Array.isArray(reply)){
-        return callback(undefined, reply);
-      }
-
-      return callback(new Error("Invalid response received from node"));
-    }).catch((error) => {
-      callback(error);
-    });
   }
 }
 
