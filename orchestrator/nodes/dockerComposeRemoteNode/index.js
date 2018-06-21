@@ -4,6 +4,8 @@ var RemoteNode = require("../remoteNode/index").Handler;
 
 // This should be external - but since it's bugged....
 var docker = require('../../docker/harbor-master');
+var logger = require("../../logger").logger;
+var config = require('../../config');
 
 function makeId(length) {
   var text = "";
@@ -25,12 +27,22 @@ class DataHandler extends RemoteNode {
       enabled: false
     };
 
-    // TODO: socket path should be configurable
-    this.client = docker.Client({ socket: '/var/run/docker.sock' });
+    this.client = undefined;
+
+    if (config.deploy.engine === "docker" && config.deploy.docker) {
+      this.client = docker.Client({ socket: config.deploy.docker.socketPath });
+    } else {
+      logger.debug('Docker was not selected in config file or its config is empty.');
+      logger.error(`Could not instantiate docker driver (no config). All request will be ignored.`);
+    }
   }
 
   getNetwork() {
     return new Promise((resolve, reject) => {
+      if (this.client === undefined) {
+        reject("Docker drive not fully initialized.");
+        return;
+      }
       if (this.targetNetwork) {
         return resolve(this.targetNetwork);
       }
@@ -52,6 +64,10 @@ class DataHandler extends RemoteNode {
 
   create() {
     return new Promise((resolve, reject) => {
+      if (this.client === undefined) {
+        reject("Docker drive not fully initialized.");
+        return;
+      }
       let model = {
         Image: this.info.image,
         AttachStdin: false,
@@ -102,6 +118,10 @@ class DataHandler extends RemoteNode {
 
   remove() {
     return new Promise((resolve, reject) => {
+      if (this.client === undefined) {
+        reject("Docker drive not fully initialized.");
+        return;
+      }
       this.client.containers().remove(this.info.container, {force: true}).then(() => {
         return resolve();
       }).catch((error) => {

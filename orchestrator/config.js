@@ -41,6 +41,9 @@ module.exports = {
         kubernetes: {
             url: `https://${process.env.KUBERNETES_SERVICE_HOST}:${process.env.KUBERNETES_PORT_443_TCP_PORT}`,
             token: process.env.KUBERNETES_TOKEN || ""
+        },
+        docker: {
+            socketPath: process.env.DOCKER_SOCKET_PATH || "/var/run/docker.sock"
         }
     }
 };

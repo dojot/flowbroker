@@ -22,7 +22,6 @@ var config = require("./config");
 class NodeManager {
   constructor() {
     this.nodes = {};
-    this.addTenant("admin");
   }
 
   addTenant(tenant) {
