@@ -4,6 +4,7 @@ var kafka = require('./kafka');
 
 var amqp = require('./amqp');
 var config = require('./config');
+var node = require('./nodeManager').Manager;
 
 // class InitializationError extends Error {}
 
@@ -85,6 +86,7 @@ module.exports = class DeviceIngestor {
    * @param  {[string]} tenant tenant which ingestion stream is to be initialized
    */
   bootstrapTenant(tenant) {
+    node.addTenant(tenant);
     const consumerid = tenant + ".device";
     if (this.consumers.hasOwnProperty(consumerid)) {
       console.log('[ingestor] Attempted to re-init device consumer for tenant:', tenant);

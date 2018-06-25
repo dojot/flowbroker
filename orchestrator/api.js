@@ -48,7 +48,7 @@ function summarizeFlow(flow) {
 }
 
 app.post('/v1/node', (req, res) => {
-  nodeManager.addRemote(req.body.image, req.body.id).then(() => {
+  nodeManager.addRemote(req.body.image, req.body.id, req.service).then(() => {
     return res.status(200).send({message: 'ok'});
   }).catch((error) => {
     if (error instanceof InvalidFlowError) {
@@ -59,7 +59,7 @@ app.post('/v1/node', (req, res) => {
 });
 
 app.delete('/v1/node/:id', (req, res) => {
-  nodeManager.delRemote(undefined, req.params.id).then(() => {
+  nodeManager.delRemote(undefined, req.params.id, req.service).then(() => {
     return res.status(200).send({message: 'ok'});
   }).catch((error) => {
     return res.status(500).send({message: 'Failed ot remove node.', error: error.message});

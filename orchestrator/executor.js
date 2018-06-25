@@ -41,7 +41,7 @@ module.exports = class Executor {
         }
 
         console.log(`[executor] will handle node ${at.type}`);
-        let handler = nodes.getNode(at.type);
+        let handler = nodes.getNode(at.type, event.metadata.tenant);
         if (handler) {
             handler.handleMessage(at, event.message, (error, result) => {
                 if (error) {
