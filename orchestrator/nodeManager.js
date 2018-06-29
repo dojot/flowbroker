@@ -84,7 +84,7 @@ class NodeManager {
   addRemote(image, id, tenant) {
     return new Promise((resolve, reject) => {
       let newNode;
-      if (config.deploy.engine === "docker-compose") {
+      if (config.deploy.engine === "docker") {
         newNode = new dockerRemote(image, tenant + id);
       } else if (config.deploy.engine === "kubernetes") {
         newNode = new k8sRemote(image, tenant + id);
