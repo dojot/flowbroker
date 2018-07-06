@@ -5,11 +5,12 @@ var config = require('./config');
 var nodes = require('./nodeManager').Manager;
 
 module.exports = class Executor {
-    constructor() {
+    constructor(contextHandler) {
         console.log('[executor] initializing ...');
         this.hop = this.hop.bind(this);
         this.producer = new amqp.AMQPProducer(config.amqp.queue);
         this.consumer = new amqp.AMQPConsumer(config.amqp.queue, this.hop);
+        this.contextHandler = contextHandler;
     }
 
     init() {
@@ -70,7 +71,7 @@ module.exports = class Executor {
                     }
                 }
                 return ack();
-            }, metadata);
+            }, metadata, this.contextHandler);
         } else {
             console.error(`[executor] Unknown node ${at.type} detected. Igoring.`);
             return ack();

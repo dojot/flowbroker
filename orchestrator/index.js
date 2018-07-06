@@ -12,6 +12,8 @@ var MongoManager = require('./mongodb');
 var APIHandler = require('./api');
 var Ingestor = require('./ingestor');
 var Executor = require('./executor');
+var ContextManagerClient = require('@dojot/flow-node').ContextManagerClient;
+var ContextHandler = require('@dojot/flow-node').ContextHandler;
 
 function fail(error) {
   logger.error('[flowbroker] Initialization failed.', error.message);
@@ -134,8 +136,17 @@ let errorCallback = (error) => {
   fail(error);
 };
 
+let contextManagerClient = new ContextManagerClient(
+  config.contextManager.contextManagerAddress,
+  config.contextManager.contextManagerPort,
+  config.contextManager.responseTimeout);
+
+contextManagerClient.init();
+
+let contextHandler = new ContextHandler(contextManagerClient);
+
 for (let i = 0; i < args.workers; i++) {
-  let exec = new Executor();
+  let exec = new Executor(contextHandler);
   exec.init().then(loggerCallback).catch(errorCallback);
 }
 

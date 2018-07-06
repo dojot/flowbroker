@@ -9,7 +9,7 @@
   "author": "Matheus Magalhaes",
   "license": "GPL-3.0",
   "dependencies": {
-    "@dojot/flow-node": "^1.0.2",
+    "@dojot/flow-node": "^1.1.0",
     "amqplib": "^0.5.2",
     "argparse": "^1.0.9",
     "axios": "^0.18.0",

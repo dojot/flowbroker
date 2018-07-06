@@ -45,5 +45,11 @@ module.exports = {
         docker: {
             socketPath: process.env.DOCKER_SOCKET_PATH || "/var/run/docker.sock"
         }
+    },
+
+    'contextManager': {
+        contextManagerAddress: process.env.CONTEXT_MANAGER_ADDRESS || "flowbroker-context-manager",
+        contextManagerPort: process.env.CONTEXT_MANAGER_PORT || 5556,
+        responseTimeout: process.env.CONTEXT_MANAGER_RESPONSE_TIMEOUT || 10000
     }
 };
