@@ -1,6 +1,6 @@
 {
   "name": "@dojot/flow-node",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Basic interface to dojot's flowbroker",
   "main": "CommandHandler.js",
   "scripts": {
@@ -9,6 +9,7 @@
   "author": "Matheus Magalhaes",
   "license": "GPL-3.0",
   "dependencies": {
-    "zeromq": "^4.6.0"
+    "zeromq": "^4.6.0",
+    "uuid": "^3.2.1"
   }
 }
