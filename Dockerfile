@@ -1,13 +1,14 @@
 FROM node:8-alpine
 
-RUN mkdir -p /opt/flowbroker
 WORKDIR /opt/flowbroker/orchestrator
-CMD ["node", "index.js", "-w", "1", "-s"]
 
 RUN apk --no-cache add gcc g++ musl-dev make python
 
-COPY . /opt/flowbroker
-RUN cd /opt/flowbroker/lib && npm install
-RUN cd /opt/flowbroker/orchestrator && npm install
+COPY orchestrator/package.json ./package.json
+RUN npm install
+
 RUN apk --no-cache del gcc g++ musl-dev make python
 
+COPY orchestrator ./src
+
+CMD ["node", "src/index.js", "-w", "1", "-s"]
