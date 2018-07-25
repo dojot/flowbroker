@@ -43,6 +43,11 @@ module.exports = class Executor {
         console.log(`[executor] will handle node ${at.type}`);
         let handler = nodes.getNode(at.type, event.metadata.tenant);
         if (handler) {
+            let metadata = {
+                flowId: event.flow.id,
+                tenant: event.metadata.tenant,
+                originatorDeviceId: event.metadata.originator
+            }
             handler.handleMessage(at, event.message, (error, result) => {
                 if (error) {
                     console.error(`[executor] Node execution failed. ${error}. Aborting flow ${event.flow.id}.`);
@@ -65,7 +70,7 @@ module.exports = class Executor {
                     }
                 }
                 return ack();
-            }, event.metadata.tenant);
+            }, metadata);
         } else {
             console.error(`[executor] Unknown node ${at.type} detected. Igoring.`);
             return ack();
