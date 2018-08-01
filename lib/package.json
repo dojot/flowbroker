@@ -8,6 +8,10 @@
   },
   "author": "Matheus Magalhaes",
   "license": "GPL-3.0",
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/dojot/flowbroker.git"
+  },
   "dependencies": {
     "zeromq": "^4.6.0",
     "uuid": "^3.2.1"
