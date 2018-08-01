@@ -40,7 +40,7 @@ class DataHandler extends dojot.DataHandlerBase {
     return {};
   }
 
-  handleMessage(config, message, callback, tenant) {
+  handleMessage(config, message, callback, metadata) {
     logger.debug("Executing device-out node...");
     if ((config.attrs === undefined) || (config.attrs.length === 0)) {
       logger.debug("... device-out node was not successfully executed.");
@@ -61,7 +61,7 @@ class DataHandler extends dojot.DataHandlerBase {
       output.metadata.deviceid = config._device_id;
       output.metadata.templates = config._device_templates;
       output.metadata.timestamp = Date.now();
-      output.metadata.tenant = tenant;
+      output.metadata.tenant = metadata.tenant;
 
       logger.debug("Updating device... ");
       logger.debug(`Message is: ${util.inspect(output, { depth: null })}`);

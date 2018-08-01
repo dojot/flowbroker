@@ -54,12 +54,13 @@ class RemoteNodeHandler extends dojot.DataHandlerBase {
     return this.locale;
   }
 
-  handleMessage(config, message, callback) {
+  handleMessage(config, message, callback, metadata) {
     // invoke remote
     let command = {
       command: 'message',
       message: message,
       config: config,
+      metadata: metadata
     };
     dispatcher(this.target, command).then((reply) => {
       if (reply.error) {

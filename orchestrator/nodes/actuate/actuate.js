@@ -40,7 +40,7 @@ class DataHandler extends dojot.DataHandlerBase {
     return {};
   }
 
-  handleMessage(config, message, callback, tenant) {
+  handleMessage(config, message, callback, metadata) {
     logger.debug("Executing actuate node...");
     if ((config.attrs === undefined) || (config.attrs.length === 0)) {
       logger.debug("... actuate node was not successfully executed.");
@@ -52,10 +52,10 @@ class DataHandler extends dojot.DataHandlerBase {
       let output = {
         meta: {
           deviceid: config._device_id,
-          service: tenant
+          service: metadata.tenant
         },
         metadata: {
-          tenant: tenant
+          tenant: metadata.tenant
         },
         event: 'configure',
         data: {
