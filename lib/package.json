@@ -2,7 +2,7 @@
   "name": "@dojot/flow-node",
   "version": "1.1.0",
   "description": "Basic interface to dojot's flowbroker",
-  "main": "CommandHandler.js",
+  "main": "index.js",
   "scripts": {
     "test": ""
   },
