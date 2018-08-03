@@ -138,29 +138,26 @@ class FlowManager {
   }
 
   removeAll() {
-    return new Promise((resolve, reject) => {
-      this.collection.deleteMany({}).then(() => {
-        resolve();
-      }).catch((error) => {
-        reject(error);
-      });
-    });
+    return this.collection
+      .deleteMany({})
+      .then(() => {});
   }
 
   get(flowid) {
-    return new Promise((resolve, reject) => {
-      this.collection.findOne({id: flowid}).then((flow) => {
+    return this.collection
+      .findOne({id: flowid})
+      .then(flow => {
         if (!flow) {
-          reject(new UnknownFlowError(flowid));
+          throw new UnknownFlowError(flowid);
         }
 
-        resolve(flow);
-      }).catch((error) => {
+        return flow;
+      })
+      .catch(error => {
         if (error instanceof mongo.MongoError){
-          reject(error);
+          throw error;
         }
       });
-    });
   }
 
   create(label, enabled, flow) {
@@ -212,8 +209,8 @@ class FlowManager {
   }
 
   set(flowid, label, enabled, flow){
-    return new Promise((resolve, reject) => {
-      this.get(flowid).then((oldFlow) => {
+    return this.get(flowid)
+      .then(oldFlow => {
         let newFlow = JSON.parse(JSON.stringify(oldFlow));
         newFlow.created = oldFlow.created;
         newFlow.updated = new Date();
@@ -230,33 +227,28 @@ class FlowManager {
         if (label) { newFlow.label = label; }
         if (enabled) { newFlow.enabled = enabled; }
 
-        this.collection.findOneAndReplace({id: flowid}, newFlow).then((result) => {
+        return this.collection
+          .findOneAndReplace({id: flowid}, newFlow)
+          .then(result => {
           if (result.ok === 1) {
-            resolve(newFlow);
+              return newFlow;
           }
-          reject(new MongoError());
-        }).catch((error) => {
-          reject(error);
-        });
-      }).catch((error) => {
-        reject(error);
+            throw new MongoError();
       });
     });
   }
 
   remove(flowid) {
-    return new Promise((resolve, reject) => {
-      this.collection.findOneAndDelete({id: flowid}).then((flow) => {
+    return this.collection
+      .findOneAndDelete({id: flowid})
+      .then((flow) => {
         if (flow.value === null) {
-          reject(new UnknownFlowError(flowid));
+          throw new UnknownFlowError(flowid);
         } else if (flow.ok === 1) {
-          resolve(flow.value);
+          return flow.value;
         } else {
-          reject(new MongoError());
+          throw new Error(new MongoError());
         }
-      }).catch((error) => {
-        reject(error);
-      });
     });
   }
 

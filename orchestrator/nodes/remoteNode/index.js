@@ -18,19 +18,19 @@ class RemoteNodeHandler extends dojot.DataHandlerBase {
 
   init() {
     // Fetch all meta information from newly created remote impl
-    return new Promise((resolve, reject) => {
-      dispatcher(this.target, {command: 'metadata'}).then((meta) => {
+    return dispatcher(this.target, {command: 'metadata'})
+      .then(meta => {
         this.metadata = meta.payload;
-        dispatcher(this.target, { command: 'html' }).then((html) => {
-          this.html = '/tmp/' + this.target;
-          fs.writeFileSync(this.html, html.payload);
-          dispatcher(this.target, { command: 'locale', locale: 'en-US' }).then((reply) => {
-            this.locale = reply.payload;
-            return resolve();
-          }).catch((error) => { return reject(error); });
-        }).catch((error) => { return reject(error); });
-      }).catch((error) => { return reject(error); });
-    });
+        return dispatcher(this.target, { command: 'html' })
+      })
+      .then(html => {
+        this.html = '/tmp/' + this.target;
+        fs.writeFileSync(this.html, html.payload);
+        return dispatcher(this.target, { command: 'locale', locale: 'en-US' })
+      })
+      .then(reply => {
+        this.locale = reply.payload;
+      });
   }
   getNodeRepresentationPath() {
     return this.html;

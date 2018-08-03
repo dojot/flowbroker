@@ -13,14 +13,11 @@ module.exports = class Executor {
     }
 
     init() {
-        return new Promise((resolve, reject) => {
-            this.producer.connect().then(() => {
+        return this.producer
+            .connect()
+            .then(() => {
                 this.consumer.connect();
-                resolve();
-            }).catch((error) => {
-                reject(error);
             });
-        });
     }
 
     hop(data, ack) {
