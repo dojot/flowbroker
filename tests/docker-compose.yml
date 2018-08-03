@@ -54,7 +54,7 @@ services:
       - mongodb
       - data-broker
       - auth
-      - flowbroker-context-manager      
+      - flowbroker-context-manager
     networks:
       - default
       - flowbroker
