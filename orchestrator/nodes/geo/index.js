@@ -75,55 +75,65 @@ class DataHandler {
      */
     handleMessage(config, message, callback) {
         logger.debug("Executing geo node...");
-        let loc;
-        for (let attr in message.payload) {
-            if (message.payload.hasOwnProperty(attr)) {
-                try {
-                    let parsed = (message.payload[attr]).match(/([+-]?\d+(.\d+)?)[ ]*,[ ]*([+-]?\d+(.\d+)?)/);
+        let geolocation = getLatLng(message.payload);
+
+        if (!geolocation) {
+            logger.debug("... geo node was not successfully executed.");
+            logger.error("Message has no geographic position attached.");
+            callback(new Error("Message has no geographic position attached"));
+        }
+
+        let inout = geolib.isPointInside(geolocation, config.points);
+
+        if (inout && (config.filter === "inside")) {
+            if (config.name) {
+                if (!message.location) {
+                    message.location = {};
+                }
+                message.location.isat = message.location.isat || [];
+                message.location.isat.push(config.name);
+            }
+            logger.debug("... geo node was successfully executed.");
+            logger.debug("Its test had a hit.");
+            return callback(undefined, [message]);
+        }
+
+        if (!inout && (config.filter === "outside")) {
+            logger.debug("... geo node was successfully executed.");
+            logger.debug("Its test had a hit.");
+            return callback(undefined, [message]);
+        }
+
+
+        logger.debug("... geo node was successfully executed.");
+        logger.debug("Its test didn't have a hit.");
+        return callback(undefined, []);
+
+        /**
+         * Look for a lat,lng string repesentation and return an
+         * object representation of it if any is found.
+         * 
+         * @param  {[object]}  payload Message payload
+         * @return {[{latitude: string, longitude: string}]}
+         */
+        function getLatLng(payload) {
+            let latlng = /([+-]?\d+(.\d+)?)[ ]*,[ ]*([+-]?\d+(.\d+)?)/;
+
+            for (let attr in payload) {
+                if (payload.hasOwnProperty(attr) && typeof payload[attr] === "string") {
+                    let parsed = payload[attr].match(latlng);
+
                     if (parsed) {
-                        loc = {
+                        return {
                             latitude: parsed[1],
                             longitude: parsed[3]
                         };
-                        break;
                     }
-                } catch (error) {
-                    // message.payload[attr] might not be a string, so this would cause
-                    // an exception to be thrown. But that's fine.
                 }
             }
+
+            return null;
         }
-
-        if (loc) {
-            let inout = geolib.isPointInside(loc, config.points);
-            if (inout && (config.filter === "inside")) {
-                if (config.name) {
-                    if (!message.location) {
-                        message.location = {};
-                    }
-                    message.location.isat = message.location.isat || [];
-                    message.location.isat.push(config.name);
-                }
-                logger.debug("... geo node was successfully executed.");
-                logger.debug("Its test had a hit.");
-                return callback(undefined, [message]);
-            }
-
-            if (!inout && (config.filter === "outside")) {
-                logger.debug("... geo node was successfully executed.");
-                logger.debug("Its test had a hit.");
-                return callback(undefined, [message]);
-            }
-
-
-            logger.debug("... geo node was successfully executed.");
-            logger.debug("Its test didn't have a hit.");
-            return callback(undefined, []);
-        }
-
-        logger.debug("... geo node was not successfully executed.");
-        logger.error("Message has no geographic position attached.");
-        callback(new Error("Message has no geographic position attached"));
     }
 }
 
