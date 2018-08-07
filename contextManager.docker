@@ -1,0 +1,14 @@
+FROM node:8-alpine
+
+WORKDIR /opt/flowbroker/contextManager
+
+RUN apk --no-cache add gcc g++ musl-dev make python
+
+COPY contextManager/package.json ./package.json
+RUN npm install
+
+RUN apk --no-cache del gcc g++ musl-dev make python
+
+COPY contextManager ./src
+
+CMD ["node", "src/index.js"]

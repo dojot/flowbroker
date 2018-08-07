@@ -1,0 +1,15 @@
+{
+  "name": "context-manager",
+  "version": "1.0.0",
+  "description": "Flow broker's context manager",
+  "main": "index.js",
+  "scripts": {
+    "test": ""
+  },
+  "author": "Raul Negreiros",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "zeromq": "^4.6.0",
+    "zookeeper": "^3.4.9-3"
+  }
+}
