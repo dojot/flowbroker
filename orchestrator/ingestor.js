@@ -25,15 +25,8 @@ module.exports = class DeviceIngestor {
    * @return {[Promise]}  List of known tenants in the platform
    */
   listTenants() {
-    return new Promise((resolve, reject) => {
-      axios({
-        'url': config.tenancy.manager + '/admin/tenants'
-      }).then((response) => {
-        resolve(response.data.tenants);
-      }).catch((error) => {
-        reject(error);
-      });
-    });
+    let url = config.tenancy.manager + '/admin/tenants';
+    return axios({ url }).then((response) => response.data.tenants);
   }
 
   /**

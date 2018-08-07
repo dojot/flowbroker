@@ -20,21 +20,19 @@ class TopicManager {
         const parsedBroker = broker || config.dataBroker.url;
         const parsedGlobal = global ? "?global=true" : "";
         const key = tenant + ':' + subject;
-        return new Promise((resolve, reject) => {
-            if (this.topics.hasOwnProperty(key)) {
-                return resolve(this.topics[key]);
-            }
 
-            axios({
-                'url': parsedBroker + '/topic/' + subject + parsedGlobal,
-                'method': 'get',
-                'headers': { 'authorization': 'Bearer ' + getToken(tenant) }
-            }).then((response) => {
-                this.topics[key] = response.data.topic;
-                resolve(response.data.topic);
-            }).catch((error) => {
-                reject(error);
-            });
+        if (this.topics.hasOwnProperty(key)) {
+            return Promise.resolve(this.topics[key]);
+        }
+
+       return axios({
+            'url': parsedBroker + '/topic/' + subject + parsedGlobal,
+            'method': 'get',
+            'headers': { 'authorization': 'Bearer ' + getToken(tenant) }
+        })
+        .then((response) => {
+            this.topics[key] = response.data.topic;
+            return response.data.topic;
         });
     }
 }

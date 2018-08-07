@@ -82,66 +82,53 @@ class NodeManager {
   }
 
   addRemote(image, id, tenant) {
-    return new Promise((resolve, reject) => {
-      let newNode;
-      if (config.deploy.engine === "docker") {
-        newNode = new dockerRemote(image, tenant + id);
-      } else if (config.deploy.engine === "kubernetes") {
-        newNode = new k8sRemote(image, tenant + id);
-      }
-      if (newNode === undefined) {
-        return;
-      }
-
-      newNode.create().then(() => {
-        newNode.init().then(() => {
-          let meta = newNode.getMetadata();
-          console.log('[nodes] container meta', JSON.stringify(meta));
-          if (!(tenant in this.nodes))
-          {
-            this.nodes[tenant] = {};
-          }
-          this.nodes[tenant][meta.name] = newNode;
-          resolve();
-        }).catch((error) => {
-          reject(error);
-        });
-      }).catch((error) => {
-        reject(error);
+    return Promise.resolve()
+      .then(() => {
+        let newNode;
+    
+        if (config.deploy.engine === "docker") {
+          newNode = new dockerRemote(image, tenant + id);
+        } else if (config.deploy.engine === "kubernetes") {
+          newNode = new k8sRemote(image, tenant + id);
+        }
+    
+        if (newNode === undefined) {
+          return;
+        }
+    
+        return newNode
+          .create()
+          .then(() => newNode.init())
+          .then(() => {
+            let meta = newNode.getMetadata();
+            console.log('[nodes] container meta', JSON.stringify(meta));
+            if (!(tenant in this.nodes)) {
+              this.nodes[tenant] = {};
+            }
+            this.nodes[tenant][meta.name] = newNode;
+          });
       });
-    });
   }
 
   delRemote(image, id, tenant) {
-    return new Promise((resolve, reject) => {
-
-      // This is a wrapper function to properly remove the attribute and to
-      // call resolve() inside a loop.
-      let processRemoveOk = (n) => {
-          return () => {
-          delete this.nodes[tenant][n];
-          return resolve();
-        };
-      };
-
-      let processRemoveError = (error) => {
-        return reject(error);
-      };
-
-      if (!(tenant in this.nodes)) {
-        return reject("Tenant not found");
-      }
-
-      for (let n in this.nodes[tenant]) {
-        if (n === id) {
-          this.nodes[tenant][n].remove().then(processRemoveOk(n))
-            .catch(processRemoveError);
-          return;
+    return Promise.resolve()
+      .then(() => {
+        if (!(tenant in this.nodes)) {
+          throw "Tenant not found";
         }
-      }
-
-      reject(new Error("No such node found"));
-    });
+  
+        for (let n in this.nodes[tenant]) {
+          if (n === id) {
+            return this.nodes[tenant][n]
+              .remove()
+              .then(() => {
+                delete this.nodes[tenant][n];
+              });
+          }
+        }
+  
+        throw new Error("No such node found");
+      });
   }
 }
 
