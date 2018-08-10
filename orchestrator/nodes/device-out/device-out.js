@@ -63,8 +63,8 @@ class DataHandler extends dojot.DataHandlerBase {
       switch (config.device_source) {
         case 'configured':
           if (config._device_id === undefined) {
-            logger.debug("... actuate node was not successfully executed.");
-            logger.error("There is not device configured to actuate");
+            logger.debug("... device-out node was not successfully executed.");
+            logger.error("There is not device configured to device out");
             return callback(new Error('Invalid Device id'));
           }
           deviceId = config._device_id;
@@ -74,15 +74,15 @@ class DataHandler extends dojot.DataHandlerBase {
         break;
         case 'dynamic':
           if ((config.device_source_msg === undefined) || (config.device_source_msg.length === 0)) {
-            logger.debug("... actuate node was not successfully executed.");
+            logger.debug("... device-out node was not successfully executed.");
             logger.error("Missing device source msg.");
             return callback(new Error('Invalid device source msg: field is mandatory'));
           }
           try {
             deviceId = this._get(config.device_source_msg, message);
           } catch (error) {
-            logger.debug("... actuate node was not successfully executed.");
-            logger.error(`Error while executing actuate node: ${error}`);
+            logger.debug("... device-out node was not successfully executed.");
+            logger.error(`Error while executing device out node: ${error}`);
             return callback(error);
           }
         break;
