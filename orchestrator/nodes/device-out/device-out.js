@@ -58,7 +58,39 @@ class DataHandler extends dojot.DataHandlerBase {
         logger.error(`Error while executing device-out node: ${e}`);
         return callback(e);
       }
-      output.metadata.deviceid = config._device_id;
+
+      let deviceId;
+      switch (config.device_source) {
+        case 'configured':
+          if (config._device_id === undefined) {
+            logger.debug("... actuate node was not successfully executed.");
+            logger.error("There is not device configured to actuate");
+            return callback(new Error('Invalid Device id'));
+          }
+          deviceId = config._device_id;
+        break;
+        case 'self':
+          deviceId = metadata.originatorDeviceId;
+        break;
+        case 'dynamic':
+          if ((config.device_source_msg === undefined) || (config.device_source_msg.length === 0)) {
+            logger.debug("... actuate node was not successfully executed.");
+            logger.error("Missing device source msg.");
+            return callback(new Error('Invalid device source msg: field is mandatory'));
+          }
+          try {
+            deviceId = this._get(config.device_source_msg, message);
+          } catch (error) {
+            logger.debug("... actuate node was not successfully executed.");
+            logger.error(`Error while executing actuate node: ${error}`);
+            return callback(error);
+          }
+        break;
+        default:
+          return callback(new Error('Invalid device source'));
+      }
+
+      output.metadata.deviceid = deviceId;
       output.metadata.templates = config._device_templates;
       output.metadata.timestamp = Date.now();
       output.metadata.tenant = metadata.tenant;
