@@ -91,7 +91,6 @@ class DataHandler extends dojot.DataHandlerBase {
       }
 
       output.metadata.deviceid = deviceId;
-      output.metadata.templates = config._device_templates;
       output.metadata.timestamp = Date.now();
       output.metadata.tenant = metadata.tenant;
 
