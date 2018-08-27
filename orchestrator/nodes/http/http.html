@@ -60,6 +60,11 @@
     </div>
 
     <div class="form-row">
+        <label for="node-input-response"><i class="fa fa-envelope"></i> <span data-i18n="httpin.label.response"></span></label>
+        <input type="text" id="node-input-response" placeholder="Response body">
+    </div>
+    
+    <div class="form-row">
         <label for="node-input-ret"><i class="fa fa-arrow-left"></i> <span data-i18n="httpin.label.return"></span></label>
         <select type="text" id="node-input-ret" style="width:70%;">
         <option value="txt" data-i18n="httpin.utf8"></opti  on>
@@ -141,6 +146,7 @@
             method:{value:"GET"},
             ret: {value:"txt"},
             body: {value:""},
+            response: {value:""},
             url:{value:"",validate:function(v) { return (v.trim().length === 0) || (v.indexOf("://") === -1) || (v.trim().indexOf("http") === 0)} }
             // tls: {type:"tls-config",required: false}
         },
@@ -194,6 +200,7 @@
                 }
             });
             $("#node-input-body").typedInput({default:'msg',types:['msg']});
+            $("#node-input-response").typedInput({default:'msg',types:['msg']});
         },
         oneditsave: function() {
             // if (!$("#node-input-usetls").is(':checked')) {

@@ -185,20 +185,21 @@ class DataHandler extends dojot.DataHandlerBase {
             var urltotest = url;
 
             logger.debug(`HTTP request about to be sent: ${opts}`);
-            var req = ((/^https/.test(urltotest)) ? https : http).request(opts, function (res) {
+            var req = ((/^https/.test(urltotest)) ? https : http).request(opts, (res) => {
                 // Force NodeJs to return a Buffer (instead of a string)
                 // See https://github.com/nodejs/node/issues/6038
                 res.setEncoding(null);
                 delete res._readableState.decoder;
 
-                message.statusCode = res.statusCode;
-                message.headers = res.headers;
-                message.responseUrl = res.responseUrl;
-                // Should the answer be cleared or appended?
-                message.payload = [];
+                this._set(config.response, {}, message);
+                var httpResponse = this._get(config.response, message);
+                httpResponse.statusCode = res.statusCode;
+                httpResponse.headers = res.headers;
+                httpResponse.responseUrl = res.responseUrl;
+                httpResponse.payload = [];
 
                 // msg.url = url;   // revert when warning above finally removed
-                res.on('data', function (chunk) {
+                res.on('data', (chunk) => {
                     if (!Buffer.isBuffer(chunk)) {
                         // if the 'setEncoding(null)' fix above stops working in
                         // a new Node.js release, throw a noisy error so we know
@@ -207,24 +208,25 @@ class DataHandler extends dojot.DataHandlerBase {
                         logger.error("Returned HTTP Request data is not a buffer.");
                         return callback(new Error("HTTP Request data chunk not a Buffer"));
                     }
-                    message.payload.push(chunk);
+                    httpResponse.payload.push(chunk);
                 });
 
-                res.on('end', function () {
+                res.on('end', () => {
 
-                    // Check that msg.payload is an array - if the req error
+                    // Check that message[config.response] is an array - if the req error
                     // handler has been called, it will have been set to a string
                     // and the error already handled - so no further action should
                     // be taken. #1344
-                    if (Array.isArray(message.payload)) {
+                    if (Array.isArray(httpResponse.payload)) {
                         // Convert the payload to the required return type
-                        message.payload = Buffer.concat(message.payload); // bin
+                        // this._set(config.response, Buffer.concat(message.payload), message); // bin
                         if (ret !== "bin") {
-                            message.payload = message.payload.toString('utf8'); // txt
+                            let strData = httpResponse.payload;
+                            httpResponse.payload = strData.toString("utf8")
 
                             if (ret === "obj") {
                                 try {
-                                    message.payload = JSON.parse(message.payload);
+                                    httpResponse.payload = JSON.parse(strData);
                                 } catch (e) {
                                     return callback(new Error("httpin.errors.json-error"));
                                 }
