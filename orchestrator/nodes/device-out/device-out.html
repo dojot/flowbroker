@@ -1,95 +1,127 @@
 <script type="text/x-red" data-template-name="device out">
-   <div class="form-row">
-       <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-       <input type="text" id="node-input-name">
-   </div>
-   <div class="form-row">
-       <label for="node-input-device"><i class="fa fa-wifi"></i> Device</label>
-       <select id="node-input-device" style=""></select>
-   </div>
-   <div class="form-row">
-       <label for="node-input-attrs"><i class="fa fa-cube"></i> Source</label>
-       <input type="text" id="node-input-attrs" style=""></input>
-   </div>
-
-   <div style="display:none">
-       <input type='text' id='node-input-_device_id'/>
-       <input type='text' id='node-input-_device_label'/>
-       <input type='text' id='node-input-_device_type'/>
-       <input type='text' id='node-input-_device_templates'/>
-   </div>
-</script>
-
-<script type="text/x-red" data-help-name="device out">
-   <p>Set the value of a virtual device, based on the results of the previous operations on the flow.</p>
-</script>
-
-<script type="text/javascript">
-    RED.nodes.registerType('device out', {
-        category: 'output',      // the palette category
-        defaults: {              // defines the editable properties of the node
-            name: { value: "", required: false },
-            device: { value: undefined, required: true },
-            attrs: { value: "", required: true },
-
-            // those are the internal types used when routing data through fiware.
-            _device_id: { value: "", required: false },
-            _device_label: { value: "", required: false },
-            _device_type: { value: "", required: false },
-            _device_templates: { value: [], required: false },
-        },
-        inputs: 1,                // set the number of inputs - only 0 or 1
-        outputs: 0,               // set the number of outputs - 0 to n
-        align: "right",          // align the icon
-        icon: "bridge-dash.png", // set the icon (held in icons dir below where you save the node)
-        color: "#f3b567",        // background-color
-        label: function () {
-            // sets the default label contents
-            return this.name || "device";
-        },
-        labelStyle: function () {
-            // sets the class to apply to the label
-            return this.name ? "node_label_italic" : "";
-        },
-        oneditprepare: function () {
-            var select = document.getElementById("node-input-device");
-            let node = this;
-
-            // this will only work from the device management interface
-            function list_all(page) {
-                extra = `?page_num=${page}`
-                if (page === undefined) {
-                    extra = ''
-                }
-
-                util.GET(`/device${extra}`).then((list) => {
-                    list.devices.map((dev) => {
-                        select.options[select.options.length] = new Option(dev.label, JSON.stringify({ 'id': dev.id }));
-                    });
-                    if (list.pagination.has_next) {
-                        list_all(list.pagination.next_page);
-                    } else {
-                        select.value = node.device;
-                    }
-                }).catch((error) => {
-                    console.error('Failed to retrieve the list of available devices', error);
-                });
-
-            }
-
-            list_all();
-        },
-
-        oneditsave: function () {
-            if ($('#node-input-device').val()) {
-                const deviceData = JSON.parse($('#node-input-device').val());
-                $('#node-input-_device_id').val(deviceData.id);
-                $('#node-input-_device_templates').val(deviceData.templates);
-                // $('#node-input-_device_label').val($('#node-input-device option:selected').text());
-                // $('#node-input-_device_type').val(deviceData.type);
-                this._device_id = deviceData.id
-                this._device_templates = deviceData.templates;
-            }
-        }
-    });
-</script>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-device"><i class="fa fa-wifi"></i> Device</label>
+        <select id="node-input-device_source" onchange="displayDeviceSourceElement()">
+            <option value="self">The device which triggered the flow</option>
+            <option value="configured">A specific device</option>
+            <option value="dynamic">A device defined during the flow</option>
+        </select>
+        <input type="text" id="node-input-device_source_msg" placeholder="Enter an attribute" />
+        <input list="node-input-list_devices_id" id="node-input-device_source_id" placeholder="Select a device"/>
+        <datalist id="node-input-list_devices_id"></datalist>
+    </div>
+    <div class="form-row">
+        <label for="node-input-attrs"><i class="fa fa-cube"></i> Source</label>
+        <input type="text" id="node-input-attrs" style=""></input>
+    </div>
+ 
+    <div style="display:none">
+        <input type='text' id='node-input-_device_id'/>
+    </div>
+ </script>
+ 
+ <script type="text/x-red" data-help-name="device out">
+    <p>Set the value of a virtual device, based on the results of the previous operations on the flow.</p>
+ </script>
+ 
+ <script type="text/javascript">
+     RED.nodes.registerType('device out', {
+         category: 'output',      // the palette category
+         defaults: {              // defines the editable properties of the node
+             name: { value: "", required: false },
+             device_source: { value: 'self', required: true },
+             device_source_msg: { value: '', required: false },
+             device_source_id: { value: '', required: false , validate: validateDeviceId},
+             attrs: { value: "", required: true },
+ 
+             // those are the internal types
+             _device_id: { value: undefined, required: false }
+         },
+         inputs: 1,                // set the number of inputs - only 0 or 1
+         outputs: 0,               // set the number of outputs - 0 to n
+         align: "right",          // align the icon
+         icon: "bridge-dash.png", // set the icon (held in icons dir below where you save the node)
+         color: "#f3b567",        // background-color
+         label: function () {
+             // sets the default label contents
+             return this.name || "device";
+         },
+         labelStyle: function () {
+             // sets the class to apply to the label
+             return this.name ? "node_label_italic" : "";
+         },
+         oneditprepare: function () {
+             var devicesId = document.getElementById("node-input-list_devices_id");
+ 
+             displayDeviceSourceElement();
+ 
+             // this will only work from the device management interface
+             function list_all(page) {
+                 extra = `?page_num=${page}`
+                 if (page === undefined) {
+                     extra = ''
+                 }
+                 let defaultDev = '';
+                 util.GET(`/device${extra}`).then((list) => {
+                     list.devices.map((dev) => {
+                         devicesId.innerHTML += '<option data-value="' + dev.id + '" value="' + dev.label + '"/>';
+                         defaultDev = dev.label;
+                     });
+                     if (list.pagination.has_next) {
+                         list_all(list.pagination.next_page);
+                     }
+                 }).catch((error) => {
+                     console.error('Failed to retrieve the list of available devices', error);
+                 });
+ 
+             }
+ 
+             list_all();
+         }
+     });
+ 
+     function displayDeviceSourceElement() {
+         var deviceSource = $('#node-input-device_source');
+         var deviceSourceId = $('#node-input-device_source_id');
+         var deviceSourceMsg = $('#node-input-device_source_msg');
+ 
+ 
+         switch(deviceSource.val()) {
+             case "self":
+                 deviceSourceMsg.hide();
+                 deviceSourceId.hide();
+             break;
+             case "configured":
+                 deviceSourceId.show();
+                 deviceSourceMsg.hide();
+             break;
+             case "dynamic":
+                 deviceSourceId.hide();
+                 deviceSourceMsg.show();
+             break;
+         }
+ 
+         $('#node-input-_device_id').val(undefined);
+     }
+ 
+     function validateDeviceId(value) {
+         if (!value) {
+             $('#node-input-_device_id').val(undefined);
+             return true;
+         }
+ 
+         deviceId = $('#node-input-list_devices_id').find('option[value="' + value + '"]').attr('data-value');
+         if (!deviceId) {
+             $('#node-input-_device_id').val(undefined);
+             return false;
+         }
+ 
+         $('#node-input-_device_id').val(deviceId);
+ 
+         return true;
+     }
+ </script>
