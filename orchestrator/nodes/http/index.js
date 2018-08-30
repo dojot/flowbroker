@@ -219,7 +219,7 @@ class DataHandler extends dojot.DataHandlerBase {
                     // be taken. #1344
                     if (Array.isArray(httpResponse.payload)) {
                         // Convert the payload to the required return type
-                        // this._set(config.response, Buffer.concat(message.payload), message); // bin
+                        this._set(config.response, Buffer.concat(message.payload), message); // bin
                         if (ret !== "bin") {
                             let strData = httpResponse.payload;
                             httpResponse.payload = strData.toString("utf8")
