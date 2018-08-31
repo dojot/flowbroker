@@ -87,10 +87,10 @@ class DataHandler extends dojot.DataHandlerBase {
         var ret = config.ret || "txt";
         var reqTimeout = 120000;
         var url = nodeUrl || message.url;
-        var requestPayload;
+        var httpRequest;
         
         try {
-            requestPayload = this._get(config.body, message);
+            httpRequest = JSON.parse(this._get(config.body, message));
         } catch (e) {
             logger.debug("... http node was not successfully executed.");
             logger.error(`Error while retrieving http payload: ${e}`);
@@ -137,9 +137,9 @@ class DataHandler extends dojot.DataHandlerBase {
             var ctSet = "Content-Type"; // set default camel case
             var clSet = "Content-Length";
 
-            if (message.headers) {
-                for (var v in message.headers) {
-                    if (message.headers.hasOwnProperty(v)) {
+            if (httpRequest.headers) {
+                for (var v in httpRequest.headers) {
+                    if (httpRequest.headers.hasOwnProperty(v)) {
                         var name = v.toLowerCase();
                         if (name !== "content-type" && name !== "content-length") {
                             // only normalise the known headers used later in this
@@ -148,19 +148,19 @@ class DataHandler extends dojot.DataHandlerBase {
                         }
                         else if (name === 'content-type') { ctSet = v; }
                         else { clSet = v; }
-                        opts.headers[name] = message.headers[v];
+                        opts.headers[name] = httpRequest.headers[v];
                     }
                 }
             }
  
             var payload = null;
-            if (typeof requestPayload !== "undefined" && (method === "POST" || method === "PUT" || method === "PATCH")) {
-                if (typeof requestPayload === "string" || Buffer.isBuffer(requestPayload)) {
-                    payload = requestPayload;
-                } else if (typeof requestPayload === "number") {
-                    payload = requestPayload + "";
+            if (typeof httpRequest.payload !== "undefined" && (method === "POST" || method === "PUT" || method === "PATCH")) {
+                if (typeof httpRequest.payload === "string" || Buffer.isBuffer(httpRequest.payload)) {
+                    payload = httpRequest.payload;
+                } else if (typeof httpRequest.payload === "number") {
+                    payload = httpRequest.payload + "";
                 } else {
-                    payload = JSON.stringify(requestPayload);
+                    payload = JSON.stringify(httpRequest.payload);
                     if (opts.headers['content-type'] === null) {
                         opts.headers[ctSet] = "application/json";
                     }
@@ -227,7 +227,7 @@ class DataHandler extends dojot.DataHandlerBase {
                                 try {
                                     httpResponse.payload = JSON.parse(strData);
                                 } catch (e) {
-                                    return callback(new Error("httpin.errors.json-error"));
+                                    logger.warn("Could not parse JSON. Forwarding as plain string.");
                                 }
                             }
                         }
@@ -251,7 +251,6 @@ class DataHandler extends dojot.DataHandlerBase {
                 logger.error(`Error was: ${err}`);
                 return callback(err);
             });
-
             if (payload) {
                 req.write(payload);
             }
