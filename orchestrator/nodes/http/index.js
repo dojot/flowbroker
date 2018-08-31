@@ -8,6 +8,7 @@ var http = require("follow-redirects").http;
 var https = require("follow-redirects").https;
 var urllib = require("url");
 var mustache = require("mustache");
+var util = require("util");
 
 var dojot = require('@dojot/flow-node');
 
@@ -184,7 +185,7 @@ class DataHandler extends dojot.DataHandlerBase {
             }
             var urltotest = url;
 
-            logger.debug(`HTTP request about to be sent: ${opts}`);
+            logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`);
             var req = ((/^https/.test(urltotest)) ? https : http).request(opts, (res) => {
                 // Force NodeJs to return a Buffer (instead of a string)
                 // See https://github.com/nodejs/node/issues/6038
@@ -219,11 +220,9 @@ class DataHandler extends dojot.DataHandlerBase {
                     // be taken. #1344
                     if (Array.isArray(httpResponse.payload)) {
                         // Convert the payload to the required return type
-                        this._set(config.response, Buffer.concat(message.payload), message); // bin
                         if (ret !== "bin") {
                             let strData = httpResponse.payload;
-                            httpResponse.payload = strData.toString("utf8")
-
+                            httpResponse.payload = strData.toString("utf8");
                             if (ret === "obj") {
                                 try {
                                     httpResponse.payload = JSON.parse(strData);
