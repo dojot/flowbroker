@@ -147,4 +147,4 @@ class Producer {
     }
 }
 
-module.exports = { 'Consumer': Consumer, 'Producer': Producer };
+module.exports = { 'Consumer': Consumer, 'Producer': Producer, 'getToken': getToken };

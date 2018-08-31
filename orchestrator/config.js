@@ -1,6 +1,11 @@
 "use strict";
 
 module.exports = {
+    
+    'deviceManager': {
+        url: process.env.DEVICE_MANAGER_HOST || "http://device-manager:5000"
+    },
+
     'mongodb': {
         url: process.env.MONGO_URL || "mongodb://mongodb:27017",
         opt: {
