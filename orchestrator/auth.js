@@ -2,6 +2,13 @@
 /* jshint esversion: 6 */
 "use strict";
 
+function getToken(tenant) {
+  const payload = { 'service': tenant, 'username': 'flowbroker' };
+  return (new Buffer('jwt schema').toString('base64')) + '.' +
+      (new Buffer(JSON.stringify(payload)).toString('base64')) + '.' +
+      (new Buffer('dummy signature').toString('base64'));
+}
+
 function b64decode(data) {
   if (typeof Buffer.from === "function") {
     return Buffer.from(data, 'base64').toString();
@@ -64,5 +71,6 @@ function authEnforce(req, res, next) {
 
 module.exports = {
   authParse: authParse,
-  authEnforce: authEnforce
+  authEnforce: authEnforce,
+  getToken: getToken
 };
