@@ -1,6 +1,15 @@
 "use strict";
 
 module.exports = {
+
+    'redis': {
+        url: process.env.FLOW_BROKER_HOST || "flowbroker-redis"
+    },
+
+    'deviceManager': {
+        url: process.env.DEVICE_MANAGER_HOST || "http://device-manager:5000"
+    },
+
     'mongodb': {
         url: process.env.MONGO_URL || "mongodb://mongodb:27017",
         opt: {

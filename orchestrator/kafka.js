@@ -2,14 +2,8 @@
 
 var kafka = require("kafka-node");
 var axios = require("axios");
+var auth = require('./auth');
 var config = require('./config');
-
-function getToken(tenant) {
-    const payload = { 'service': tenant, 'username': 'flowbroker' };
-    return (new Buffer('jwt schema').toString('base64')) + '.' +
-        (new Buffer(JSON.stringify(payload)).toString('base64')) + '.' +
-        (new Buffer('dummy signature').toString('base64'));
-}
 
 class TopicManager {
     constructor() {
@@ -28,7 +22,7 @@ class TopicManager {
        return axios({
             'url': parsedBroker + '/topic/' + subject + parsedGlobal,
             'method': 'get',
-            'headers': { 'authorization': 'Bearer ' + getToken(tenant) }
+            'headers': { 'authorization': 'Bearer ' + auth.getToken(tenant) }
         })
         .then((response) => {
             this.topics[key] = response.data.topic;

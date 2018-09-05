@@ -1,10 +1,10 @@
 var axios = require("axios");
 var util = require('util');
 var kafka = require('./kafka');
-
 var amqp = require('./amqp');
 var config = require('./config');
 var node = require('./nodeManager').Manager;
+var redisManager = require('./redisManager').RedisManager;
 
 // class InitializationError extends Error {}
 
@@ -14,6 +14,9 @@ module.exports = class DeviceIngestor {
    * @param {FlowManagerBuilder} fmBuilder Builder instance to be used when parsing received events
    */
   constructor(fmBuilder) {
+    // using redis as cache
+    this.redis = new redisManager();
+    this.client = this.redis.getClient();
     // map of active consumers (used to detect topic rebalancing by kafka)
     this.consumers = {};
     this.fmBuiler = fmBuilder;
@@ -67,7 +70,7 @@ module.exports = class DeviceIngestor {
       }).catch((error) => {
         const message = "Failed to acquire existing tenancy contexts";
         console.error("[ingestor] %s - %s", message, error.message);
-        setTimeout(() => {this.initTenants();}, 2000);
+        setTimeout(() => { this.initTenants(); }, 2000);
         // throw new InitializationError(message);
       });
     }
@@ -117,9 +120,9 @@ module.exports = class DeviceIngestor {
 
   _publish(node, message, flow, metadata) {
     if (node.hasOwnProperty('status') &&
-        (node.status.toLowerCase() !== 'true') &&
-        metadata.hasOwnProperty('reason') &&
-        (metadata.reason === 'statusUpdate')) {
+      (node.status.toLowerCase() !== 'true') &&
+      metadata.hasOwnProperty('reason') &&
+      (metadata.reason === 'statusUpdate')) {
       console.log(`[ingestor] ignoring device status update ${metadata.deviceid} ${flow.id}`);
       return;
     }
@@ -150,23 +153,23 @@ module.exports = class DeviceIngestor {
       const node = flow.nodeMap[head];
       // handle input by device
       if (node.hasOwnProperty('_device_id') &&
-          (node._device_id === event.metadata.deviceid) &&
-          (isTemplate === false)) {
-        this._publish(node, {payload: event.attrs}, flow, event.metadata);
+        (node._device_id === event.metadata.deviceid) &&
+        (isTemplate === false)) {
+        this._publish(node, { payload: event.attrs }, flow, event.metadata);
       }
 
       // handle input by template
       if (node.hasOwnProperty('device_template_id') &&
-          event.metadata.hasOwnProperty('templates') &&
-          (event.metadata.templates.includes(node.device_template_id)) &&
-          (isTemplate === true)) {
-        this._publish(node, {payload: event.attrs}, flow, event.metadata);
+        event.metadata.hasOwnProperty('templates') &&
+        (event.metadata.templates.includes(node.device_template_id)) &&
+        (isTemplate === true)) {
+        this._publish(node, { payload: event.attrs }, flow, event.metadata);
       }
     }
   }
 
   handleEvent(event) {
-    console.log(`[ingestor] got new device event: ${util.inspect(event, {depth: null})}`);
+    console.log(`[ingestor] got new device event: ${util.inspect(event, { depth: null })}`);
     let flowManager = this.fmBuiler.get(event.metadata.tenant);
     flowManager.getByDevice(event.metadata.deviceid).then((flowlist) => {
       for (let flow of flowlist) {
@@ -174,17 +177,18 @@ module.exports = class DeviceIngestor {
       }
     });
 
-
     let okCallback = (flowlist) => {
       for (let flow of flowlist) {
         this.handleFlow(event, flow, true);
       }
     };
-    
-    if (event.metadata.hasOwnProperty('templates')) {
-      for (let template of event.metadata.templates) {
+
+    this.client.getTemplateList(event.metadata.deviceid, event.metadata.tenant).then((data) => {
+      for (let template of data.templates) {
         flowManager.getByTemplate(template).then(okCallback);
       }
-    }
+    }).catch((error) => {
+      console.log(error);
+    })
   }
 };

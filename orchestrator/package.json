@@ -19,16 +19,17 @@
     "geolib": "^2.0.24",
     "joi": "^10.2.0",
     "kafka-node": "^2.4.1",
+    "kubernetes-client": "^5.3.0",
     "lodash": "^4.17.4",
     "mongodb": "^3.0.4",
     "mustache": "^2.3.0",
     "nodemailer": "^4.6.4",
+    "redis": "^2.8.0",
     "request": "^2.79.0",
     "url": "^0.11.0",
     "uuid": "^3.2.1",
+    "when": "~3.7.8",
     "winston": "3.0.0-rc5",
-    "zeromq": "^4.6.0",
-    "kubernetes-client": "^5.3.0",
-    "when": "~3.7.8"
+    "zeromq": "^4.6.0"
   }
 }
