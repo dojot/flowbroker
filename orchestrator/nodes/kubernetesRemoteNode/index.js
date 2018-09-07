@@ -114,7 +114,7 @@ class DataHandler extends RemoteNode {
   /**
    * Return a Kubernetes Group Option object.
    * This is the default configuraton and valid for extensions (most used API in
-   * this handler). 
+   * this handler).
    * @returns { ApiGroupOptions } API group options for use with Kubernetes API.
    */
   getDefaultGroupOptions() {

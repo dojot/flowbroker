@@ -13,7 +13,7 @@ class RemoteNodeHandler extends dojot.DataHandlerBase {
    */
   constructor() {
     super();
-    
+
   }
 
   init() {

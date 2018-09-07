@@ -146,7 +146,7 @@ class NodeManager {
             try {
               await this.collection.insertOne(modelContainer);
               logger.debug("... remote node was successfully inserted into the database.");
-              continueStart = true;  
+              continueStart = true;
             } catch (e) {
               continueStart = false;
               logger.debug(`... remote node was not inserted into the database. Error is ${e}`);

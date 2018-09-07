@@ -25,7 +25,7 @@
 
 
 * **Please tell us about your environment:**
-  
+
   - Version: 0.2.x
   - Environment: [kubernetes, docker-compose, standalone]
   - Operating system: [Ubuntu 16.04, Fedora 28, Ubuntu on VirtualBox (Windows 10), etc.]

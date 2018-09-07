@@ -84,7 +84,7 @@ class FlowManager {
   /**
    * Given a flow representation (json, node-red schema), perform initial validation
    * and parsing.
-   * 
+   *
    * This function will ignore any 'tab' and undefined nodes.
    *
    * @param  {[type]} flow [description]

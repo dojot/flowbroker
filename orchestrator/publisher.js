@@ -12,7 +12,7 @@ class Publisher {
       this.kafkaMessenger.publish(this.subject, this.tenant, JSON.stringify(message));
     }
     else {
-      console.error(`Message ${message} will be discarded.  
+      console.error(`Message ${message} will be discarded.
       Tenant doesn't match! (expected: ${this.tenant} - received: ${message.data.tenant})`);
     }
   }

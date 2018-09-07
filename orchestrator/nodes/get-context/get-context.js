@@ -46,11 +46,11 @@ class DataHandler extends dojot.DataHandlerBase {
   }
 
   handleMessage(config, message, callback, metadata, contextHandler) {
-    
+
     let getContextPromise;
 
     if (config.contextLayer === 'tenant') {
-      getContextPromise = contextHandler.getTenantContext(metadata.tenant, config.contextName); 
+      getContextPromise = contextHandler.getTenantContext(metadata.tenant, config.contextName);
     } else { // flow layer
       getContextPromise = contextHandler.getFlowContext(metadata.tenant, metadata.flowId, config.contextName);
     }
@@ -65,7 +65,7 @@ class DataHandler extends dojot.DataHandlerBase {
     }).catch((error) => {
       callback(error);
     });
-  }  
+  }
 }
 
 module.exports = { Handler: DataHandler };

@@ -57,10 +57,10 @@
         },
         oneditprepare: function () {
             var listDevices = $("#node-input-list_devices_id");
-            
+
             // this will only work from the device management interface
             function list_all(page) {
-             
+
                 if (page === undefined) {
                     page=1;
                 }
@@ -77,7 +77,7 @@
                     });
                     if (list.pagination.has_next) {
                         list_all(list.pagination.next_page);
-                    } 
+                    }
                 }).catch((error) => {
                     console.error('Failed to retrieve the list of available devices', error);
                 });
@@ -90,7 +90,7 @@
 
             let deviceId = $('#node-input-list_devices_id').find(
                     'option[value="' + deviceLabel + '"]').attr('data-value');
-                
+
                 if (!deviceId) {
                     $('#node-input-_device_id').val(undefined);
                 } else {

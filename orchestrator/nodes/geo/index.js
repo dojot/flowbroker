@@ -112,7 +112,7 @@ class DataHandler {
         /**
          * Look for a lat,lng string repesentation and return an
          * object representation of it if any is found.
-         * 
+         *
          * @param  {[object]}  payload Message payload
          * @return {[{latitude: string, longitude: string}]}
          */

@@ -62,7 +62,7 @@ module.exports = {
                     "batch.num.messages": 1000000,
                     "dr_cb": true
                 },
-        
+
                 consumer: {
                     "group.id": process.env.KAFKA_GROUP_ID || "flowbroker",
                     "metadata.broker.list": process.env.KAFKA_HOSTS || "kafka:9092"
