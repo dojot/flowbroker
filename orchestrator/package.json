@@ -10,7 +10,7 @@
   "license": "GPL-3.0",
   "dependencies": {
     "@dojot/dojot-module": "0.0.1-alpha.6",
-    "@dojot/flow-node": "^2.0.0-alpha1",
+    "@dojot/flow-node": "^3.0.0-alpha1",
     "@dojot/healthcheck": "0.0.1-alpha.1",
     "amqplib": "^0.5.2",
     "argparse": "^1.0.9",
