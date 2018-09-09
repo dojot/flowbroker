@@ -203,7 +203,7 @@ class DataHandler extends dojot.DataHandlerBase {
      * @param  {Function}     callback Callback to call upon processing completion
      * @return {[undefined]}
      */
-    handleMessage(config, message, callback) {
+    handleMessage(config, message) {
         logger.debug("Executing switch node...");
         let onward = [];
         try {
@@ -214,7 +214,7 @@ class DataHandler extends dojot.DataHandlerBase {
             } catch (error) {
                 logger.debug("... switch node was not successfully executed.");
                 logger.error(`Error while retrieving variables from switch node: ${error}`);
-                return callback(error);
+                return Promise.reject(error);
             }
             prop = this._getTyped(value, config.propertyType);
 
@@ -239,7 +239,7 @@ class DataHandler extends dojot.DataHandlerBase {
                     } catch (err) {
                         logger.debug("... switch node was not successfully executed.");
                         logger.error(`Error while evaluating value in jsonata first test: ${err}`);
-                        return callback(err, undefined);
+                        return Promise.reject(err);
                     }
                 } else {
                     v1 = this._getTyped(rule.v, rule.vt);
@@ -256,7 +256,7 @@ class DataHandler extends dojot.DataHandlerBase {
                     } catch (err) {
                         logger.debug("... switch node was not successfully executed.");
                         logger.error(`Error while evaluating value in jsonata second test: ${err}`);
-                        return callback(err, undefined);
+                        return Promise.reject(err);
                     }
                 } else if (typeof v2 !== 'undefined') {
                     v2 = this._getTyped(rule.v2, rule.v2t);
@@ -278,12 +278,12 @@ class DataHandler extends dojot.DataHandlerBase {
             }
             config.previousValue = prop;
             logger.debug("... switch node was successfully executed.");
-            return callback(undefined, onward);
+            return Promise.resolve(onward);
 
         } catch (err) {
             logger.debug("... switch node was not successfully executed.");
             logger.error(`Error while executing switch node: ${err}`);
-            return callback(err);
+            return Promise.reject(err);
         }
     }
 }

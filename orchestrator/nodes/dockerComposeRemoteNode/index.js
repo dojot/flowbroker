@@ -5,7 +5,6 @@ var RemoteNode = require("../remoteNode/index").Handler;
 // This should be external - but since it's bugged....
 var docker = require('../../docker/harbor-master');
 var logger = require("../../logger").logger;
-var config = require('../../config');
 
 function makeId(length) {
   var text = "";
@@ -19,24 +18,18 @@ function makeId(length) {
 
 
 class DataHandler extends RemoteNode {
-  constructor(image, id) {
-    super();
+  constructor(image, id, socketPath, network) {
+    //for now we will set the server address as undefined, it  will be defined
+    //when the container be created, during the create method
+    super(id, undefined, 5555);
     this.info = {
       userid: id,
       image: image,
       enabled: false
     };
 
-    this.client = undefined;
-    this.network = undefined;
-
-    if (config.deploy.engine === "docker" && config.deploy.docker) {
-      this.client = docker.Client({ socket: config.deploy.docker.socketPath });
-      this.network = config.deploy.docker.network;
-    } else {
-      logger.debug('Docker was not selected in config file or its config is empty.');
-      logger.error(`Could not instantiate docker driver (no config). All request will be ignored.`);
-    }
+    this.client = docker.Client({ socket: socketPath });
+    this.network = network;
   }
 
   getNetwork() {
@@ -100,8 +93,8 @@ class DataHandler extends RemoteNode {
               Container: container.Id
             };
             this.info.container = container.Id;
-            this.target = container.Id.substr(0,12);
-            console.log(`Target: ${this.target}`);
+            this.serverAddress = container.Id.substr(0,12);
+            console.log(`Target: ${this.serverAddress}`);
             this.getNetwork().then((network) => {
               this.client.networks().connect(network, network_opt).then(() => {
                 console.log(`[nodes] container up: ${options.name}:${container.Id}`);

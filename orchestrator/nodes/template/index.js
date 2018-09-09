@@ -73,17 +73,17 @@ class DataHandler extends dojot.DataHandlerBase {
    * @param  {Function}     callback Callback to call upon processing completion
    * @return {[undefined]}
    */
-  handleMessage(config, message, callback) {
+  handleMessage(config, message) {
     logger.debug("Executing template node...");
     try {
       let result = mustache.render(config.template, message);
       this._set(config.field, result, message);
       logger.debug("... template node was successfully executed.");
-      return callback(undefined, [message]);
+      return Promise.resolve([message]);
     } catch (error) {
       logger.debug("... template node was not successfully executed.");
       logger.error(`Error while executing template node: ${error}`);
-      return callback(error);
+      return Promise.reject(error);
     }
   }
 }

@@ -70,10 +70,10 @@ class DataHandler {
      * @param  {Function}     callback Callback to call upon processing completion
      * @return {[undefined]}
      */
-    handleMessage(config, message, callback) {
+    handleMessage(config, message) {
         setTimeout(() => {
 
-            callback(undefined, [message]);
+            Promise.resolve([message]);
 
         }, 10);
 

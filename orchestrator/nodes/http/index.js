@@ -88,7 +88,7 @@ class DataHandler extends dojot.DataHandlerBase {
         var reqTimeout = 120000;
         var url = nodeUrl || message.url;
         var httpRequest;
-        
+
         try {
             httpRequest = JSON.parse(this._get(config.body, message));
         } catch (e) {
@@ -152,7 +152,7 @@ class DataHandler extends dojot.DataHandlerBase {
                     }
                 }
             }
- 
+
             var payload = null;
             if (typeof httpRequest.payload !== "undefined" && (method === "POST" || method === "PUT" || method === "PATCH")) {
                 if (typeof httpRequest.payload === "string" || Buffer.isBuffer(httpRequest.payload)) {

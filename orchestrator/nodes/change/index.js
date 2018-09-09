@@ -143,7 +143,7 @@ class DataHandler extends dojot.DataHandlerBase {
    * @param  {Function}     callback Callback to call upon processing completion
    * @return {[undefined]}
    */
-  handleMessage(config, message, callback) {
+  handleMessage(config, message) {
     logger.debug("Executing change node...");
     try {
       for (let rule of config.rules) {
@@ -168,22 +168,22 @@ class DataHandler extends dojot.DataHandlerBase {
               } catch (e) {
                 logger.error("... change node was not successfully executed.");
                 logger.error(`Error while executing change node: ${e}`);
-                return callback(e);
+                return Promise.reject(e);
               }
               break;
             default:
               logger.debug("... change node was not successfully executed.");
               logger.error(`Change node has invalid value type: ${rule.tot}`);
-              return callback(new Error('Invalid value type: ' + rule.tot));
+              return Promise.reject(new Error('Invalid value type: ' + rule.tot));
           }
         }
       }
       logger.debug("... change node was successfully executed.");
-      return callback(undefined, [message]);
+      return Promise.resolve([message]);
     } catch (error) {
       logger.debug("... change node was not successfully executed.");
       logger.error(`Error while executing change node: ${error}`);
-      return callback(error);
+      return Promise.reject(error);
     }
   }
 }
