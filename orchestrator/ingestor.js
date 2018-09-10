@@ -1,9 +1,11 @@
 var axios = require("axios");
 var util = require('util');
+var auth = require('./auth');
 var kafka = require('./kafka');
 var amqp = require('./amqp');
 var config = require('./config');
 var node = require('./nodeManager').Manager;
+
 
 // class InitializationError extends Error {}
 
@@ -184,7 +186,7 @@ module.exports = class DeviceIngestor {
     axios.get(config.deviceManager.url + "/device/" + event.metadata.deviceid,
       {
         'headers': {
-          'authorization': "Bearer " + kafka.getToken(event.metadata.tenant)
+          'authorization': "Bearer " + auth.getToken(event.metadata.tenant)
         }
       }).then((response) => {
         if (response.data.hasOwnProperty('templates')) {
@@ -192,6 +194,8 @@ module.exports = class DeviceIngestor {
             flowManager.getByTemplate(template).then(okCallback);
           }
         }
+      }).catch((error) => {
+        console.log(`[ingestor] ${error}`)
       });
   }
 };
