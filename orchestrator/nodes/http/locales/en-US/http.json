@@ -10,6 +10,7 @@
         "headers": "Headers",
         "other": "other",
         "body": "Request body",
+        "response": "Response",
         "name": "Name"
     },
     "setby": "- set by msg.method -",

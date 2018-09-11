@@ -8,6 +8,7 @@ var http = require("follow-redirects").http;
 var https = require("follow-redirects").https;
 var urllib = require("url");
 var mustache = require("mustache");
+var util = require("util");
 
 var dojot = require('@dojot/flow-node');
 
@@ -86,10 +87,10 @@ class DataHandler extends dojot.DataHandlerBase {
         var ret = config.ret || "txt";
         var reqTimeout = 120000;
         var url = nodeUrl || message.url;
-        var requestPayload;
+        var httpRequest;
         
         try {
-            requestPayload = this._get(config.body, message);
+            httpRequest = JSON.parse(this._get(config.body, message));
         } catch (e) {
             logger.debug("... http node was not successfully executed.");
             logger.error(`Error while retrieving http payload: ${e}`);
@@ -136,9 +137,9 @@ class DataHandler extends dojot.DataHandlerBase {
             var ctSet = "Content-Type"; // set default camel case
             var clSet = "Content-Length";
 
-            if (message.headers) {
-                for (var v in message.headers) {
-                    if (message.headers.hasOwnProperty(v)) {
+            if (httpRequest.headers) {
+                for (var v in httpRequest.headers) {
+                    if (httpRequest.headers.hasOwnProperty(v)) {
                         var name = v.toLowerCase();
                         if (name !== "content-type" && name !== "content-length") {
                             // only normalise the known headers used later in this
@@ -147,19 +148,19 @@ class DataHandler extends dojot.DataHandlerBase {
                         }
                         else if (name === 'content-type') { ctSet = v; }
                         else { clSet = v; }
-                        opts.headers[name] = message.headers[v];
+                        opts.headers[name] = httpRequest.headers[v];
                     }
                 }
             }
  
             var payload = null;
-            if (typeof requestPayload !== "undefined" && (method === "POST" || method === "PUT" || method === "PATCH")) {
-                if (typeof requestPayload === "string" || Buffer.isBuffer(requestPayload)) {
-                    payload = requestPayload;
-                } else if (typeof requestPayload === "number") {
-                    payload = requestPayload + "";
+            if (typeof httpRequest.payload !== "undefined" && (method === "POST" || method === "PUT" || method === "PATCH")) {
+                if (typeof httpRequest.payload === "string" || Buffer.isBuffer(httpRequest.payload)) {
+                    payload = httpRequest.payload;
+                } else if (typeof httpRequest.payload === "number") {
+                    payload = httpRequest.payload + "";
                 } else {
-                    payload = JSON.stringify(requestPayload);
+                    payload = JSON.stringify(httpRequest.payload);
                     if (opts.headers['content-type'] === null) {
                         opts.headers[ctSet] = "application/json";
                     }
@@ -184,21 +185,22 @@ class DataHandler extends dojot.DataHandlerBase {
             }
             var urltotest = url;
 
-            logger.debug(`HTTP request about to be sent: ${opts}`);
-            var req = ((/^https/.test(urltotest)) ? https : http).request(opts, function (res) {
+            logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`);
+            var req = ((/^https/.test(urltotest)) ? https : http).request(opts, (res) => {
                 // Force NodeJs to return a Buffer (instead of a string)
                 // See https://github.com/nodejs/node/issues/6038
                 res.setEncoding(null);
                 delete res._readableState.decoder;
 
-                message.statusCode = res.statusCode;
-                message.headers = res.headers;
-                message.responseUrl = res.responseUrl;
-                // Should the answer be cleared or appended?
-                message.payload = [];
+                this._set(config.response, {}, message);
+                var httpResponse = this._get(config.response, message);
+                httpResponse.statusCode = res.statusCode;
+                httpResponse.headers = res.headers;
+                httpResponse.responseUrl = res.responseUrl;
+                httpResponse.payload = [];
 
                 // msg.url = url;   // revert when warning above finally removed
-                res.on('data', function (chunk) {
+                res.on('data', (chunk) => {
                     if (!Buffer.isBuffer(chunk)) {
                         // if the 'setEncoding(null)' fix above stops working in
                         // a new Node.js release, throw a noisy error so we know
@@ -207,26 +209,25 @@ class DataHandler extends dojot.DataHandlerBase {
                         logger.error("Returned HTTP Request data is not a buffer.");
                         return callback(new Error("HTTP Request data chunk not a Buffer"));
                     }
-                    message.payload.push(chunk);
+                    httpResponse.payload.push(chunk);
                 });
 
-                res.on('end', function () {
+                res.on('end', () => {
 
-                    // Check that msg.payload is an array - if the req error
+                    // Check that message[config.response] is an array - if the req error
                     // handler has been called, it will have been set to a string
                     // and the error already handled - so no further action should
                     // be taken. #1344
-                    if (Array.isArray(message.payload)) {
+                    if (Array.isArray(httpResponse.payload)) {
                         // Convert the payload to the required return type
-                        message.payload = Buffer.concat(message.payload); // bin
                         if (ret !== "bin") {
-                            message.payload = message.payload.toString('utf8'); // txt
-
+                            let strData = httpResponse.payload;
+                            httpResponse.payload = strData.toString("utf8");
                             if (ret === "obj") {
                                 try {
-                                    message.payload = JSON.parse(message.payload);
+                                    httpResponse.payload = JSON.parse(strData);
                                 } catch (e) {
-                                    return callback(new Error("httpin.errors.json-error"));
+                                    logger.warn("Could not parse JSON. Forwarding as plain string.");
                                 }
                             }
                         }
@@ -250,7 +251,6 @@ class DataHandler extends dojot.DataHandlerBase {
                 logger.error(`Error was: ${err}`);
                 return callback(err);
             });
-
             if (payload) {
                 req.write(payload);
             }
