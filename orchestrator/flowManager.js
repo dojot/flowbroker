@@ -16,7 +16,7 @@ class FlowError extends Error {
   }
 
   payload() {
-    return {'message': this.message };
+    return { 'message': this.message };
   }
 }
 
@@ -80,7 +80,7 @@ class FlowManager {
   }
 
 
-  
+
   /**
    * Given a flow representation (json, node-red schema), perform initial validation
    * and parsing.
@@ -94,11 +94,11 @@ class FlowManager {
   parse(flow) {
     logger.debug("Parsing new flow...");
     let parsed = new ParsedFlow(flow);
-    logger.debug(`New flow: ${util.inspect(parsed, {depth: null})}`);
+    logger.debug(`New flow: ${util.inspect(parsed, { depth: null })}`);
 
     for (let node of flow) {
       if (!node.hasOwnProperty('type')) {
-        logger.debug(`Node ${util.inspect(node, {depth: null})} has no 'type' attribute.`);
+        logger.debug(`Node ${util.inspect(node, { depth: null })} has no 'type' attribute.`);
         throw new InvalidFlowError();
       }
 
@@ -115,11 +115,11 @@ class FlowManager {
         case "device in":
           parsed.heads.push(node.id);
           parsed.devices.push(node._device_id);
-        break;
+          break;
         case "device template in":
           parsed.heads.push(node.id);
           parsed.templates.push(node.device_template_id);
-        break;
+          break;
       }
     }
 
@@ -140,12 +140,12 @@ class FlowManager {
   removeAll() {
     return this.collection
       .deleteMany({})
-      .then(() => {});
+      .then(() => { });
   }
 
   get(flowid) {
     return this.collection
-      .findOne({id: flowid})
+      .findOne({ id: flowid })
       .then(flow => {
         if (!flow) {
           throw new UnknownFlowError(flowid);
@@ -154,7 +154,7 @@ class FlowManager {
         return flow;
       })
       .catch(error => {
-        if (error instanceof mongo.MongoError){
+        if (error instanceof mongo.MongoError) {
           throw error;
         }
       });
@@ -198,7 +198,7 @@ class FlowManager {
       parsed.updated = parsed.created;
 
       logger.debug('Inserting flow into the database...');
-      this.collection.insert(parsed).then(() =>{
+      this.collection.insert(parsed).then(() => {
         logger.debug("... new flow was successfully inserted into the database.");
         return resolve(parsed);
       }).catch((error) => {
@@ -208,7 +208,7 @@ class FlowManager {
     });
   }
 
-  set(flowid, label, enabled, flow){
+  set(flowid, label, enabled, flow) {
     return this.get(flowid)
       .then(oldFlow => {
         let newFlow = JSON.parse(JSON.stringify(oldFlow));
@@ -228,19 +228,19 @@ class FlowManager {
         if (enabled) { newFlow.enabled = enabled; }
 
         return this.collection
-          .findOneAndReplace({id: flowid}, newFlow)
+          .findOneAndReplace({ id: flowid }, newFlow)
           .then(result => {
-          if (result.ok === 1) {
+            if (result.ok === 1) {
               return newFlow;
-          }
+            }
             throw new MongoError();
+          });
       });
-    });
   }
 
   remove(flowid) {
     return this.collection
-      .findOneAndDelete({id: flowid})
+      .findOneAndDelete({ id: flowid })
       .then((flow) => {
         if (flow.value === null) {
           throw new UnknownFlowError(flowid);
@@ -249,7 +249,7 @@ class FlowManager {
         } else {
           throw new Error(new MongoError());
         }
-    });
+      });
   }
 
   getByDevice(deviceid) {
@@ -264,7 +264,7 @@ class FlowManager {
     return new Promise((resolve) => {
       // we might want to return ids only, but that would be best only if we had a local cache
       // in place
-      resolve(this.collection.find({templates: templateid}).toArray());
+      resolve(this.collection.find({ templates: templateid }).toArray());
     });
   }
 }
