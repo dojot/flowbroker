@@ -37,7 +37,8 @@ module.exports = {
     },
 
     'ingestion': {
-        subject: process.env.INGESTION_SUBJECT || "device-data"
+        subject: process.env.INGESTION_SUBJECT || "device-data",
+        devices: process.env.DOJOT_SUBJECT_DEVICES || "dojot.device-manager.device"
     },
 
     'tenancy': {

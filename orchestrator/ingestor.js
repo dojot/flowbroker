@@ -1,6 +1,5 @@
 var axios = require("axios");
 var util = require('util');
-var auth = require('./auth');
 var kafka = require('./kafka');
 var amqp = require('./amqp');
 var config = require('./config');
@@ -92,7 +91,12 @@ module.exports = class DeviceIngestor {
     }
 
     let consumer = new kafka.Consumer(tenant, config.ingestion.subject);
+    let consumerDevices = new kafka.Consumer(tenant, config.ingestion.devices);
     this.consumers[consumerid] = true;
+
+    consumerDevices.on('connect', () => {
+      console.log(`[ingestor] Device info consumer ready for tenant ${tenant}`);
+    });
 
     consumer.on('connect', () => {
       console.log(`[ingestor] Device consumer ready for tenant: ${tenant}`);
@@ -114,10 +118,26 @@ module.exports = class DeviceIngestor {
       }
     });
 
+    consumerDevices.on('message', (data) => {
+      try {
+        const message = JSON.parse(data.value.toString());
+        if (message.event === 'update' || message.event === 'remove'){
+          this.handleUpdate(message);
+        }
+      } catch (error) {
+        console.error(`[ingestor] Device-manager event ingestion failed: `, error.message);
+      }
+    });
+
     consumer.on('error', (error) => {
       console.error('[ingestor:kafka] Consumer for tenant "%s" is errored.', tenant);
       console.error('[ingestor:kafka] Error is: %s', error);
     });
+
+    consumerDevice.on('error', (error) => {
+      console.error('[ingestor:kafka] Consumer device for tenant "%s" is errored.', tenant);
+      console.error('[ingestor:kafka] Error is: %s', error);
+    })
   }
 
   _publish(node, message, flow, metadata) {
@@ -192,5 +212,10 @@ module.exports = class DeviceIngestor {
     }).catch((error) => {
       console.log(error);
     })
+  }
+
+  handleUpdate(event) {
+    console.log(`[ingestor] got new device info update: ${util.inspect(event, { depth: null})}`);
+    this.client.deleteDevice(event.data.id, event.meta.service);
   }
 };
