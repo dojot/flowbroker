@@ -3,7 +3,7 @@
 module.exports = {
 
     'redis': {
-        url: process.env.FLOW_BROKER_HOST || "flowbroker-redis"
+        url: process.env.FLOWBROKER_CACHE_HOST || "flowbroker-redis"
     },
 
     'deviceManager': {

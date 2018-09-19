@@ -13,54 +13,81 @@ class ClientWrapper {
   constructor(client) {
     this.client = client;
   }
+
   /**
    * Returns template list of a device. Search for it on cache, if it's not, requests device manager
    * and then stores on cache.
-   * @param deviceid 
+   * @param {string} deviceid
+   * @param {string} tenant 
+   * @param {string} redisState
    */
-
-  getTemplateList(deviceid, tenant) {
+  getTemplateList(tenant, deviceid, redisState) {
     return new Promise((resolve, reject) => {
-      this.client.get(deviceid + ":" + tenant, (error, data) => {
-        if (error) {
-          reject(error);
-          return;
-        }
+      if (redisState === 'Connected') {
+        this.client.get(tenant + ":" + deviceid).then((data) => {
 
-        if (data != null) {
-          resolve(JSON.parse(data));
-          return;
-        }
+          if (data != null) {
+            resolve(JSON.parse(data));
+            return;
+          }
 
-        axios.get(config.deviceManager.url + "/device/" + deviceid,
-          {
-            'headers': {
-              'authorization': "Bearer " + auth.getToken(tenant)
-            }
-          }).then((response) => {
-            this.setTemplateList(deviceid, tenant, response.data.templates);
-            resolve({ "templates": response.data.templates });
-            return;
-          }).catch((error) => {
-            reject(error);
-            return;
-          })
-      });
+          this.requestTemplateList(tenant, deviceid, resolve, reject, redisState);
+        }).catch(() => {
+          console.log(`[redis] Could not get from redis, will request to device manager`);
+          this.requestTemplateList(tenant, deviceid, resolve, reject, redisState);
+          return;
+        });
+      } else {
+        this.requestTemplateList(tenant, deviceid, resolve, reject, redisState);
+      }
     });
   }
+
+  /**
+   * Requests template list to devicemanager.
+   * @param {string} deviceid 
+   * @param {string} tenant 
+   * @param {callback} resolve 
+   * @param {callback} reject 
+   */
+  requestTemplateList(tenant, deviceid, resolve, reject, redisState) {
+    axios.get(config.deviceManager.url + "/device/" + deviceid,
+      {
+        'headers': {
+          'authorization': "Bearer " + auth.getToken(tenant)
+        }
+      }).then((response) => {
+
+        if (redisState === 'Connected') {
+          this.setTemplateList(tenant, deviceid, response.data.templates);
+        }
+
+        resolve({ "templates": response.data.templates });
+        return;
+      }).catch((error) => {
+        reject(error);
+        return;
+      });
+  }
+
   /**
    * Stores list of templates retrieved from device-manager
    * @param  deviceid 
    * @param  tenant 
    * @param  templateList 
    */
-  setTemplateList(deviceid, tenant, templateList) {
+  setTemplateList(tenant, deviceid, templateList) {
     console.log(`[redis] storing template list on cache . . .`);
-    const key = deviceid + ":" + tenant;
+    const key = tenant + ":" + deviceid;
     const value = { "templates": templateList };
-    this.client.set(key, JSON.stringify(value));
-    console.log(`[redis] . . . template list stored successfully`);
+
+    this.client.set(key, JSON.stringify(value)).then(() => {
+      console.log(`[redis] . . . template list stored successfully`);
+    }).catch((error) => {
+      console.log(error);
+    })
   }
+
   /**
    * Deletes a given device from te cache. This function will be called
    * when the information stored on cache isn't the same from device-manager
@@ -68,10 +95,14 @@ class ClientWrapper {
    * @param {*} deviceid 
    * @param {*} tenant 
    */
-  deleteDevice(deviceid, tenant){
-    console.log(`[redis] Will delet ${deviceid + ":" + tenant} from cache`);
-    const key = deviceid + ":" + tenant;    
-    this.client.del(key);
+  deleteDevice(tenant, deviceid) {
+    console.log(`[redis] Will delet ${tenant + ":" + deviceid} from cache`);
+    const key = tenant + ":" + deviceid;
+    this.client.del(key).then(() => {
+      console.log(`[redis] Deleted from cache`);
+    }).catch((error) => {
+      console.log(error);
+    });
   }
 }
 

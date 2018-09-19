@@ -205,7 +205,7 @@ module.exports = class DeviceIngestor {
       }
     };
 
-    this.client.getTemplateList(event.metadata.deviceid, event.metadata.tenant).then((data) => {
+    this.client.getTemplateList(event.metadata.tenant, event.metadata.deviceid, this.redis.getState()).then((data) => {
       for (let template of data.templates) {
         flowManager.getByTemplate(template).then(okCallback);
       }
@@ -216,6 +216,6 @@ module.exports = class DeviceIngestor {
 
   handleUpdate(event) {
     console.log(`[ingestor] got new device info update: ${util.inspect(event, { depth: null})}`);
-    this.client.deleteDevice(event.data.id, event.meta.service);
+    this.client.deleteDevice(event.meta.service, event.data.id);
   }
 };
