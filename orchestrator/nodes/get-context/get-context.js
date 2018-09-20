@@ -41,47 +41,37 @@ class DataHandler extends dojot.DataHandlerBase {
    * @param  {[string]} locale Locale string, such as "en-US"
    * @return {[object]}        Locale settings used by the module
    */
-  getLocaleData(locale) {
+  getLocaleData(/*locale*/) {
     return {};
   }
 
   handleMessage(config, message, callback, metadata, contextHandler) {
+    
+    let getContextPromise;
+
     if (config.contextLayer === 'tenant') {
-      contextHandler.getTenantContext(metadata.tenant, config.contextName).then( (values) => {
-        let [contextId, contextContent] = values;
-
-        contextHandler.saveContext(contextId, contextContent).then( () => {
-          try {
-            this._set(config.contextContent, contextContent, message);
-            callback(undefined, [message]);
-          } catch (error) {
-            callback(error);
-          }
-        }).catch((error) => {
-          callback(error);
-        });
-      }).catch((error) => {
-        callback(error);
-      }); 
+      getContextPromise = contextHandler.getTenantContext(metadata.tenant, config.contextName); 
     } else { // flow layer
-      contextHandler.getFlowContext(metadata.tenant, metadata.flowId, config.contextName).then( (values) => {
-        let [contextId, contextContent] = values;
+      getContextPromise = contextHandler.getFlowContext(metadata.tenant, metadata.flowId, config.contextName);
+    }
 
-        contextHandler.saveContext(contextId, contextContent).then( () => {
-          try {
-            this._set(config.contextContent, contextContent, message);
-            callback(undefined, [message]);
-          } catch (error) {
-            callback(error);
-          }
-        }).catch((error) => {
+    getContextPromise.then( (results) => {
+      let [contextId, contextContent] = results;
+
+      contextHandler.saveContext(contextId, contextContent).then( () => {
+        try {
+          this._set(config.contextContent, contextContent, message);
+          callback(undefined, [message]);
+        } catch (error) {
           callback(error);
-        });
+        }
       }).catch((error) => {
         callback(error);
-      });
-    }
-  }
+      })
+    }).catch((error) => {
+      callback(error);
+    });
+  }  
 }
 
 module.exports = { Handler: DataHandler };
