@@ -48,13 +48,20 @@ class DataHandler extends RemoteNode {
       }
 
       this.client.networks().list().then((results) => {
-        for (let result of results) {
-          let name = result.Name.match(/.+?_flowbroker/);
-          if (name) {
-            this.targetNetwork = name;
-            return resolve(name);
+        let network = process.env.FLOWBROKER_NETWORK;
+        let errorMessage;
+        if (network) {
+          for (let result of results) {
+            if (result.Name.includes(network)) {
+              return resolve(network);
+            }
           }
+          errorMessage = `failed to acquire target network ${network}`;
+        } else {
+          errorMessage = "failed to acquire target network. network name is blank";
         }
+        logger.error(errorMessage);
+        return reject(new Error(errorMessage));
       }).catch((error) => {
         console.error("failed to acquire target network", error);
         return reject(error);
@@ -102,6 +109,9 @@ class DataHandler extends RemoteNode {
                 this.remove();
                 return reject(error);
               });
+            }).catch((error) => {
+              this.remove();
+              return reject(error);
             });
           }).catch((error) => {
             this.remove();
