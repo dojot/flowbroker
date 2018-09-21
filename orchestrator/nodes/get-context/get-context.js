@@ -1,6 +1,6 @@
 "use strict";
 
-var path = require('path')
+var path = require('path');
 var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
