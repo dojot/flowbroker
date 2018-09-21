@@ -1,7 +1,11 @@
 "use strict";
 
 module.exports = {
-    
+
+    'redis': {
+        url: process.env.FLOWBROKER_CACHE_HOST || "flowbroker-redis"
+    },
+
     'deviceManager': {
         url: process.env.DEVICE_MANAGER_HOST || "http://device-manager:5000"
     },
@@ -33,7 +37,8 @@ module.exports = {
     },
 
     'ingestion': {
-        subject: process.env.INGESTION_SUBJECT || "device-data"
+        subject: process.env.INGESTION_SUBJECT || "device-data",
+        devices: process.env.DOJOT_SUBJECT_DEVICES || "dojot.device-manager.device"
     },
 
     'tenancy': {
