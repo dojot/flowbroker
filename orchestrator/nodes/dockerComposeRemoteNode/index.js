@@ -28,9 +28,11 @@ class DataHandler extends RemoteNode {
     };
 
     this.client = undefined;
+    this.network = undefined;
 
     if (config.deploy.engine === "docker" && config.deploy.docker) {
       this.client = docker.Client({ socket: config.deploy.docker.socketPath });
+      this.network = config.deploy.docker.network;
     } else {
       logger.debug('Docker was not selected in config file or its config is empty.');
       logger.error(`Could not instantiate docker driver (no config). All request will be ignored.`);
@@ -48,15 +50,14 @@ class DataHandler extends RemoteNode {
       }
 
       this.client.networks().list().then((results) => {
-        let network = config.deploy.docker.network;
         let errorMessage;
-        if (network) {
+        if (this.network) {
           for (let result of results) {
-            if (result.Name.includes(network)) {
-              return resolve(network);
+            if (result.Name.includes(this.network)) {
+              return resolve(this.network);
             }
           }
-          errorMessage = `failed to acquire target network ${network}`;
+          errorMessage = `failed to acquire target network ${this.network}`;
         } else {
           errorMessage = "failed to acquire target network. network name is blank";
         }
