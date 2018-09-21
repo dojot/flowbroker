@@ -48,7 +48,7 @@ class DataHandler extends RemoteNode {
       }
 
       this.client.networks().list().then((results) => {
-        let network = process.env.FLOWBROKER_NETWORK;
+        let network = config.deploy.docker.network;
         let errorMessage;
         if (network) {
           for (let result of results) {
