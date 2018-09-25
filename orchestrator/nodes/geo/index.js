@@ -80,7 +80,7 @@ class DataHandler {
         if (!geolocation) {
             logger.debug("... geo node was not successfully executed.");
             logger.error("Message has no geographic position attached.");
-            callback(new Error("Message has no geographic position attached"));
+            return callback(new Error("Message has no geographic position attached"));
         }
 
         let inout = geolib.isPointInside(geolocation, config.points);

@@ -8,8 +8,8 @@ module.exports = class Executor {
     constructor(contextHandler) {
         console.log('[executor] initializing ...');
         this.hop = this.hop.bind(this);
-        this.producer = new amqp.AMQPProducer(config.amqp.queue);
-        this.consumer = new amqp.AMQPConsumer(config.amqp.queue, this.hop);
+        this.producer = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
+        this.consumer = new amqp.AMQPConsumer(config.amqp.queue, this.hop, config.amqp.url, 2);
         this.contextHandler = contextHandler;
     }
 
@@ -58,12 +58,16 @@ module.exports = class Executor {
                     let newEvent = result[output];
                     if (newEvent) {
                         for (let hop of at.wires[output]) {
+                            // event that are being processed must use
+                            // the maximum priority, in this way new
+                            // coming event will need to wait until
+                            // the previous being processed
                             this.producer.sendMessage(JSON.stringify({
                                 hop: hop,
                                 message: newEvent,
                                 flow: event.flow,
                                 metadata: event.metadata
-                            }));
+                            }), 1);
                         }
                     }
                 }
