@@ -57,7 +57,7 @@ class AMQPBase {
 }
 
 class AMQPProducer extends AMQPBase {
-  constructor(queue, target) {
+  constructor(queue, target, maxPriority) {
     if (queue === undefined) {
       throw new Error("Queue must be defined");
     }
@@ -67,32 +67,32 @@ class AMQPProducer extends AMQPBase {
     this.backtrack = [];
 
     this.on('channel', (channel) => {
-      channel.assertQueue(this.queue, { durable: true });
+      channel.assertQueue(this.queue, { durable: true, maxPriority: maxPriority});
       console.log('[amqp] producer ready ... ');
 
       let event = this.backtrack.pop();
       while (event) {
-        this.sendMessage(event);
+        this.sendMessage(event.data, event.priority);
         event = this.backtrack.pop();
       }
     });
   }
 
-  sendMessage(data) {
+  sendMessage(data, priority = 0) {
     if (this.channel) {
       let buffer = new Buffer(data);
       // console.log('Will send message [%s] %s', this.queue, data);
-      this.channel.sendToQueue(this.queue, buffer, { persistent: true });
+      this.channel.sendToQueue(this.queue, buffer, { persistent: true, priority: priority });
       return;
     } else {
       // console.log('channel was not ready yet', this);
-      this.backtrack.push(data);
+      this.backtrack.push({data, priority});
     }
   }
 }
 
 class AMQPConsumer extends AMQPBase {
-  constructor(queue, onMessage, target) {
+  constructor(queue, onMessage, target, maxPriority) {
     if (queue === undefined || onMessage === undefined) {
       throw new Error("Both queue and message callbacks must be defined");
     }
@@ -101,7 +101,7 @@ class AMQPConsumer extends AMQPBase {
     this.queue = queue;
     this.on('channel', (channel) => {
       console.log('[amqp] consumer ready ... ');
-      channel.assertQueue(this.queue, { durable: true });
+      channel.assertQueue(this.queue, { durable: true, maxPriority: maxPriority });
       channel.consume(this.queue, (amqpCtx) => {
         onMessage(amqpCtx.content.toString(), () => {
           // console.log('will ack message', new Error().stack);

@@ -93,7 +93,7 @@ if (args.message && args.device) {
 
   let producer;
   try {
-    producer = new amqp.AMQPProducer(config.amqp.queue);
+    producer = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
   } catch (error) {
     fail(error);
   }
@@ -117,7 +117,7 @@ if (args.message && args.device) {
           msg: message,
           node: node,
           flow: flow.id
-        }));
+        }), 0);
       }
     }
   }

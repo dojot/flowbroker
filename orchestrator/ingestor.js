@@ -21,7 +21,7 @@ module.exports = class DeviceIngestor {
     // map of active consumers (used to detect topic rebalancing by kafka)
     this.consumers = {};
     this.fmBuiler = fmBuilder;
-    this.amqp = new amqp.AMQPProducer(config.amqp.queue);
+    this.amqp = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
   }
 
   /**
@@ -149,6 +149,8 @@ module.exports = class DeviceIngestor {
       return;
     }
 
+    // new events must have the lowest priority in the queue, in this way
+    // events that are being processed can be finished first
     // This should work for single output nodes only!
     for (let output of node.wires) {
       for (let hop of output) {
@@ -160,7 +162,7 @@ module.exports = class DeviceIngestor {
             tenant: metadata.tenant,
             originator: metadata.deviceid
           }
-        }));
+        }), 0);
       }
     }
   }
