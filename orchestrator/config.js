@@ -53,7 +53,8 @@ module.exports = {
             token: process.env.KUBERNETES_TOKEN || ""
         },
         docker: {
-            socketPath: process.env.DOCKER_SOCKET_PATH || "/var/run/docker.sock"
+            socketPath: process.env.DOCKER_SOCKET_PATH || "/var/run/docker.sock",
+            network: process.env.FLOWBROKER_NETWORK || "dojot"
         }
     },
 
