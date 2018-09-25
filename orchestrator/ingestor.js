@@ -201,15 +201,14 @@ module.exports = class DeviceIngestor {
       }
     });
 
-    let okCallback = (flowlist) => {
-      for (let flow of flowlist) {
-        this.handleFlow(event, flow, true);
-      }
-    };
-
     this.client.getTemplateList(event.metadata.tenant, event.metadata.deviceid, this.redis.getState()).then((data) => {
+      event.metadata.templates = data.templates;
       for (let template of data.templates) {
-        flowManager.getByTemplate(template).then(okCallback);
+        flowManager.getByTemplate(template).then( (flowlist) => {
+          for (let flow of flowlist) {
+            this.handleFlow(event, flow, true);
+          }
+        });
       }
     }).catch((error) => {
       console.log(error);
