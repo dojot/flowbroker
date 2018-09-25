@@ -45,6 +45,14 @@ services:
       - default
       - flowbroker
 
+  flowbroker-redis:
+    image: redis:alpine
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+
   flowbroker:
     image: dojot/flowbroker
     restart: always
@@ -55,6 +63,7 @@ services:
       - data-broker
       - auth
       - flowbroker-context-manager
+      - flowbroker-redis
     networks:
       - default
       - flowbroker
