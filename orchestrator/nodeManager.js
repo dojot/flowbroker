@@ -12,6 +12,7 @@ var device_in = require('./nodes/device-in/device-in').Handler;
 var device_tpl = require('./nodes/template-in/template-in').Handler;
 var actuate = require('./nodes/actuate/actuate').Handler;
 var device_out = require('./nodes/device-out/device-out').Handler;
+var get_context = require('./nodes/get-context/get-context').Handler;
 var dockerRemote = require('./nodes/dockerComposeRemoteNode/index').Handler;
 var k8sRemote = require('./nodes/kubernetesRemoteNode/index').Handler;
 var Publisher = require('./publisher');
@@ -35,7 +36,8 @@ class NodeManager {
       "device in": new device_in(),
       "device out": new device_out(new Publisher()),
       "device template in": new device_tpl(),
-      "actuate": new actuate(new Publisher('dojot.device-manager.device'))
+      "actuate": new actuate(new Publisher('dojot.device-manager.device')),
+      "get context": new get_context(),
     };
   }
 
