@@ -1,6 +1,5 @@
 var config = require('./config');
 var amqp = require('./amqp');
-var axios = require("axios");
 var util = require('util');
 var node = require('./nodeManager').Manager;
 var redisManager = require('./redisManager').RedisManager;
@@ -39,7 +38,7 @@ module.exports = class DeviceIngestor {
     //tenancy subject
     console.log("Registering callbacks for tenancy subject...");
     this.kafkaMessenger.on(dojotConfig.dojot.subjects.tenancy, "new-tenant", (tenant, newtenant) => {
-      node.addTenant(tenant, this.kafkaMessenger)});
+      node.addTenant(newtenant, this.kafkaMessenger)});
     console.log("... callbacks for tenancy registered.");
 
     //device-manager subject

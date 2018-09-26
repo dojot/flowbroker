@@ -1,6 +1,3 @@
-var config = require('./config');
-var dojotModule = require("@dojot/dojot-module");
-
 class Publisher {
   constructor(kafka, subject, tenant) {
     this.kafkaMessenger = kafka;

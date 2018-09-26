@@ -197,6 +197,6 @@ kafkaMessenger.init().then(() => {
   }
 
 }).catch((error) => {
-  logger.error("... Flowbroker kafka-messenger couldn't be initialized.");
+  logger.error(`... Flowbroker kafka-messenger couldn't be initialized. Error ${error}`);
   process.exit(1);
 });
