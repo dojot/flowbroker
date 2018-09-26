@@ -1,45 +1,23 @@
-var kafka = require('./kafka');
 var config = require('./config');
+var dojotModule = require("@dojot/dojot-module");
 
 class Publisher {
-  constructor(subject) {
-    this.producer = new kafka.Producer();
-    this.producer.initProducer();
-    this.subject = subject || config.ingestion.subject;
-  }
-
-  /**
- * Internal method used to fill up required fields when informing updates to dojot
- * @param  {[string]} deviceid Device to be updated
- * @param  {[string]} tenant   Tenant which device belongs to
- * @param  {[object]} metadata Device metadata that accompanies the event
- * @return {[object]}          Updated metadata (if fields were missing)
- */
-  checkCompleteMetaFields(deviceid, tenant, metadata) {
-    return new Promise((resolve) => {
-
-      if (!metadata.hasOwnProperty('deviceid')) {
-        metadata.deviceid = deviceid;
-      }
-
-      if (!metadata.hasOwnProperty('tenant')) {
-        metadata.tenant = tenant;
-      }
-
-      if (!metadata.hasOwnProperty('timestamp')) {
-        metadata.timestamp = Date.now();
-      }
-
-      if (!metadata.hasOwnProperty('templates')) {
-        metadata.templates = [];
-      }
-      resolve();
-    });
+  constructor(kafka, subject, tenant) {
+    this.kafkaMessenger = kafka;
+    this.subject = subject;
+    this.tenant = tenant;
   }
 
   publish(message) {
-    console.log(`will produce to ${this.subject}`);
-    this.producer.sendEvent(message.metadata.tenant, this.subject, message);
+    console.log(typeof message);
+    if (this.tenant === message.metadata.tenant) {
+      console.log(`will produce ${message} to ${this.subject}:${this.tenant}`);
+      this.kafkaMessenger.publish(this.subject, this.tenant, JSON.stringify(message));
+    }
+    else {
+      console.error(`Message ${message} will be discarded.  
+      Tenant doesn't match! (expected: ${this.tenant} - received: ${message.data.tenant})`);
+    }
   }
 }
 
