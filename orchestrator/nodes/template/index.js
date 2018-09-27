@@ -75,8 +75,15 @@ class DataHandler extends dojot.DataHandlerBase {
   handleMessage(config, message) {
     logger.debug("Executing template node...");
     try {
-      let result = mustache.render(config.template, message);
-      this._set(config.field, result, message);
+      let data = config.template;
+      if (config.syntax === 'mustache') {
+        data = mustache.render(data, message);
+      }
+
+      if (config.output === 'json') {
+        data = JSON.parse(data);
+      }
+      this._set(config.field, data, message);
       logger.debug("... template node was successfully executed.");
       return Promise.resolve([message]);
     } catch (error) {
