@@ -64,6 +64,9 @@ services:
       - auth
       - flowbroker-context-manager
       - flowbroker-redis
+    environment:
+      DEPLOY_ENGINE: docker
+      FLOWBROKER_NETWORK: flowbroker
     networks:
       - default
       - flowbroker
