@@ -121,8 +121,13 @@ module.exports = class DeviceIngestor {
     consumerDevices.on('message', (data) => {
       try {
         const message = JSON.parse(data.value.toString());
-        if (message.event === 'update' || message.event === 'remove'){
-          this.handleUpdate(message);
+        if (message.event === 'update' || message.event === 'remove') {
+          this.handleUpdate(message.meta.service, message.data.id);
+        }
+        if (message.event === 'template.update') {
+          message.data.affected.forEach(deviceid => {
+            this.handleUpdate(message.meta.service, deviceid);
+          })
         }
       } catch (error) {
         console.error(`[ingestor] Device-manager event ingestion failed: `, error.message);
@@ -202,7 +207,21 @@ module.exports = class DeviceIngestor {
     });
 
     this.client.getTemplateList(event.metadata.tenant, event.metadata.deviceid, this.redis.getState()).then((data) => {
+
       event.metadata.templates = data.templates;
+
+      if (data.staticAttrs !== null) {
+        if (event.metadata.hasOwnProperty('reason')) {
+          if (event.metadata.reason === 'statusUpdate') {
+            event.attrs = {};
+          }
+        }
+        // Copy static attrs to event.attrs
+        for (var attr in data.staticAttrs) {
+          event.attrs[attr] = data.staticAttrs[attr];
+        }
+      }
+
       for (let template of data.templates) {
         flowManager.getByTemplate(template).then( (flowlist) => {
           for (let flow of flowlist) {
@@ -215,8 +234,7 @@ module.exports = class DeviceIngestor {
     })
   }
 
-  handleUpdate(event) {
-    console.log(`[ingestor] got new device info update: ${util.inspect(event, { depth: null})}`);
-    this.client.deleteDevice(event.meta.service, event.data.id);
+  handleUpdate(tenant, deviceid) {
+    this.client.deleteDevice(tenant, deviceid);
   }
 };

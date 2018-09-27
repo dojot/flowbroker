@@ -1,7 +1,6 @@
 /* jslint node: true */
 "use strict";
 var axios = require("axios");
-
 var config = require('./config');
 var auth = require('./auth');
 
@@ -15,7 +14,7 @@ class ClientWrapper {
   }
 
   /**
-   * Returns template list of a device. Search for it on cache, if it's not, requests device manager
+   * Returns device info of a device. Search for it on cache, if it's not, requests device manager
    * and then stores on cache.
    * @param {string} deviceid
    * @param {string} tenant 
@@ -31,38 +30,37 @@ class ClientWrapper {
             return;
           }
 
-          this.requestTemplateList(tenant, deviceid, resolve, reject, redisState);
+          this.requestDeviceInfo(tenant, deviceid, resolve, reject, redisState);
         }).catch(() => {
           console.log(`[redis] Could not get from redis, will request to device manager`);
-          this.requestTemplateList(tenant, deviceid, resolve, reject, redisState);
+          this.requestDeviceInfo(tenant, deviceid, resolve, reject, redisState);
           return;
         });
       } else {
-        this.requestTemplateList(tenant, deviceid, resolve, reject, redisState);
+        this.requestDeviceInfo(tenant, deviceid, resolve, reject, redisState);
       }
     });
   }
 
   /**
-   * Requests template list to devicemanager.
+   * Requests device info to devicemanager.
    * @param {string} deviceid 
    * @param {string} tenant 
    * @param {callback} resolve 
    * @param {callback} reject 
    */
-  requestTemplateList(tenant, deviceid, resolve, reject, redisState) {
+  requestDeviceInfo(tenant, deviceid, resolve, reject, redisState) {
     axios.get(config.deviceManager.url + "/device/" + deviceid,
       {
         'headers': {
           'authorization': "Bearer " + auth.getToken(tenant)
         }
       }).then((response) => {
-
+        let deviceInfo = { "templates": response.data.templates, "staticAttrs": this.addStaticAttrs(response.data.attrs) };
         if (redisState === 'Connected') {
-          this.setTemplateList(tenant, deviceid, response.data.templates);
+          this.setDeviceInfo(tenant, deviceid, deviceInfo);
         }
-
-        resolve({ "templates": response.data.templates });
+        resolve(deviceInfo);
         return;
       }).catch((error) => {
         reject(error);
@@ -76,13 +74,12 @@ class ClientWrapper {
    * @param  tenant 
    * @param  templateList 
    */
-  setTemplateList(tenant, deviceid, templateList) {
-    console.log(`[redis] storing template list on cache . . .`);
+  setDeviceInfo(tenant, deviceid, deviceInfo) {
+    console.log(`[redis] storing device info on cache . . .`);
     const key = tenant + ":" + deviceid;
-    const value = { "templates": templateList };
 
-    this.client.set(key, JSON.stringify(value)).then(() => {
-      console.log(`[redis] . . . template list stored successfully`);
+    this.client.set(key, JSON.stringify(deviceInfo)).then(() => {
+      console.log(`[redis] . . . device info stored successfully`);
     }).catch((error) => {
       console.log(error);
     })
@@ -91,7 +88,7 @@ class ClientWrapper {
   /**
    * Deletes a given device from te cache. This function will be called
    * when the information stored on cache isn't the same from device-manager
-   * anymore, i.e. when the template list of the device is updated.
+   * anymore, i.e. when the device info of the device is updated.
    * @param {*} deviceid 
    * @param {*} tenant 
    */
@@ -99,10 +96,31 @@ class ClientWrapper {
     console.log(`[redis] Will delet ${tenant + ":" + deviceid} from cache`);
     const key = tenant + ":" + deviceid;
     this.client.del(key).then(() => {
-      console.log(`[redis] Deleted from cache`);
+      console.log(`[redis]${tenant + ":" + deviceid} deleted from cache`);
     }).catch((error) => {
       console.log(error);
     });
+  }
+
+  /**
+   * Gets all static attrs of the device and puts it in an object that will be assigned
+   * to a key to be stored on Redis
+   * @param {object} attrs 
+   */
+  addStaticAttrs(attrs) {
+    let deviceStaticAtrrs = {};
+    for (let template in attrs) {
+      attrs[template].forEach(attr => {
+        if (attr.type === 'static') {
+          if (attr.value_type === 'float' || attr.value_type === 'integer') {
+            deviceStaticAtrrs[attr.label] = Number(attr.static_value);
+          } else {
+            deviceStaticAtrrs[attr.label] = attr.static_value;
+          }
+        }
+      });
+    }
+    return deviceStaticAtrrs;
   }
 }
 
