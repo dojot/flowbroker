@@ -20,7 +20,7 @@ class ClientWrapper {
    * @param {string} tenant 
    * @param {string} redisState
    */
-  getTemplateList(tenant, deviceid, redisState) {
+  getDeviceInfo(tenant, deviceid, redisState) {
     return new Promise((resolve, reject) => {
       if (redisState === 'Connected') {
         this.client.get(tenant + ":" + deviceid).then((data) => {

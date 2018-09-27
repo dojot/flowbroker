@@ -206,7 +206,7 @@ module.exports = class DeviceIngestor {
       }
     });
 
-    this.client.getTemplateList(event.metadata.tenant, event.metadata.deviceid, this.redis.getState()).then((data) => {
+    this.client.getDeviceInfo(event.metadata.tenant, event.metadata.deviceid, this.redis.getState()).then((data) => {
 
       event.metadata.templates = data.templates;
 
