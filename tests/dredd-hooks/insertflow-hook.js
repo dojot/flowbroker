@@ -11,17 +11,16 @@ hooks.beforeEach(function (transaction, done) {
     hooks.log("Entering Database!");
     var dbo = db.db("flowbroker_admin");
     var myobj = {
-      "created": new Date('2014-01-22T14:56:59.301Z'),
-      "devices": [],
-      "enabled": true,
       "heads": [],
-      "id": "aaaaaaaa",
-      "label": "zeroflow",
-      "red": [],
+      "devices": [],
       "templates": [],
+      "red": [],
+      "enabled": true,
+      "label": "firstflow",
+      "id": "123456",
+      "created": new Date('2014-01-22T14:56:59.301Z'),
       "updated": new Date('2014-01-22T14:56:59.301Z')
     };
-
     dbo.collection("flows").insertOne(myobj, function(err) {
       if (err) {throw err;}
       hooks.log("1 flow inserted");

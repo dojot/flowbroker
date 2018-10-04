@@ -4,9 +4,17 @@ node_js:
 cache:
   directories:
   - node_modules
+env:
+  - DOCKER_COMPOSE_VERSION=1.21.2
+before_install:
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
 install:
   - npm install aglio
 script:
+  - export FLOWBROKER_NETWORK=flowbroker
   - docker build -t dojot/flowbroker -f orchestrator.docker .
   - docker build -t dojot/flowbroker-context-manager -f contextManager.docker .
   - docker build -t tests/flowbroker -f ./tests/Dockerfile .
