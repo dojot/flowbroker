@@ -73,6 +73,8 @@ services:
 
   tester:
     image: tests/flowbroker
+    depends_on:
+      - flowbroker
 
   rabbitmq:
     image: rabbitmq
