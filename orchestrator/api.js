@@ -62,7 +62,7 @@ app.delete('/v1/node/:id', (req, res) => {
   nodeManager.delRemote(undefined, req.params.id, req.service).then(() => {
     return res.status(200).send({message: 'ok'});
   }).catch((error) => {
-    return res.status(500).send({message: 'Failed ot remove node.', error: error.message});
+    return res.status(500).send({message: 'Failed to remove node.', error: error.message});
   });
 });
 

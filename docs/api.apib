@@ -2,7 +2,7 @@
 
 ## Flows [/v1/flow]
 
-### Get the current configured flows [GET]
+### Get the current configured flows [GET /v1/flow]
 Returns all currently configured flows
 + Request (application/json; charset=utf-8)
   + Headers
@@ -17,10 +17,10 @@ Returns all currently configured flows
                 {
                   "name": "firstflow",
                   "enabled": true,
-                  "id": "dddddddd",
+                  "id": "123456",
                   "flow": [],
-                  "created": 1523303385798,
-                  "updated": 1523303385798
+                  "created": 1538070858845,
+                  "updated": 1538070858845
                 }
               ]
             }
@@ -32,7 +32,7 @@ Returns all currently configured flows
         }
 
 
-### Configure a new flow [POST]
+### Configure a new flow [POST /v1/flow]
 Adds a new flow.
 + Request (application/json; charset=utf-8)
   + Headers
@@ -42,11 +42,9 @@ Adds a new flow.
   + Body
 
             {
-              "id" : "8476897",
-              "service" : "admin",
-              "servicePath" : "/",
-              "flow" : [],
-              "name" : "firstflow"
+              "flow": [],
+              "enabled": true,
+              "name": "secondflow"
             }
 
 + Response 200 (application/json; charset=utf-8)
@@ -54,12 +52,12 @@ Adds a new flow.
         {
           "message": "ok",
           "flow": {
-            "name": "firstflow",
+            "name": "secondflow",
             "enabled": true,
-            "id": "bbbbbbbb",
+            "id": "123457",
             "flow": [],
-            "created": 1523303385798,
-            "updated": 1523303385798
+            "created": 1538070858845,
+            "updated": 1538070858845
           }
         }
 
@@ -75,7 +73,7 @@ Adds a new flow.
           "msg" : "failed to insert data"
         }
 
-### Removes all flows [DELETE]
+### Removes all flows [DELETE /v1/flow]
 Removes all flows and their configurations.
 + Request (application/json; charset=utf-8)
   + Headers
@@ -88,12 +86,15 @@ Removes all flows and their configurations.
           "message" : "All flows removed"
         }
 
-## Flows [/v1/flow/{id}]
-+ Parameters
-    + id : aaaaaaaa (required, string)- The identifier associated to the flow
 
-### Get the current configured flow [GET]
+## Specific Flow [/v1/flow/{id}]
+
+### Get the current configured flow [GET /v1/flow/{id}]
 Returns the configuration of a particular flow
+
++ Parameters
+  + id: 123456 (required, string) - The identifier associated to the flow
+
 + Request (application/json; charset=utf-8)
   + Headers
 
@@ -104,12 +105,12 @@ Returns the configuration of a particular flow
         {
           "message": "ok",
           "flow": {
-            "name": "zeroflow",
+            "name": "firstflow",
             "enabled": true,
-            "id": "aaaaaaaa",
+            "id": "123456",
             "flow": [],
-            "created": 1390402619301,
-            "updated": 1390402619301
+            "created": 1538070858845,
+            "updated": 1538070858845
           }
         }
 
@@ -120,8 +121,12 @@ Returns the configuration of a particular flow
         }
 
 
-### Reconfigure a specific flow [PUT]
+### Reconfigure a specific flow [PUT /v1/flow/{id}]
 Reconfigure a particular flow - the old config will be removed and the new one will be deployed.
+
++ Parameters
+  + id: 123456 (required, string) - The identifier associated to the flow
+
 + Request (application/json; charset=utf-8)
   + Headers
 
@@ -130,12 +135,9 @@ Reconfigure a particular flow - the old config will be removed and the new one w
   + Body
 
                 {
-                  "created" : 123456,
+                  "name" : "newflowname",
                   "enabled" : true,
-                  "flow" : [],
-                  "id" : "aaaaaaaa",
-                  "name" : "emaema",
-                  "updated" : 123456
+                  "flow" : []
                 }
 
 + Response 200 (application/json; charset=utf-8)
@@ -143,20 +145,20 @@ Reconfigure a particular flow - the old config will be removed and the new one w
         {
           "message": "ok",
           "flow": {
-            "name": "emaema",
+            "name": "newflowname",
             "enabled": true,
-            "id": "aaaaaaaa",
+            "id": "123456",
             "flow": [],
-            "created": 1390402619301,
-            "updated": 1523391323270
+            "created": 1538070858845,
+            "updated": 1538070858845
           }
         }
 
 + Response 400
 
         {
-          "message": "Unknown flow: d7fa79ef",
-          "flow": "d7fa79ef"
+          "message": "Unknown flow: 777777",
+          "flow": "777777"
         }
 + Response 404
 
@@ -174,8 +176,12 @@ Reconfigure a particular flow - the old config will be removed and the new one w
           "msg" : "failed to insert data"
         }
 
-### Remove the flow [DELETE]
+### Remove the flow [DELETE /v1/flow/{id}]
 Removes the flow and its configuration.
+
++ Parameters
+  + id: 123456 (required, string) - The identifier associated to the flow
+
 + Request (application/json; charset=utf-8)
   + Headers
 
@@ -186,12 +192,12 @@ Removes the flow and its configuration.
         {
           "message": "flow removed",
           "flow": {
-            "name": "emaema",
+            "name": "firstflow",
             "enabled": true,
-            "id": "aaaaaaaa",
+            "id": "123456",
             "flow": [],
-            "created": 1390402619301,
-            "updated": 1523461760729
+            "created": 1538070858845,
+            "updated": 1538070858845
           }
         }
 
@@ -205,4 +211,56 @@ Removes the flow and its configuration.
 
         {
           "msg" : "given flow is unknown"
+        }
+
+## Nodes [/v1/node]
+
+### Add a remote node [POST /v1/node]
+Adds a remote node
+
++ Request (application/json; charset=utf-8)
+  + Headers
+
+            Authorization: Bearer JWT
+
+  + Body
+
+            {
+                "image": "mmagr/kelvin:latest",
+                "id": "kelvin"
+            }
+
++ Response 200 (application/json; charset=utf-8)
+
+        {
+          "message": "ok"
+        }
+
++ Response 500
+
+        {
+          "message" : "Failed to add node"
+        }
+
+### Remove a remote node [DELETE /v1/node/{id}]
+Removes a remote node
+
++ Parameters
+  + id: kelvin (required, string) - The identifier associated to the node
+
++ Request (application/json; charset=utf-8)
+  + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json; charset=utf-8)
+
+        {
+          "message": "ok"
+        }
+
++ Response 500
+
+        {
+          "message": "Failed to remove node.",
         }
