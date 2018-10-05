@@ -70,6 +70,11 @@ services:
       - flowbroker
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:Z
+    healthcheck:
+      test: ["CMD", "nc", "-z", "flowbroker:80"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   tester:
     image: tests/flowbroker
