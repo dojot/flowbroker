@@ -2,7 +2,7 @@ FROM node:8-alpine
 
 WORKDIR /opt/flowbroker/orchestrator
 
-RUN apk --no-cache add gcc g++ musl-dev make python
+RUN apk --no-cache add gcc g++ musl-dev make python bash zlib-dev
 
 COPY orchestrator/package.json ./package.json
 RUN npm install

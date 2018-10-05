@@ -34,6 +34,7 @@ services:
     image: dojot/flowbroker-context-manager
     restart: always
     environment:
+      DOJOT_SERVICE_MANAGEMENT: "internal"
       ZOOKEEPER_HOST: zookeeper
       ZOOKEEPER_PORT: 2181
       ZEROMQ_PORT: 5556
@@ -72,9 +73,16 @@ services:
       - flowbroker
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:Z
+    healthcheck:
+      test: ["CMD", "nc", "-z", "flowbroker:80"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   tester:
     image: tests/flowbroker
+    depends_on:
+      - flowbroker
 
   rabbitmq:
     image: rabbitmq

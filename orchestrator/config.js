@@ -21,11 +21,6 @@ module.exports = {
         }
     },
 
-    'kafka': {
-        kafkaHost: process.env.KAFKA_HOST || "kafka:9092",
-        sessionTimeout: process.env.KAFKA_SESSION_TIMEOUT || "15000",
-        groupId: process.env.KAFKA_GROUP_ID || ('iotagent-' + Math.floor(Math.random() * 10000))
-    },
 
     'dataBroker': {
         url: process.env.DATA_BROKER_URL || "http://data-broker:80"
@@ -34,16 +29,6 @@ module.exports = {
     'amqp': {
         url: process.env.AMQP_URL || "amqp://rabbitmq",
         queue: process.env.AMQP_QUEUE || "task_queue"
-    },
-
-    'ingestion': {
-        subject: process.env.INGESTION_SUBJECT || "device-data",
-        devices: process.env.DOJOT_SUBJECT_DEVICES || "dojot.device-manager.device"
-    },
-
-    'tenancy': {
-        subject: process.env.TENANCY_SUBJECT || "dojot.tenancy",
-        manager: process.env.TENANCY_MANAGER || "http://auth:5000"
     },
 
     'deploy': {
