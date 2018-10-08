@@ -1,11 +1,11 @@
-var axios = require("axios");
-var util = require('util');
-var kafka = require('./kafka');
-var amqp = require('./amqp');
 var config = require('./config');
+var amqp = require('./amqp');
+var util = require('util');
 var node = require('./nodeManager').Manager;
 var redisManager = require('./redisManager').RedisManager;
 
+var dojotModule = require("@dojot/dojot-module");
+var dojotConfig = dojotModule.Config;
 
 // class InitializationError extends Error {}
 
@@ -14,135 +14,78 @@ module.exports = class DeviceIngestor {
    * Constructor.
    * @param {FlowManagerBuilder} fmBuilder Builder instance to be used when parsing received events
    */
-  constructor(fmBuilder) {
+  constructor(fmBuilder, kafka) {
     // using redis as cache
     this.redis = new redisManager();
     this.client = this.redis.getClient();
-    // map of active consumers (used to detect topic rebalancing by kafka)
-    this.consumers = {};
+    
+    // flow builder
     this.fmBuiler = fmBuilder;
+
+    // rabbitmq
     this.amqp = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
+
+    // kafka
+    this.kafkaMessenger = kafka;
   }
 
   /**
-   * Lists current known tenants in the platform
-   * @return {[Promise]}  List of known tenants in the platform
+   * Initializes device ingestor: Kafka, RabbitMQ ...
    */
-  listTenants() {
-    let url = config.tenancy.manager + '/admin/tenants';
-    return axios({ url }).then((response) => response.data.tenants);
-  }
+  init() {
+    //TODO: The messages must be read from kafka in the pace
+    //      flowbroker can process them, otherwise, all messages
+    //      will be processed in parallel, so their running will prolong,
+    //      and flowbroker will seem very slow!!
+    //tenancy subject
+    console.log("Registering callbacks for tenancy subject...");
+    this.kafkaMessenger.on(dojotConfig.dojot.subjects.tenancy, "new-tenant", (tenant, newtenant) => {
+      node.addTenant(newtenant, this.kafkaMessenger)});
+    console.log("... callbacks for tenancy registered.");
 
-  /**
-   * Initialize iotagent kafka consumers (for tenant and device events)
-   * @return {Promise}
-   */
-  initConsumer() {
-    let consumer = new kafka.Consumer('internal', config.tenancy.subject, true);
-
-    consumer.on('message', (data) => {
-      let parsed = null;
+    //device-manager subject
+    console.log("Registering callbacks for device-manager device subject...");
+    this.kafkaMessenger.on(dojotConfig.dojot.subjects.devices, "message", (tenant, msg) => {
       try {
-        parsed = JSON.parse(data.value.toString());
-      } catch (e) {
-        console.error('Received tenancy event is not valid json. Ignoring.');
-        return;
-      }
-
-      this.bootstrapTenant(parsed.tenant);
-    });
-
-    consumer.on('connect', () => {
-      this.initTenants();
-    });
-
-    return this.amqp.connect();
-  }
-
-  initTenants() {
-    if (!this.consumers.hasOwnProperty('tenancy')) {
-      // console.log('got connect event - tenancy');
-      this.listTenants().then((tenants) => {
-        for (let t of tenants) {
-          this.bootstrapTenant(t);
+        let parsed = JSON.parse(msg);
+        if (parsed.event === 'update' || parsed.event === 'remove'){
+          this.handleUpdate(parsed);
         }
-        console.log('[ingestor] Tenancy context management initialized');
-        this.consumers.tenancy = true;
-      }).catch((error) => {
-        const message = "Failed to acquire existing tenancy contexts";
-        console.error("[ingestor] %s - %s", message, error.message);
-        setTimeout(() => { this.initTenants(); }, 2000);
-        // throw new InitializationError(message);
-      });
-    }
-  }
-
-  /**
-   * Given a tenant, initialize the related device event stream ingestor.
-   *
-   * @param  {[string]} tenant tenant which ingestion stream is to be initialized
-   */
-  bootstrapTenant(tenant) {
-    node.addTenant(tenant);
-    const consumerid = tenant + ".device";
-    if (this.consumers.hasOwnProperty(consumerid)) {
-      console.log('[ingestor] Attempted to re-init device consumer for tenant:', tenant);
-      return;
-    }
-
-    let consumer = new kafka.Consumer(tenant, config.ingestion.subject);
-    let consumerDevices = new kafka.Consumer(tenant, config.ingestion.devices);
-    this.consumers[consumerid] = true;
-
-    consumerDevices.on('connect', () => {
-      console.log(`[ingestor] Device info consumer ready for tenant ${tenant}`);
+      } catch (error) {
+        console.error(`[ingestor] device-manager event ingestion failed: `, error.message);
+      }
     });
+    console.log("... callbacks for device-manager registered.");
 
-    consumer.on('connect', () => {
-      console.log(`[ingestor] Device consumer ready for tenant: ${tenant}`);
-    });
-
-    consumer.on('message', (data) => {
+    // device-data subject
+    console.log("Registering callbacks for device-data device subject...");
+    this.kafkaMessenger.on(dojotConfig.dojot.subjects.deviceData, "message", (tenant, msg) => {
       let parsed = null;
       try {
-        parsed = JSON.parse(data.value.toString());
+        parsed = JSON.parse(msg);
       } catch (e) {
-        console.error("[ingestor] Device event is not valid json. Ignoring.");
+        console.error("[ingestor] device-data event is not valid json. Ignoring.");
         return;
       }
-
       try {
         this.handleEvent(parsed);
       } catch (error) {
-        console.error('[ingestor] Device event ingestion failed: ', error.message);
+        console.error('[ingestor] device-data event ingestion failed: ', error.message);
       }
     });
+    console.log("... callbacks for device-data registered.");
 
-    consumerDevices.on('message', (data) => {
-      try {
-        const message = JSON.parse(data.value.toString());
-        if (message.event === 'update' || message.event === 'remove') {
-          this.handleUpdate(message.meta.service, message.data.id);
-        }
-        if (message.event === 'template.update') {
-          message.data.affected.forEach(deviceid => {
-            this.handleUpdate(message.meta.service, deviceid);
-          })
-        }
-      } catch (error) {
-        console.error(`[ingestor] Device-manager event ingestion failed: `, error.message);
-      }
-    });
+    // Initializes flow nodes by tenant ...
+    console.log("Initializing flow nodes for current tenants ...");
+    for (const tenant of this.kafkaMessenger.tenants) {
+      console.log(`Initializing nodes for ${tenant} ...`)
+      node.addTenant(tenant, this.kafkaMessenger);
+      console.log(`... nodes initialized for ${tenant}.`)
+    }
+    console.log("... flow nodes initialized for current tenants.");
 
-    consumer.on('error', (error) => {
-      console.error('[ingestor:kafka] Consumer for tenant "%s" is errored.', tenant);
-      console.error('[ingestor:kafka] Error is: %s', error);
-    });
-
-    consumerDevice.on('error', (error) => {
-      console.error('[ingestor:kafka] Consumer device for tenant "%s" is errored.', tenant);
-      console.error('[ingestor:kafka] Error is: %s', error);
-    })
+    //Connects to RabbitMQ
+    this.amqp.connect();
   }
 
   _publish(node, message, flow, metadata) {

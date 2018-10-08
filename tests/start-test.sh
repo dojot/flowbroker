@@ -1,3 +1,3 @@
 #!/bin/bash -ex
 
-dredd
+dredd --level=debug

@@ -20,12 +20,15 @@ var logger = require('./logger').logger;
 
 var config = require("./config");
 
+var dojotModule = require("@dojot/dojot-module");
+var dojotConfig = dojotModule.Config;
+
 class NodeManager {
   constructor() {
     this.nodes = {};
   }
 
-  addTenant(tenant) {
+  addTenant(tenant, kafka) {
     this.nodes[tenant] = {
       "change": new change(),
       "email": new email(),
@@ -34,9 +37,11 @@ class NodeManager {
       "switch": new select(),
       "template": new template(),
       "device in": new device_in(),
-      "device out": new device_out(new Publisher()),
+      "device out": new device_out(
+        new Publisher(kafka, dojotConfig.dojot.subjects.deviceData, tenant)),
       "device template in": new device_tpl(),
-      "actuate": new actuate(new Publisher('dojot.device-manager.device')),
+      "actuate": new actuate(
+        new Publisher(kafka, dojotConfig.dojot.subjects.devices, tenant)),
       "get context": new get_context(),
     };
   }
