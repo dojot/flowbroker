@@ -152,11 +152,32 @@ class DataHandler extends dojot.DataHandlerBase {
     }
 
     /**
-   *
-   * @param {string} value Path to field to be read
-   * @param {string} type Expected type (js) to be returned
-   * @returns {*} Evalueted value
-   */
+     *
+     * @param {string} field Path to field to be set
+     * @param {object} target Object to read from
+     */
+    _get(field, target) {
+        let source = field.match(/([^.]+)/g);
+        let at = source.shift();
+        let data = target;
+        while (at) {
+            if (!data.hasOwnProperty(at)) {
+                return undefined;
+            }
+
+            data = data[at];
+            at = source.shift();
+        }
+
+        return data;
+    }
+
+    /**
+     *
+     * @param {string} value Path to field to be read
+     * @param {string} type Expected type (js) to be returned
+     * @returns {*} Evalueted value
+     */
     _getTyped(value, type) {
         switch (type) {
             case "num":
