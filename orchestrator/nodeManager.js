@@ -23,12 +23,44 @@ var config = require("./config");
 var dojotModule = require("@dojot/dojot-module");
 var dojotConfig = dojotModule.Config;
 
+var MongoManager = require('./mongodb');
+
 class NodeManager {
   constructor() {
     this.nodes = {};
   }
 
+  showDatabase(tenant) {
+    this.collection.find().toArray()
+      .then((values) => {
+        console.log('---------------DATABASE-------------')
+        values.forEach(item => {
+          console.log(item);
+          this.addRemote(item.image, item.id, tenant, false);
+        });
+      })
+  }
+
+  mongoConnection(tenant) {
+    try {
+      MongoManager.get().then((client) => {
+        this.collection = client.db(`flowbroker_${tenant}`).collection('remoteNode');
+        this.collection.find().toArray()
+          .then((values) => {
+            console.log('------------database----------')
+            console.log(values);
+          });
+        this.showDatabase(tenant);
+      }).catch((error) => {
+        logger.debug("... impossible create a DB connection.");
+      });
+    } catch (error) {
+      logger.debug(`... Something wasn't work with this error ${error}.`);
+    }
+  }
+
   addTenant(tenant, kafka) {
+    this.mongoConnection(tenant);
     this.nodes[tenant] = {
       "change": new change(),
       "email": new email(),
@@ -88,52 +120,70 @@ class NodeManager {
     return this.nodes[tenant][type];
   }
 
-  addRemote(image, id, tenant) {
-    return Promise.resolve()
-      .then(() => {
-        let newNode;
-    
-        if (config.deploy.engine === "docker") {
-          newNode = new dockerRemote(image, tenant + id);
-        } else if (config.deploy.engine === "kubernetes") {
-          newNode = new k8sRemote(image, tenant + id);
-        }
-    
-        if (newNode === undefined) {
-          return;
-        }
-    
-        return newNode
-          .create()
-          .then(() => newNode.init())
-          .then(() => {
-            let meta = newNode.getMetadata();
-            console.log('[nodes] container meta', JSON.stringify(meta));
-            if (!(tenant in this.nodes)) {
-              this.nodes[tenant] = {};
-            }
-            this.nodes[tenant][meta.name] = newNode;
-          });
-      });
+  async addRemote(image, id, tenant, save = true) {
+    const node = await this.collection.findOne({ id: id });
+    if (node === null) {
+      return Promise.resolve()
+        .then(() => {
+          let newNode;
+          let parse = {};
+          parse.id = id;
+          parse.image = image;
+          if (config.deploy.engine === "docker") {
+            newNode = new dockerRemote(image, tenant + id);
+          } else if (config.deploy.engine === "kubernetes") {
+            newNode = new k8sRemote(image, tenant + id);
+          }
+
+          if (newNode === undefined) {
+            return;
+          }
+
+          return newNode
+            .create()
+            .then(() => newNode.init())
+            .then(() => {
+              let meta = newNode.getMetadata();
+              console.log('[nodes] container meta', JSON.stringify(meta));
+              if (!(tenant in this.nodes)) {
+                this.nodes[tenant] = {};
+              }
+              this.nodes[tenant][meta.name] = newNode;
+              if (save) {
+                this.collection.insert(parse).then(() => {
+                  logger.debug("... remote node was successfully inserted into the database.");
+                }).catch((error) => {
+                  logger.debug(`... remote node was not inserted into the database. Error is ${error}`);
+                });
+              }
+            });
+        });
+    } else {
+      logger.debug(`This node already is up. Image: ${image}`);
+      return Promise.reject(new Error(`already is up. Image: ${image}.`));
+    }
   }
 
-  delRemote(image, id, tenant) {
+  async delRemote(image, id, tenant) {
     return Promise.resolve()
       .then(() => {
         if (!(tenant in this.nodes)) {
           throw "Tenant not found";
         }
-  
         for (let n in this.nodes[tenant]) {
           if (n === id) {
             return this.nodes[tenant][n]
               .remove()
               .then(() => {
                 delete this.nodes[tenant][n];
+                this.collection.findOneAndDelete({ id: id })
+                  .then(() => {
+                    logger.debug("... remote node was successfully removed to the database.");
+                  })
               });
           }
         }
-  
+        
         throw new Error("No such node found");
       });
   }
