@@ -30,12 +30,10 @@ class NodeManager {
     this.nodes = {};
   }
 
-  showDatabase(tenant) {
+  upContainers(tenant) {
     this.collection.find().toArray()
       .then((values) => {
-        console.log('---------------DATABASE-------------')
         values.forEach(item => {
-          console.log(item);
           this.addRemote(item.image, item.id, tenant, false);
         });
       })
@@ -45,12 +43,7 @@ class NodeManager {
     try {
       MongoManager.get().then((client) => {
         this.collection = client.db(`flowbroker_${tenant}`).collection('remoteNode');
-        this.collection.find().toArray()
-          .then((values) => {
-            console.log('------------database----------')
-            console.log(values);
-          });
-        this.showDatabase(tenant);
+        this.upContainers(tenant);
       }).catch((error) => {
         logger.debug("... impossible create a DB connection.");
       });
@@ -126,9 +119,6 @@ class NodeManager {
       return Promise.resolve()
         .then(() => {
           let newNode;
-          let parse = {};
-          parse.id = id;
-          parse.image = image;
           if (config.deploy.engine === "docker") {
             newNode = new dockerRemote(image, tenant + id);
           } else if (config.deploy.engine === "kubernetes") {
@@ -138,7 +128,6 @@ class NodeManager {
           if (newNode === undefined) {
             return;
           }
-
           return newNode
             .create()
             .then(() => newNode.init())
@@ -149,8 +138,13 @@ class NodeManager {
                 this.nodes[tenant] = {};
               }
               this.nodes[tenant][meta.name] = newNode;
+              let modelContainer = {};
+              modelContainer.id = id;
+              modelContainer.image = image;
+              modelContainer.target = newNode.target;
+              modelContainer.meta = meta;
               if (save) {
-                this.collection.insert(parse).then(() => {
+                this.collection.insert(modelContainer).then(() => {
                   logger.debug("... remote node was successfully inserted into the database.");
                 }).catch((error) => {
                   logger.debug(`... remote node was not inserted into the database. Error is ${error}`);
@@ -159,33 +153,33 @@ class NodeManager {
             });
         });
     } else {
-      logger.debug(`This node already is up. Image: ${image}`);
-      return Promise.reject(new Error(`already is up. Image: ${image}.`));
+      logger.debug(`... This image already up. Image: ${image}`);
+      return Promise.reject(new Error(`... This image already up. Image: ${image}`));
     }
   }
 
   async delRemote(image, id, tenant) {
-    return Promise.resolve()
-      .then(() => {
-        if (!(tenant in this.nodes)) {
-          throw "Tenant not found";
-        }
-        for (let n in this.nodes[tenant]) {
-          if (n === id) {
-            return this.nodes[tenant][n]
-              .remove()
-              .then(() => {
-                delete this.nodes[tenant][n];
-                this.collection.findOneAndDelete({ id: id })
-                  .then(() => {
-                    logger.debug("... remote node was successfully removed to the database.");
-                  })
-              });
+    const node = await this.collection.findOne({ id: id });
+    if (node) {
+      let newNode;
+      if (config.deploy.engine === "docker") {
+        newNode = new dockerRemote(node.image, tenant + id);
+      } else if (config.deploy.engine === "kubernetes") {
+        newNode = new k8sRemote(node.image, tenant + id);
+      }
+      return Promise.resolve()
+        .then(() => {
+          if (!(tenant in this.nodes)) {
+            throw "Tenant not found";
           }
-        }
-        
-        throw new Error("No such node found");
-      });
+          return newNode.remove(node.target)
+            .then(() => {
+              this.collection.findOneAndDelete({ id: id });
+              logger.debug("... remote node was successfully removed to the database.");
+            });
+        });
+    }
+    throw new Error("No such node found");
   }
 }
 

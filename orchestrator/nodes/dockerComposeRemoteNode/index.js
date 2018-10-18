@@ -127,20 +127,28 @@ class DataHandler extends RemoteNode {
     });
   }
 
-  remove() {
+  remove(target) {
     return new Promise((resolve, reject) => {
       if (this.client === undefined) {
         reject("Docker drive not fully initialized.");
         return;
       }
-      this.client.containers().remove(this.info.container, {force: true}).then(() => {
-        return resolve();
-      }).catch((error) => {
-        return reject(error);
-      });
+      if (target !== undefined) {
+        this.client.containers().remove(target, {force: true}).then(() => {
+          return resolve();
+        }).catch((error) => {
+          return reject(error);
+        });
+      } else {
+        this.client.containers().remove(this.info.container, {force: true}).then(() => {
+          return resolve();
+        }).catch((error) => {
+          return reject(error);
+        });
+      }
     });
   }
-
+  
   update() {
     // TODO
   }
