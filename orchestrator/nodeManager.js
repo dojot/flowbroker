@@ -31,10 +31,26 @@ class NodeManager {
   }
 
   upContainers(tenant) {
+    this.collection
+      .deleteMany({})
+      .then(() => { });
     this.collection.find().toArray()
       .then((values) => {
         values.forEach(item => {
-          this.addRemote(item.image, item.id, tenant, false);
+          let newNode;
+          if (config.deploy.engine === "docker") {
+            newNode = new dockerRemote(item.image, tenant + item.id);
+          } else if (config.deploy.engine === "kubernetes") {
+            newNode = new k8sRemote(item.image, tenant + item.id);
+          }
+          newNode.stats(item.target)
+            .then((stats) => {
+              logger.debug(`...[remoteNode] container already up with id ${item.target}.`);
+            })
+            .catch((err) => {
+              logger.debug(`...[remoteNode] container not up. Going up container...`);
+              this.addRemote(item.image, item.id, tenant, false);
+            });
         });
       })
   }
@@ -116,42 +132,56 @@ class NodeManager {
   async addRemote(image, id, tenant, save = true) {
     const node = await this.collection.findOne({ id: id });
     if (node === null) {
-      return Promise.resolve()
-        .then(() => {
-          let newNode;
-          if (config.deploy.engine === "docker") {
-            newNode = new dockerRemote(image, tenant + id);
-          } else if (config.deploy.engine === "kubernetes") {
-            newNode = new k8sRemote(image, tenant + id);
-          }
+      return new Promise((resolve, reject) => {
+        let newNode, modelContainer = {};
 
-          if (newNode === undefined) {
-            return;
-          }
-          return newNode
-            .create()
-            .then(() => newNode.init())
-            .then(() => {
-              let meta = newNode.getMetadata();
-              console.log('[nodes] container meta', JSON.stringify(meta));
-              if (!(tenant in this.nodes)) {
-                this.nodes[tenant] = {};
-              }
-              this.nodes[tenant][meta.name] = newNode;
-              let modelContainer = {};
-              modelContainer.id = id;
-              modelContainer.image = image;
-              modelContainer.target = newNode.target;
-              modelContainer.meta = meta;
-              if (save) {
-                this.collection.insert(modelContainer).then(() => {
-                  logger.debug("... remote node was successfully inserted into the database.");
-                }).catch((error) => {
-                  logger.debug(`... remote node was not inserted into the database. Error is ${error}`);
-                });
-              }
-            });
-        });
+        if (config.deploy.engine === "docker") {
+          newNode = new dockerRemote(image, tenant + id);
+        } else if (config.deploy.engine === "kubernetes") {
+          newNode = new k8sRemote(image, tenant + id);
+        }
+
+        if (newNode === undefined) {
+          reject('Invalid node');
+        }
+        if (save) {
+          modelContainer.id = id;
+          modelContainer.image = image;
+          this.collection.insert(modelContainer).then(() => {
+            logger.debug("... remote node was successfully inserted into the database.");
+          }).catch((error) => {
+            logger.debug(`... remote node was not inserted into the database. Error is ${error}`);
+          });
+        }
+        newNode.create()
+          .then(() => {
+            newNode.init()
+              .then(() => {
+                let meta = newNode.getMetadata();
+                console.log('[nodes] container meta', JSON.stringify(meta));
+                if (!(tenant in this.nodes)) {
+                  this.nodes[tenant] = {};
+                }
+                this.nodes[tenant][meta.name] = newNode;
+                if (save) {
+                  this.collection.updateOne({ id: id }, { $set: { 
+                    target: newNode.target,
+                    meta: meta,
+                   } });
+                }
+                resolve();
+              });
+          })
+          .catch((err) => {
+            this.collection.findOneAndDelete({ id: id });
+            if (err.response.statusCode === 404) {
+              logger.debug(`... Invalid image`);
+              this.collection.findOneAndDelete({ id: id });
+              reject({ message: 'Invalid image' });
+            };
+            reject({ message: 'Please, Try again.' });
+          });
+      })
     } else {
       logger.debug(`... This image already up. Image: ${image}`);
       return Promise.reject(new Error(`... This image already up. Image: ${image}`));
