@@ -2,7 +2,7 @@
 
 let fs = require('fs');
 let path = require('path');
-var logger = require("../../logger").logger;
+var logger = require("@dojot/dojot-module-logger").logger;
 
 var geolib = require('geolib');
 

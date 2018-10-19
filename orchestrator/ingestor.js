@@ -5,6 +5,7 @@ var node = require('./nodeManager').Manager;
 var redisManager = require('./redisManager').RedisManager;
 
 var dojotModule = require("@dojot/dojot-module");
+var logger = require("@dojot/dojot-module-logger").logger;
 var dojotConfig = dojotModule.Config;
 
 // class InitializationError extends Error {}
@@ -38,13 +39,14 @@ module.exports = class DeviceIngestor {
     //      will be processed in parallel, so their running will prolong,
     //      and flowbroker will seem very slow!!
     //tenancy subject
-    console.log("Registering callbacks for tenancy subject...");
+    logger.debug("Registering callbacks for tenancy subject...", {filename:"ingestor"});
     this.kafkaMessenger.on(dojotConfig.dojot.subjects.tenancy, "new-tenant", (tenant, newtenant) => {
-      node.addTenant(newtenant, this.kafkaMessenger)});
-    console.log("... callbacks for tenancy registered.");
+      node.addTenant(newtenant, this.kafkaMessenger);
+    });
+    logger.debug("... callbacks for tenancy registered.", {filename:"ingestor"});
 
     //device-manager subject
-    console.log("Registering callbacks for device-manager device subject...");
+    logger.debug("Registering callbacks for device-manager device subject...", {filename:"ingestor"});
     this.kafkaMessenger.on(dojotConfig.dojot.subjects.devices, "message", (tenant, msg) => {
       try {
         let parsed = JSON.parse(msg);
@@ -52,37 +54,37 @@ module.exports = class DeviceIngestor {
           this.handleUpdate(parsed);
         }
       } catch (error) {
-        console.error(`[ingestor] device-manager event ingestion failed: `, error.message);
+        logger.error(`Device-manager event ingestion failed: ${error.message}`, {filename:"ingestor"});
       }
     });
-    console.log("... callbacks for device-manager registered.");
+    logger.debug("... callbacks for device-manager registered.", {filename:"ingestor"});
 
     // device-data subject
-    console.log("Registering callbacks for device-data device subject...");
+    logger.debug("Registering callbacks for device-data device subject...", {filename:"ingestor"});
     this.kafkaMessenger.on(dojotConfig.dojot.subjects.deviceData, "message", (tenant, msg) => {
       let parsed = null;
       try {
         parsed = JSON.parse(msg);
       } catch (e) {
-        console.error("[ingestor] device-data event is not valid json. Ignoring.");
+        logger.error("Device-data event is not valid json. Ignoring.", {filename:"ingestor"});
         return;
       }
       try {
         this.handleEvent(parsed);
       } catch (error) {
-        console.error('[ingestor] device-data event ingestion failed: ', error.message);
+        logger.error(`Device-data event ingestion failed: ${error.message}`, {filename:"ingestor"});
       }
     });
-    console.log("... callbacks for device-data registered.");
+    logger.debug("... callbacks for device-data registered.", {filename:"ingestor"});
 
     // Initializes flow nodes by tenant ...
-    console.log("Initializing flow nodes for current tenants ...");
+    logger.debug("Initializing flow nodes for current tenants ...", {filename:"ingestor"});
     for (const tenant of this.kafkaMessenger.tenants) {
-      console.log(`Initializing nodes for ${tenant} ...`)
+      logger.debug(`Initializing nodes for ${tenant} ...`, {filename:"ingestor"});
       node.addTenant(tenant, this.kafkaMessenger);
-      console.log(`... nodes initialized for ${tenant}.`)
+      logger.debug(`... nodes initialized for ${tenant}.`, {filename:"ingestor"});
     }
-    console.log("... flow nodes initialized for current tenants.");
+    logger.debug("... flow nodes initialized for current tenants.", {filename:"ingestor"});
 
     //Connects to RabbitMQ
     this.amqp.connect();
@@ -93,7 +95,7 @@ module.exports = class DeviceIngestor {
       (node.status.toLowerCase() !== 'true') &&
       metadata.hasOwnProperty('reason') &&
       (metadata.reason === 'statusUpdate')) {
-      console.log(`[ingestor] ignoring device status update ${metadata.deviceid} ${flow.id}`);
+      logger.debug(`Ignoring device status update ${metadata.deviceid} ${flow.id}`, {filename:"ingestor"});
       return;
     }
 
@@ -141,7 +143,7 @@ module.exports = class DeviceIngestor {
   }
 
   handleEvent(event) {
-    console.log(`[ingestor] got new device event: ${util.inspect(event, { depth: null })}`);
+    logger.debug(`Got new device event: ${util.inspect(event, { depth: null })}`, {filename:"ingestor"});
     let flowManager = this.fmBuiler.get(event.metadata.tenant);
     flowManager.getByDevice(event.metadata.deviceid).then((flowlist) => {
       for (let flow of flowlist) {
@@ -173,7 +175,7 @@ module.exports = class DeviceIngestor {
         });
       }
     }).catch((error) => {
-      console.log(error);
+      logger.debug(error, {filename:"ingestor"});
     })
   }
 

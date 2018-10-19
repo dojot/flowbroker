@@ -13,6 +13,8 @@ var NodeAPI = require('./node-red/src/index');
 var nodeManager = require('./nodeManager').Manager;
 
 var InvalidFlowError = require('./flowManager').InvalidFlowError;
+var logger = require("@dojot/dojot-module-logger").logger;
+var util = require("util");
 
 // initialized by init()
 var FlowManager;

@@ -16,7 +16,8 @@ var get_context = require('./nodes/get-context/get-context').Handler;
 var dockerRemote = require('./nodes/dockerComposeRemoteNode/index').Handler;
 var k8sRemote = require('./nodes/kubernetesRemoteNode/index').Handler;
 var Publisher = require('./publisher');
-var logger = require('./logger').logger;
+
+var logger = require("@dojot/dojot-module-logger").logger;
 
 var config = require("./config");
 
@@ -65,10 +66,10 @@ class NodeManager {
   }
 
   asHtml(tenant) {
-    logger.debug(`Getting HTML for tenant ${tenant}`);
+    logger.debug(`Getting HTML for tenant ${tenant}`, {filename:"node-manager"});
     let result = "";
     if (!(tenant in this.nodes)) {
-      logger.debug("Could not find nodes for this tenant");
+      logger.debug("Could not find nodes for this tenant", {filename:"node-manager"});
       return "";
     }
 
@@ -108,7 +109,7 @@ class NodeManager {
           .then(() => newNode.init())
           .then(() => {
             let meta = newNode.getMetadata();
-            console.log('[nodes] container meta', JSON.stringify(meta));
+            logger.debug(`container meta ${JSON.stringify(meta)}`, {filename:"node-manager"});
             if (!(tenant in this.nodes)) {
               this.nodes[tenant] = {};
             }

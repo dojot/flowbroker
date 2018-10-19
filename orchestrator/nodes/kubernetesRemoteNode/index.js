@@ -3,7 +3,7 @@
 var fs = require('fs');
 var k8s = require("kubernetes-client");
 var util = require("util");
-var logger = require("../../logger").logger;
+var logger = require("@dojot/dojot-module-logger").logger;
 var config = require("../../config");
 var RemoteNode = require("../remoteNode/index").Handler;
 

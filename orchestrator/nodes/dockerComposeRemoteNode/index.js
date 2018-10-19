@@ -4,7 +4,7 @@ var RemoteNode = require("../remoteNode/index").Handler;
 
 // This should be external - but since it's bugged....
 var docker = require('../../docker/harbor-master');
-var logger = require("../../logger").logger;
+var logger = require("@dojot/dojot-module-logger").logger;
 var config = require('../../config');
 
 function makeId(length) {

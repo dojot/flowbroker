@@ -7,7 +7,7 @@
 var mongo = require('mongodb');
 var uuid = require('uuid/v4');
 var util = require('util');
-var logger = require('./logger').logger;
+var logger = require("@dojot/dojot-module-logger").logger;
 
 class FlowError extends Error {
   constructor(...params) {

@@ -1,7 +1,7 @@
 'use strict';
 
 var fs = require("fs");
-var logger = require('./logger').logger;
+var logger = require("@dojot/dojot-module-logger").logger;
 
 var ArgumentParser = require('argparse').ArgumentParser;
 
