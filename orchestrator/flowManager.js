@@ -7,7 +7,9 @@
 var mongo = require('mongodb');
 var uuid = require('uuid/v4');
 var util = require('util');
-var logger = require('./logger').logger;
+var logger = require("@dojot/dojot-module-logger").logger;
+
+const TAG={filename: "flow-manager"};
 
 class FlowError extends Error {
   constructor(...params) {
@@ -84,7 +86,7 @@ class FlowManager {
   /**
    * Given a flow representation (json, node-red schema), perform initial validation
    * and parsing.
-   * 
+   *
    * This function will ignore any 'tab' and undefined nodes.
    *
    * @param  {[type]} flow [description]
@@ -92,19 +94,19 @@ class FlowManager {
    * @throws InvalidFlowError If any node has no 'type' attribute.
    */
   parse(flow) {
-    logger.debug("Parsing new flow...");
+    logger.debug("Parsing new flow...", TAG);
     let parsed = new ParsedFlow(flow);
-    logger.debug(`New flow: ${util.inspect(parsed, { depth: null })}`);
+    logger.debug(`New flow: ${util.inspect(parsed, { depth: null })}`, TAG);
 
     for (let node of flow) {
       if (!node.hasOwnProperty('type')) {
-        logger.debug(`Node ${util.inspect(node, { depth: null })} has no 'type' attribute.`);
+        logger.debug(`Node ${util.inspect(node, { depth: null })} has no 'type' attribute.`, TAG);
         throw new InvalidFlowError();
       }
 
       if ((node.type === 'tab') || (node.wires === undefined)) {
         // ignore tab node (used to identify flow by node-red front-end)
-        logger.debug(`Ignoring 'tab' node.`);
+        logger.debug(`Ignoring 'tab' node.`, TAG);
         continue;
       }
 
@@ -123,7 +125,7 @@ class FlowManager {
       }
     }
 
-    logger.debug("... flow was successfully parsed.");
+    logger.debug("... flow was successfully parsed.", TAG);
     return parsed;
   }
 
@@ -162,13 +164,13 @@ class FlowManager {
 
   create(label, enabled, flow) {
     return new Promise((resolve, reject) => {
-      logger.debug("Creating new flow...");
+      logger.debug("Creating new flow...", TAG);
       if (!label) {
-        logger.error("Flow has no label.");
+        logger.error("Flow has no label.", TAG);
         return reject(new InvalidFlowError("Label field is required"));
       }
 
-      logger.debug("Checking 'enabled' field...");
+      logger.debug("Checking 'enabled' field...", TAG);
       let enabledVal;
       if ((enabled === undefined) || (enabled === null)) {
         enabledVal = true;
@@ -177,17 +179,17 @@ class FlowManager {
       } else if ((enabled instanceof Boolean) || (typeof enabled === 'boolean')) {
         enabledVal = enabled;
       } else {
-        logger.error("Invalid 'enabled' field: ", enabled, enabled instanceof Boolean, typeof enabled);
+        logger.error(`Invalid 'enabled' field: ${enabled}, ${enabled instanceof Boolean}, ${typeof enabled}`, TAG);
         return reject(new InvalidFlowError("Invalid 'enabled' field: ", enabled));
       }
-      logger.debug("... 'enabled' field was checked.");
+      logger.debug("... 'enabled' field was checked.", TAG);
 
       let parsed;
       try {
         parsed = this.parse(flow);
         delete parsed.nodes; // mongo doesn't like dots on keys
       } catch (e) {
-        logger.info("... new flow has errors - it was not created.");
+        logger.info("... new flow has errors - it was not created.", TAG);
         return reject(new InvalidFlowError());
       }
 
@@ -197,12 +199,12 @@ class FlowManager {
       parsed.created = new Date();
       parsed.updated = parsed.created;
 
-      logger.debug('Inserting flow into the database...');
+      logger.debug('Inserting flow into the database...', TAG);
       this.collection.insert(parsed).then(() => {
-        logger.debug("... new flow was successfully inserted into the database.");
+        logger.debug("... new flow was successfully inserted into the database.", TAG);
         return resolve(parsed);
       }).catch((error) => {
-        logger.debug(`... new flow was not inserted into the database. Error is ${error}`);
+        logger.debug(`... new flow was not inserted into the database. Error is ${error}`, TAG);
         return reject(error);
       });
     });

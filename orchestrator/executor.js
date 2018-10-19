@@ -3,14 +3,18 @@
 var amqp = require('./amqp');
 var config = require('./config');
 var nodes = require('./nodeManager').Manager;
+var logger = require("@dojot/dojot-module-logger").logger;
+
+const TAG={filename:"executor"};
 
 module.exports = class Executor {
     constructor(contextHandler) {
-        console.log('[executor] initializing ...');
+        logger.debug(`Creating executor...`, TAG);
         this.hop = this.hop.bind(this);
         this.producer = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
         this.consumer = new amqp.AMQPConsumer(config.amqp.queue, this.hop, config.amqp.url, 2);
         this.contextHandler = contextHandler;
+        logger.debug(`... executor was successfully created.`, TAG);
     }
 
     init() {
@@ -26,19 +30,19 @@ module.exports = class Executor {
         try {
             event = JSON.parse(data);
         } catch (error) {
-            console.error("[amqp] Received event is not valid JSON. Ignoring");
+            logger.error("Received event is not valid JSON. Ignoring", TAG);
             return ack();
         }
 
         const at = event.flow.nodeMap[event.hop];
         // sanity check on received hop
         if (!at.hasOwnProperty('type')) {
-            console.error(`[executor] Node execution failed. Missing node type. Aborting flow ${event.flow.id}.`);
+            logger.error(`Node execution failed. Missing node type. Aborting flow ${event.flow.id}.`, TAG);
             // TODO notify alarmManager
             return ack();
         }
 
-        console.log(`[executor] will handle node ${at.type}`);
+        logger.debug(`Will handle node ${at.type}`, TAG);
         let handler = nodes.getNode(at.type, event.metadata.tenant);
         if (handler) {
             let metadata = {
@@ -48,12 +52,12 @@ module.exports = class Executor {
             }
             handler.handleMessage(at, event.message, (error, result) => {
                 if (error) {
-                    console.error(`[executor] Node execution failed. ${error}. Aborting flow ${event.flow.id}.`);
+                    logger.error(`Node execution failed. ${error}. Aborting flow ${event.flow.id}.`, TAG);
                     // TODO notify alarmManager
                     return ack();
                 }
 
-                console.log(`[executor] hop (${at.type}) result: ${JSON.stringify(result)}`);
+                logger.debug(`Hop (${at.type}) result: ${JSON.stringify(result)}`, TAG);
                 for (let output = 0; output < at.wires.length; output++) {
                     let newEvent = result[output];
                     if (newEvent) {
@@ -74,7 +78,7 @@ module.exports = class Executor {
                 return ack();
             }, metadata, this.contextHandler);
         } else {
-            console.error(`[executor] Unknown node ${at.type} detected. Igoring.`);
+            logger.error(`Unknown node ${at.type} detected. Igoring.`, TAG);
             return ack();
         }
     }

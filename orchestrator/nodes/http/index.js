@@ -2,7 +2,7 @@
 
 var fs = require('fs');
 var path = require('path');
-var logger = require('../../logger').logger;
+var logger = require("@dojot/dojot-module-logger").logger;
 
 var http = require("follow-redirects").http;
 var https = require("follow-redirects").https;

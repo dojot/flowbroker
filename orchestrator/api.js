@@ -13,12 +13,13 @@ var NodeAPI = require('./node-red/src/index');
 var nodeManager = require('./nodeManager').Manager;
 
 var InvalidFlowError = require('./flowManager').InvalidFlowError;
+var logger = require("@dojot/dojot-module-logger").logger;
+var util = require("util");
 
 var pjson = require('./package.json');
 var HealthChecker = require('@dojot/healthcheck').HealthChecker;
 var DataTrigger = require('@dojot/healthcheck').DataTrigger;
 var endpoint = require('@dojot/healthcheck').getHTTPRouter;
-const logger = require('./logger').logger;
 
 const configHealth = {
   description: pjson.name,

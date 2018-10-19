@@ -1,6 +1,6 @@
 var path = require('path');
 var dojot = require('@dojot/flow-node');
-var logger = require("../../logger").logger;
+var logger = require("@dojot/dojot-module-logger").logger;
 var util = require("util");
 
 class DataHandler extends dojot.DataHandlerBase {

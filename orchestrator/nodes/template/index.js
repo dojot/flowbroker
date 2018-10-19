@@ -4,7 +4,7 @@ let fs = require('fs');
 let path = require('path');
 var dojot = require('@dojot/flow-node');
 let mustache = require('mustache');
-var logger = require("../../logger").logger;
+var logger = require("@dojot/dojot-module-logger").logger;
 
 // Sample node implementation
 class DataHandler extends dojot.DataHandlerBase {

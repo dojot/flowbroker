@@ -3,7 +3,7 @@
 let fs = require('fs');
 let path = require('path');
 let nodemailer = require("nodemailer");
-var logger = require("../../logger").logger;
+var logger = require("@dojot/dojot-module-logger").logger;
 var util = require('util');
 var dojot = require('@dojot/flow-node');
 

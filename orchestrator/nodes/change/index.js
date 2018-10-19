@@ -1,7 +1,7 @@
 "use strict";
 
 let fs = require('fs');
-var logger = require("../../logger").logger;
+var logger = require("@dojot/dojot-module-logger").logger;
 let path = require('path');
 var dojot = require('@dojot/flow-node');
 

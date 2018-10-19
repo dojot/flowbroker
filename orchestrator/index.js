@@ -1,7 +1,7 @@
 'use strict';
 
 var fs = require("fs");
-var logger = require('./logger').logger;
+var logger = require("@dojot/dojot-module-logger").logger;
 
 var ArgumentParser = require('argparse').ArgumentParser;
 
@@ -17,8 +17,10 @@ var ContextHandler = require('@dojot/flow-node').ContextHandler;
 
 var dojotModule = require("@dojot/dojot-module");
 
+const TAG={filename: "init"};
+
 function fail(error) {
-  logger.error('[flowbroker] Initialization failed.', error.message);
+  logger.error(`Initialization failed: ${error.message}.`, TAG);
   process.exit(1);
 }
 
@@ -35,7 +37,7 @@ class IdleManager {
       this.watchdog = setInterval(() => {
         const now = new Date();
         if ((now - this.last) > this.interval) {
-          logger.info('Process has been idle for too long. Exiting.');
+          logger.info('Process has been idle for too long. Exiting.', TAG);
           process.exit(0);
         }
       });
@@ -75,7 +77,7 @@ if (args.flow) {
 
 if (args.kill_idle) {
   if (args.server) {
-    logger.info("--kill-idle cannot be used together with --server");
+    logger.info("--kill-idle cannot be used together with --server", TAG);
     process.exit(1);
   }
 
@@ -107,7 +109,7 @@ if (args.message && args.device) {
     triggeredFlows = flows.getByTemplate(args.template);
   } else {
     // invalid command
-    logger.info("Message can only be used with either [-m | --message] or [-t | --template]");
+    logger.info("Message can only be used with either [-m | --message] or [-t | --template]", TAG);
     process.exit(1);
   }
 
@@ -126,12 +128,12 @@ if (args.message && args.device) {
 }
 
 if (!args.server && !hasMessages) {
-  logger.info('Nothing to do: run with either [-s] or [-f <flow> -m <message> [-d <device> | -t <template>]]');
+  logger.info('Nothing to do: run with either [-s] or [-f <flow> -m <message> [-d <device> | -t <template>]]', TAG);
   process.exit(0);
 }
 
 let loggerCallback = () => {
-  logger.info(`[executor] Worker ready.`);
+  logger.info(`[executor] Worker ready.`, TAG);
 };
 
 let errorCallback = (error) => {
@@ -156,31 +158,31 @@ for (let i = 0; i < args.workers; i++) {
 var kafkaMessenger = new dojotModule.Messenger("flowbroker", config.kafkaMessenger);
 
 // Initializes kafka listeners ...
-logger.debug("Initializing kafka messenger ...");
+logger.debug("Initializing kafka messenger ...", TAG);
 kafkaMessenger.init().then(() => {
-  logger.info("... Kafka messenger was successfully initialized.");
+  logger.info("... Kafka messenger was successfully initialized.", TAG);
 
   // read:  new tenants for updating flow nodes
-  logger.debug("Creating r-only channel for tenancy subject...");
+  logger.debug("Creating r-only channel for tenancy subject...", TAG);
   kafkaMessenger.createChannel(
     config.kafkaMessenger.dojot.subjects.tenancy, "r", true /*global*/);
-  logger.debug("... r-only channel for tenancy was created.");
+  logger.debug("... r-only channel for tenancy was created.", TAG);
 
   // read:  device events for updating local cache
   // write: actuation
-  logger.debug("Creating r+w channel for device-manager subject...");
+  logger.debug("Creating r+w channel for device-manager subject...", TAG);
   kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.devices, "rw");
-  logger.debug("... r+w channel for device-manager was created.");
+  logger.debug("... r+w channel for device-manager was created.", TAG);
 
   // read:  device data to trigger the flows
   // write: virtual device
-  logger.debug("Creating r+w channel for device-data subject...");
+  logger.debug("Creating r+w channel for device-data subject...", TAG);
   kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.deviceData, "rw");
-  logger.debug("... r+w channel for device-data was created.");
+  logger.debug("... r+w channel for device-data was created.", TAG);
 
   // chain other initialization steps
   return MongoManager.get();
-  
+
   }).then((client) => {
     let FlowManager = new FlowManagerBuilder(client);
     APIHandler.init(FlowManager);

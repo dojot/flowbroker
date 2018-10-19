@@ -16,10 +16,13 @@ var get_context = require('./nodes/get-context/get-context').Handler;
 var dockerRemote = require('./nodes/dockerComposeRemoteNode/index').Handler;
 var k8sRemote = require('./nodes/kubernetesRemoteNode/index').Handler;
 var Publisher = require('./publisher');
-var logger = require('./logger').logger;
+
+var logger = require("@dojot/dojot-module-logger").logger;
 
 var config = require("./config");
 var MongoManager = require('./mongodb');
+
+const TAG={filename:"node-manager"};
 
 class NodeManager {
   constructor() {
@@ -37,10 +40,10 @@ class NodeManager {
           }
           newNode.stats(item.target)
             .then(() => {
-                logger.debug(`...[remoteNode] container already up with id ${item.target}.`);
+                logger.debug(`...[remoteNode] container already up with id ${item.target}.`, TAG);
               })
             .catch(() => {
-                logger.debug(`...[remoteNode] container not up. Going up container...`);
+                logger.debug(`...[remoteNode] container not up. Going up container...`, TAG);
                 this.addRemote(item.image, item.id, tenant, false);
               });
         });
@@ -48,15 +51,17 @@ class NodeManager {
   }
 
   createMongoConnection(tenant) {
+    logger.debug("Creating a new connection with Mongo...", TAG);
     try {
       MongoManager.get().then((client) => {
         this.collection = client.db(`flowbroker_${tenant}`).collection('remoteNode');
         this.startContainer(tenant);
       }).catch(() => {
-          logger.debug("... impossible create a DB connection.");
+          logger.debug("... impossible create a DB connection.", TAG);
         });
     } catch (error) {
-      logger.debug(`... Something wasn't work with this error ${error}.`);
+      logger.debug(`... could not connect to Mongo.`);
+      logger.error(`Could not connect to Mongo: ${error}`);
     }
   }
 
@@ -98,10 +103,10 @@ class NodeManager {
   }
 
   asHtml(tenant) {
-    logger.debug(`Getting HTML for tenant ${tenant}`);
+    logger.debug(`Getting HTML for tenant ${tenant}`, {filename:"node-manager"}, TAG);
     let result = "";
     if (!(tenant in this.nodes)) {
-      logger.debug("Could not find nodes for this tenant");
+      logger.debug("Could not find nodes for this tenant", {filename:"node-manager"}, TAG);
       return "";
     }
 
@@ -145,11 +150,11 @@ class NodeManager {
 
             try {
               await this.collection.insertOne(modelContainer);
-              logger.debug("... remote node was successfully inserted into the database.");
-              continueStart = true;  
+              logger.debug("... remote node was successfully inserted into the database.", TAG);
+              continueStart = true;
             } catch (e) {
               continueStart = false;
-              logger.debug(`... remote node was not inserted into the database. Error is ${e}`);
+              logger.debug(`... remote node was not inserted into the database. Error is ${e}`, TAG);
             }
           }
           if (continueStart === true) {
@@ -177,26 +182,26 @@ class NodeManager {
             .catch((err) => {
               try {
                 if (err.response.statusCode === 404) {
-                  logger.debug(`... Invalid image`);
+                  logger.debug(`... Invalid image`, TAG);
                   this.collection.findOneAndDelete({ id: id });
                   reject({ message: 'Invalid image' });
                 } else {
                   throw err
                 }
               } catch(e) {
-                logger.debug(`... Problem to start container. Reason: ${e}`);
+                logger.debug(`... Problem to start container. Reason: ${e}`, TAG);
                 this.collection.findOneAndDelete({ id: id });
                 reject({ message: 'Please, Try again.' });
               }
             });
           } else {
-            logger.debug(`... Problem to save in database.`);
+            logger.debug(`... Problem to save in database.`, TAG);
             reject({ message: 'Problem to save in database, please, Try again.' });
           }
         }
       })
     } else {
-      logger.debug(`... This image already up. Image: ${image}`);
+      logger.debug(`... This image already up. Image: ${image}`, TAG);
       return Promise.reject(new Error(`... This image already up. Image: ${image}`));
     }
   }
@@ -223,7 +228,7 @@ class NodeManager {
           return newNode.remove(node.target)
             .then(() => {
               this.collection.findOneAndDelete({ id: id });
-              logger.debug("... remote node was successfully removed to the database.");
+              logger.debug("... remote node was successfully removed to the database.", TAG);
             });
         });
     }

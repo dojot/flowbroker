@@ -4,6 +4,9 @@
 var redisClient = require("ioredis");
 var config = require("./config");
 var { ClientWrapper } = require('./redisClientWrapper');
+var logger = require("@dojot/dojot-module-logger").logger;
+
+const TAG={filename:"redis-manager"};
 
 class RedisManager {
   constructor() {
@@ -26,21 +29,21 @@ class RedisManager {
     */
     this.redis.on("connect", () => {
       this.redisState = "Connected";
-      console.log(`[redis] Succesfully connected to redis`);
+      logger.debug(`Succesfully connected to redis`, TAG);
       this.redis.flushdb().then(() => {
-        console.log(`[redis] Cache is cleared`);
+        logger.debug(`Cache is cleared`, TAG);
       }).catch((error) => {
-        console.log(error);
+        logger.error(`Could not connect to redis: ${error}`, TAG);
       });
     });
 
     this.redis.on("error", (error) => {
       this.redisState = "notConnected";
-      console.log(`[redis] An error occurred with redis ${error}`);
+      logger.debug(`An error occurred with redis ${error}`, TAG);
     });
 
     this.redis.on("reconnect", () => {
-      console.log(`[redis] Connection reestablished`)
+      logger.debug(`Connection reestablished`, TAG);
     });
   }
 
