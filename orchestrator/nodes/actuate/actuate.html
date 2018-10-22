@@ -69,7 +69,8 @@
             function list_all(page) {
                 extra = `?page_num=${page}`
                 if (page === undefined) {
-                    extra = ''
+                     //order by label if dont receive a number page
+                     extra='?sortBy=label';
                 }
 
                 util.GET(`/device${extra}`).then((list) => {
