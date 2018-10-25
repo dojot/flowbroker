@@ -5,7 +5,8 @@
    </div>
    <div class="form-row">
        <label for="node-input-device"><i class="fa fa-wifi"></i> Device</label>
-       <select id="node-input-device" style=""></select>
+       <input type="text" list="node-input-list_devices_id" id="node-input-device_source_id" placeholder="Select a device"/>
+       <datalist id="node-input-list_devices_id"></datalist>
    </div>
    <div class="form-row">
        <label for="node-input-status"><i class="fa fa-bell" /> Status</label>
@@ -30,11 +31,10 @@
         category: 'input',      // the palette category
         defaults: {
             // defines the editable properties of the node
-
             // just the UI label displayed back to the user on the flow.
             name: { value: "", required: false },
             // name of the device which data is retrieved from.
-            device: { value: "", required: true },
+            device_source_id: { value: '', required: true },
             status: { value: 'false', required: true },
 
             // those are the internal types used when routing data through fiware.
@@ -56,8 +56,7 @@
             return this.name ? "node_label_italic" : "";
         },
         oneditprepare: function () {
-            var select = document.getElementById("node-input-device");
-            let node = this;
+             var listDevices = $("#node-input-list_devices_id");
 
             // this will only work from the device management interface
             function list_all(page) {
@@ -69,30 +68,28 @@
 
                 util.GET(`/device${extra}`).then((list) => {
                     list.devices.map((dev) => {
-                        select.options[select.options.length] = new Option(dev.label, JSON.stringify({ 'id': dev.id }));
+                        listDevices.append('<option data-value="' + dev.id +
+                            '" value="' + dev.label + ' (' + dev.id + ')"/>');
                     });
                     if (list.pagination.has_next) {
                         list_all(list.pagination.next_page);
-                    } else {
-                        select.value = node.device;
-                    }
+                    } 
                 }).catch((error) => {
                     console.error('Failed to retrieve the list of available devices', error);
                 });
 
             }
-
             list_all();
         },
-
         oneditsave: function () {
-            if ($('#node-input-device').val()) {
-                const deviceData = JSON.parse($('#node-input-device').val());
-                $('#node-input-_device_id').val(deviceData.id);
-                // $('#node-input-_device_label').val($('#node-input-device option:selected').text());
-                // $('#node-input-_device_type').val(deviceData.type);
-                this._device_id = deviceData.id
-            }
+            let deviceId = $('#node-input-list_devices_id').find(
+                    'option[value="' + deviceLabel + '"]').attr('data-value');
+
+                if (!deviceId) {
+                    $('#node-input-_device_id').val(undefined);
+                } else {
+                    $('#node-input-_device_id').val(deviceId);
+                }
         }
     });
 </script>
