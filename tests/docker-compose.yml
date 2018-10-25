@@ -65,6 +65,7 @@ services:
       - flowbroker-context-manager
       - flowbroker-redis
     environment:
+      DOJOT_SERVICE_MANAGEMENT: "internal"
       DEPLOY_ENGINE: docker
       FLOWBROKER_NETWORK: ${FLOWBROKER_NETWORK}
     networks:
@@ -75,6 +76,8 @@ services:
 
   tester:
     image: tests/flowbroker
+    depends_on:
+      - flowbroker
 
   rabbitmq:
     image: rabbitmq
