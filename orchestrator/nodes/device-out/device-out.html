@@ -4,14 +4,18 @@
         <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
-        <label for="node-input-device"><i class="fa fa-wifi"></i> Device</label>
+        <label for="node-input-device"><i class="fa fa-gears"></i> Action</label>
         <select id="node-input-device_source" onchange="displayDeviceSourceElement()">
             <option value="self">The device which triggered the flow</option>
             <option value="configured">A specific device</option>
             <option value="dynamic">A device defined during the flow</option>
         </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-device_source_msg" id="node-input-device_source_msg_label"><i class="fa fa-tag"></i> Attribute</label>
+        <label for="node-input-device_source_id" id="node-input-device_source_id_label"><i class="fa fa-wifi"></i> Device</label>
         <input type="text" id="node-input-device_source_msg" placeholder="Enter an attribute" />
-        <input list="node-input-list_devices_id" id="node-input-device_source_id" placeholder="Select a device"/>
+        <input type="text" list="node-input-list_devices_id" id="node-input-device_source_id" placeholder="Select a device"/>
         <datalist id="node-input-list_devices_id"></datalist>
     </div>
     <div class="form-row">
@@ -80,6 +84,8 @@
                 });
             }
 
+            $('#node-input-device_source').css('width', '70%');
+            
             list_all();
         },
         oneditsave: function () {
@@ -104,19 +110,27 @@
         var deviceSource = $('#node-input-device_source');
         var deviceSourceId = $('#node-input-device_source_id');
         var deviceSourceMsg = $('#node-input-device_source_msg');
+        var deviceSourceIdLabel = $('#node-input-device_source_id_label');
+        var deviceSourceMsgLabel = $('#node-input-device_source_msg_label');
 
         switch(deviceSource.val()) {
             case "self":
                 deviceSourceId.hide();
                 deviceSourceMsg.hide();
+                deviceSourceIdLabel.hide();
+                deviceSourceMsgLabel.hide();
             break;
             case "configured":
                 deviceSourceId.show();
                 deviceSourceMsg.hide();
+                deviceSourceIdLabel.show();
+                deviceSourceMsgLabel.hide();
             break;
             case "dynamic":
                 deviceSourceId.hide();
                 deviceSourceMsg.show();
+                deviceSourceIdLabel.hide();
+                deviceSourceMsgLabel.show();
             break;
         }
     }

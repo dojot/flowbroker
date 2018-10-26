@@ -1,6 +1,7 @@
 {
     "template": {
         "label": {
+            "name": "Name",
             "template": "Template",
             "property": "Set property",
             "format": "Syntax Highlight",
