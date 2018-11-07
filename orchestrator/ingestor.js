@@ -3,9 +3,7 @@ var amqp = require('./amqp');
 var util = require('util');
 var node = require('./nodeManager').Manager;
 var redisManager = require('./redisManager').RedisManager;
-
-var dojotModule = require("@dojot/dojot-module");
-var dojotConfig = dojotModule.Config;
+var logger = require("@dojot/dojot-module-logger").logger;
 
 // class InitializationError extends Error {}
 
@@ -14,7 +12,7 @@ module.exports = class DeviceIngestor {
    * Constructor.
    * @param {FlowManagerBuilder} fmBuilder Builder instance to be used when parsing received events
    */
-  constructor(fmBuilder, kafka) {
+  constructor(fmBuilder, kafkaMessenger) {
     // using redis as cache
     this.redis = new redisManager();
     this.client = this.redis.getClient();
@@ -23,69 +21,70 @@ module.exports = class DeviceIngestor {
     this.fmBuiler = fmBuilder;
 
     // rabbitmq
-    this.amqp = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
+    this.preProcessEvent = this.preProcessEvent.bind(this);
+    this.amqpTaskProducer = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
+    this.amqpEventProducer = new amqp.AMQPProducer(config.amqp.event_queue, config.amqp.url, 1);
+    this.amqpEventConsumer = new amqp.AMQPConsumer(config.amqp.event_queue, this.preProcessEvent, 
+      config.amqp.url, 1);
 
-    // kafka
-    this.kafkaMessenger = kafka;
+    // kafka messenger
+    this.kafkaMessenger = kafkaMessenger;
   }
 
   /**
    * Initializes device ingestor: Kafka, RabbitMQ ...
    */
   init() {
-    //TODO: The messages must be read from kafka in the pace
-    //      flowbroker can process them, otherwise, all messages
-    //      will be processed in parallel, so their running will prolong,
-    //      and flowbroker will seem very slow!!
     //tenancy subject
-    console.log("Registering callbacks for tenancy subject...");
-    this.kafkaMessenger.on(dojotConfig.dojot.subjects.tenancy, "new-tenant", (tenant, newtenant) => {
-      node.addTenant(newtenant, this.kafkaMessenger)});
-    console.log("... callbacks for tenancy registered.");
+    logger.debug("Registering callbacks for tenancy subject...");
+    this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.tenancy, 
+      "new-tenant", (tenant, newtenant) => {
+        node.addTenant(newtenant, this.kafkaMessenger)});
+    logger.debug("... callbacks for tenancy registered.");
 
     //device-manager subject
-    console.log("Registering callbacks for device-manager device subject...");
-    this.kafkaMessenger.on(dojotConfig.dojot.subjects.devices, "message", (tenant, msg) => {
-      try {
-        let parsed = JSON.parse(msg);
+    logger.debug("Registering callbacks for device-manager device subject...");
+    this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.devices, 
+      "message", (tenant, msg) => {
+        try {
+          let parsed = JSON.parse(msg);
         if (parsed.event === 'update' || parsed.event === 'remove'){
           this.handleUpdate(parsed);
         }
       } catch (error) {
-        console.error(`[ingestor] device-manager event ingestion failed: `, error.message);
+        logger.error(`[ingestor] device-manager event ingestion failed: `, error.message);
       }
     });
-    console.log("... callbacks for device-manager registered.");
+    logger.debug("... callbacks for device-manager registered.");
 
     // device-data subject
-    console.log("Registering callbacks for device-data device subject...");
-    this.kafkaMessenger.on(dojotConfig.dojot.subjects.deviceData, "message", (tenant, msg) => {
-      let parsed = null;
-      try {
-        parsed = JSON.parse(msg);
-      } catch (e) {
-        console.error("[ingestor] device-data event is not valid json. Ignoring.");
-        return;
-      }
-      try {
-        this.handleEvent(parsed);
-      } catch (error) {
-        console.error('[ingestor] device-data event ingestion failed: ', error.message);
-      }
+    logger.debug("Registering callbacks for device-data device subject...");
+    this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.deviceData, 
+      "message", (tenant, msg) => {
+
+      this.enqueueEvent(msg);
     });
-    console.log("... callbacks for device-data registered.");
+    logger.debug("... callbacks for device-data registered.");
 
     // Initializes flow nodes by tenant ...
-    console.log("Initializing flow nodes for current tenants ...");
+    logger.debug("Initializing flow nodes for current tenants ...");
     for (const tenant of this.kafkaMessenger.tenants) {
-      console.log(`Initializing nodes for ${tenant} ...`)
+      logger.debug(`Initializing nodes for ${tenant} ...`)
       node.addTenant(tenant, this.kafkaMessenger);
-      console.log(`... nodes initialized for ${tenant}.`)
+      logger.debug(`... nodes initialized for ${tenant}.`)
     }
-    console.log("... flow nodes initialized for current tenants.");
+    logger.debug("... flow nodes initialized for current tenants.");
 
-    //Connects to RabbitMQ
-    this.amqp.connect();
+    // Connects to RabbitMQ
+    Promise.all(
+      [this.amqpTaskProducer.connect(), 
+        this.amqpEventProducer.connect(),
+        this.amqpEventConsumer.connect()]).then(() => {
+          logger.debug('Connections established with RabbitMQ!');
+        }).catch( errors => {
+          logger.error(`Failed to establish connections with RabbitMQ. Error = ${errors}`);
+          process.exit(1);
+        }); 
   }
 
   _publish(node, message, flow, metadata) {
@@ -93,7 +92,7 @@ module.exports = class DeviceIngestor {
       (node.status.toLowerCase() !== 'true') &&
       metadata.hasOwnProperty('reason') &&
       (metadata.reason === 'statusUpdate')) {
-      console.log(`[ingestor] ignoring device status update ${metadata.deviceid} ${flow.id}`);
+      logger.debug(`[ingestor] ignoring device status update ${metadata.deviceid} ${flow.id}`);
       return;
     }
 
@@ -102,7 +101,7 @@ module.exports = class DeviceIngestor {
     // This should work for single output nodes only!
     for (let output of node.wires) {
       for (let hop of output) {
-        this.amqp.sendMessage(JSON.stringify({
+        this.amqpTaskProducer.sendMessage(JSON.stringify({
           hop: hop,
           message: message,
           flow: flow,
@@ -141,43 +140,80 @@ module.exports = class DeviceIngestor {
   }
 
   handleEvent(event) {
-    console.log(`[ingestor] got new device event: ${util.inspect(event, { depth: null })}`);
+    logger.debug(`[ingestor] got new device event: ${util.inspect(event, { depth: null })}`);
     let flowManager = this.fmBuiler.get(event.metadata.tenant);
-    flowManager.getByDevice(event.metadata.deviceid).then((flowlist) => {
-      for (let flow of flowlist) {
-        this.handleFlow(event, flow, false);
-      }
-    });
 
-    this.client.getDeviceInfo(event.metadata.tenant, event.metadata.deviceid, this.redis.getState()).then((data) => {
+    return this.client.getDeviceInfo(event.metadata.tenant, event.metadata.deviceid, 
+      this.redis.getState()).then((data) => {
 
-      event.metadata.templates = data.templates;
+        // update event with template and static attr info
+        event.metadata.templates = data.templates;
 
-      if (data.staticAttrs !== null) {
-        if (event.metadata.hasOwnProperty('reason')) {
-          if (event.metadata.reason === 'statusUpdate') {
-            event.attrs = {};
+        if (data.staticAttrs !== null) {
+          if (event.metadata.hasOwnProperty('reason')) {
+            if (event.metadata.reason === 'statusUpdate') {
+              event.attrs = {};
+            }
+          }
+          // Copy static attrs to event.attrs
+          for (var attr in data.staticAttrs) {
+            event.attrs[attr] = data.staticAttrs[attr];
           }
         }
-        // Copy static attrs to event.attrs
-        for (var attr in data.staticAttrs) {
-          event.attrs[attr] = data.staticAttrs[attr];
+        
+        let flowsPromise = [];
+        // [0]: flows starting with a given device
+        flowsPromise.push(flowManager.getByDevice(event.metadata.deviceid));
+        
+        // [1..N]: flows starting with a given template
+        for (let template of data.templates) {
+          flowsPromise.push(flowManager.getByTemplate(template));
         }
-      }
 
-      for (let template of data.templates) {
-        flowManager.getByTemplate(template).then( (flowlist) => {
-          for (let flow of flowlist) {
-            this.handleFlow(event, flow, true);
+        return Promise.all(flowsPromise);
+      }).then(flowLists => {
+
+        // [0]: flows starting with a given device
+        let flows = flowLists.shift();
+        for (let flow of flows) {
+          this.handleFlow(event, flow, false);
+        }
+
+        // [1..N]: flows starting with a given template
+        for (let flows of flowLists) {
+          for (let flow of flows) {
+            this.handleFlow(event, flow, true);      
           }
-        });
-      }
-    }).catch((error) => {
-      console.log(error);
-    })
+        }
+      });
   }
 
   handleUpdate(tenant, deviceid) {
     this.client.deleteDevice(tenant, deviceid);
   }
+
+  enqueueEvent(event) {
+    this.amqpEventProducer.sendMessage(event);
+    logger.debug(`Queued event ${event}`);
+  }
+
+  preProcessEvent(event, ack) {
+    logger.debug(`Pre-processing event ${event}`);
+
+    let parsed = null;
+    try {
+      parsed = JSON.parse(event);
+    } catch (e) {
+      logger.error("[ingestor] event is not valid json. Ignoring.");
+      return ack();
+    }
+
+    this.handleEvent(parsed).then( () => {
+      return ack();
+    }).catch( error => {
+      logger.error(`Coudn't enqueue message. Reason: ${error}`);
+      return ack();
+    });
+  }
+
 };

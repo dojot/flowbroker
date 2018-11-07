@@ -19,7 +19,6 @@ var Publisher = require('./publisher');
 var logger = require('./logger').logger;
 
 var config = require("./config");
-
 var dojotModule = require("@dojot/dojot-module");
 var dojotConfig = dojotModule.Config;
 
@@ -29,7 +28,6 @@ class NodeManager {
   constructor() {
     this.nodes = {};
   }
-
   startContainer(tenant) {
     this.collection
       .deleteMany({})
@@ -68,7 +66,7 @@ class NodeManager {
     }
   }
 
-  addTenant(tenant, kafka) {
+  addTenant(tenant, kafkaMessenger) {
     this.createMongoConnection(tenant);
     this.nodes[tenant] = {
       "change": new change(),
@@ -79,10 +77,10 @@ class NodeManager {
       "template": new template(),
       "device in": new device_in(),
       "device out": new device_out(
-        new Publisher(kafka, dojotConfig.dojot.subjects.deviceData, tenant)),
+        new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
       "device template in": new device_tpl(),
       "actuate": new actuate(
-        new Publisher(kafka, dojotConfig.dojot.subjects.devices, tenant)),
+        new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
       "get context": new get_context(),
     };
   }

@@ -33,6 +33,7 @@ class AMQPBase {
             return reject(error);
           }
 
+          channel.prefetch(1); // only 1 unacked msg
           this.channel = channel;
           let list = this.callbacks.channel;
           for (let i = 0; i < list.length; i++) {
