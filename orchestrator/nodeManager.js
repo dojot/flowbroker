@@ -26,9 +26,6 @@ class NodeManager {
     this.nodes = {};
   }
   startContainer(tenant) {
-    this.collection
-      .deleteMany({})
-      .then(() => { });
     this.collection.find().toArray()
       .then((values) => {
         values.forEach(item => {
