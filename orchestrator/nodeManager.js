@@ -19,9 +19,6 @@ var Publisher = require('./publisher');
 var logger = require('./logger').logger;
 
 var config = require("./config");
-var dojotModule = require("@dojot/dojot-module");
-var dojotConfig = dojotModule.Config;
-
 var MongoManager = require('./mongodb');
 
 class NodeManager {
@@ -141,44 +138,47 @@ class NodeManager {
 
         if (newNode === undefined) {
           reject('Invalid node');
-        }
-        if (save) {
-          modelContainer.id = id;
-          modelContainer.image = image;
-          this.collection.insert(modelContainer).then(() => {
-            logger.debug("... remote node was successfully inserted into the database.");
-          }).catch((error) => {
-            logger.debug(`... remote node was not inserted into the database. Error is ${error}`);
-          });
-        }
-        newNode.create()
-          .then(() => {
-            newNode.init()
-              .then(() => {
-                let meta = newNode.getMetadata();
-                console.log('[nodes] container meta', JSON.stringify(meta));
-                if (!(tenant in this.nodes)) {
-                  this.nodes[tenant] = {};
-                }
-                this.nodes[tenant][meta.name] = newNode;
-                if (save) {
-                  this.collection.updateOne({ id: id }, { $set: { 
-                    target: newNode.target,
-                    meta: meta,
-                   } });
-                }
-                resolve();
-              });
-          })
-          .catch((err) => {
-            this.collection.findOneAndDelete({ id: id });
-            if (err.response.statusCode === 404) {
-              logger.debug(`... Invalid image`);
+        } else {
+          if (save) {
+            modelContainer.id = id;
+            modelContainer.image = image;
+            this.collection.insert(modelContainer).then(() => {
+              logger.debug("... remote node was successfully inserted into the database.");
+            }).catch((error) => {
+              logger.debug(`... remote node was not inserted into the database. Error is ${error}`);
+            });
+          }
+          newNode.create()
+            .then(() => {
+              newNode.init()
+                .then(() => {
+                  let meta = newNode.getMetadata();
+                  console.log('[nodes] container meta', JSON.stringify(meta));
+                  if (!(tenant in this.nodes)) {
+                    this.nodes[tenant] = {};
+                  }
+                  this.nodes[tenant][meta.name] = newNode;
+                  if (save) {
+                    this.collection.updateOne({ id: id }, {
+                      $set: {
+                        target: newNode.target,
+                        meta: meta,
+                      }
+                    });
+                  }
+                  resolve();
+                });
+            })
+            .catch((err) => {
               this.collection.findOneAndDelete({ id: id });
-              reject({ message: 'Invalid image' });
-            };
-            reject({ message: 'Please, Try again.' });
-          });
+              if (err.response.statusCode === 404) {
+                logger.debug(`... Invalid image`);
+                this.collection.findOneAndDelete({ id: id });
+                reject({ message: 'Invalid image' });
+              };
+              reject({ message: 'Please, Try again.' });
+            });
+        }
       })
     } else {
       logger.debug(`... This image already up. Image: ${image}`);
