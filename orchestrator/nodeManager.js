@@ -30,7 +30,7 @@ class NodeManager {
     this.nodes = {};
   }
 
-  upContainers(tenant) {
+  startContainer(tenant) {
     this.collection
       .deleteMany({})
       .then(() => { });
@@ -55,11 +55,11 @@ class NodeManager {
       })
   }
 
-  mongoConnection(tenant) {
+  createMongoConnection(tenant) {
     try {
       MongoManager.get().then((client) => {
         this.collection = client.db(`flowbroker_${tenant}`).collection('remoteNode');
-        this.upContainers(tenant);
+        this.startContainer(tenant);
       }).catch((error) => {
         logger.debug("... impossible create a DB connection.");
       });
@@ -69,7 +69,7 @@ class NodeManager {
   }
 
   addTenant(tenant, kafka) {
-    this.mongoConnection(tenant);
+    this.createMongoConnection(tenant);
     this.nodes[tenant] = {
       "change": new change(),
       "email": new email(),
@@ -201,6 +201,11 @@ class NodeManager {
         .then(() => {
           if (!(tenant in this.nodes)) {
             throw "Tenant not found";
+          }
+          for (let n in this.nodes[tenant]) {
+            if (n === id) {
+              delete this.nodes[tenant][n];
+            }
           }
           return newNode.remove(node.target)
             .then(() => {
