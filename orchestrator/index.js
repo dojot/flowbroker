@@ -16,7 +16,6 @@ var ContextManagerClient = require('@dojot/flow-node').ContextManagerClient;
 var ContextHandler = require('@dojot/flow-node').ContextHandler;
 
 var dojotModule = require("@dojot/dojot-module");
-var dojotConfig = dojotModule.Config;
 
 function fail(error) {
   logger.error('[flowbroker] Initialization failed.', error.message);
@@ -153,50 +152,40 @@ for (let i = 0; i < args.workers; i++) {
   exec.init().then(loggerCallback).catch(errorCallback);
 }
 
-// kafka listeners and writers
-var kafkaMessenger = new dojotModule.Messenger("flowbroker");
-// Initializes kafka listeners ...
-logger.debug("Initializing flowbroker Kafka-messenger...");
-kafkaMessenger.init().then(() => {
-  logger.info("... Flowbroker Kafka-messenger was successfully initialized.");
+// Kafka listeners and writers
+var kafkaMessenger = new dojotModule.Messenger("flowbroker", config.kafkaMessenger);
 
-  // tenancy subject subject (read only)
+// Initializes kafka listeners ...
+logger.debug("Initializing kafka messenger ...");
+kafkaMessenger.init().then(() => {
+  logger.info("... Kafka messenger was successfully initialized.");
+
   // read:  new tenants for updating flow nodes
   logger.debug("Creating r-only channel for tenancy subject...");
-  kafkaMessenger.createChannel(dojotConfig.dojot.subjects.tenancy, "r", true /*global*/);
+  kafkaMessenger.createChannel(
+    config.kafkaMessenger.dojot.subjects.tenancy, "r", true /*global*/);
   logger.debug("... r-only channel for tenancy was created.");
 
-  // device-manager subject (read and write)
   // read:  device events for updating local cache
   // write: actuation
   logger.debug("Creating r+w channel for device-manager subject...");
-  kafkaMessenger.createChannel(dojotConfig.dojot.subjects.devices, "rw");
+  kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.devices, "rw");
   logger.debug("... r+w channel for device-manager was created.");
 
-  // device-data subject (read and write)
   // read:  device data to trigger the flows
   // write: virtual device
-  logger.debug("Creating r+w channel for device-manager subject...");
-  kafkaMessenger.createChannel(dojotConfig.dojot.subjects.deviceData, "rw");
-  logger.debug("... r+w channel for device-manager was created.");
+  logger.debug("Creating r+w channel for device-data subject...");
+  kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.deviceData, "rw");
+  logger.debug("... r+w channel for device-data was created.");
 
-  // Initializes flow manager and ingestor
-  if (args.server) {
-    try {
-      MongoManager.get().then((client) => {
-        let FlowManager = new FlowManagerBuilder(client);
-        APIHandler.init(FlowManager);
-        let ingestor = new Ingestor(FlowManager, kafkaMessenger);
-        ingestor.init();
-      }).catch((error) => {
-        fail(error);
-      });
-    } catch (error) {
-      fail(error);
-    }
-  }
-
-}).catch((error) => {
-  logger.error(`... Flowbroker kafka-messenger couldn't be initialized. Error ${error}`);
-  process.exit(1);
+  // chain other initialization steps
+  return MongoManager.get();
+  
+  }).then((client) => {
+    let FlowManager = new FlowManagerBuilder(client);
+    APIHandler.init(FlowManager);
+    let ingestor = new Ingestor(FlowManager, kafkaMessenger);
+    ingestor.init();
+  }).catch((error) => {
+  fail(error);
 });
