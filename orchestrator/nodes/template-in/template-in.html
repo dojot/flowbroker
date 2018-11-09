@@ -64,6 +64,7 @@
              //order by label if dont receive a number page
              extra='?sortBy=label';
           }
+          
           util.GET(`/template${extra}`).then((list) => {
             list.templates.map((dev) => {
               select.options[select.options.length] = new Option(dev.label, JSON.stringify({ 'id': dev.id }));
