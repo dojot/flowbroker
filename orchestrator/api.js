@@ -14,16 +14,50 @@ var nodeManager = require('./nodeManager').Manager;
 
 var InvalidFlowError = require('./flowManager').InvalidFlowError;
 
+var pjson = require('./package.json');
+var HealthChecker = require('@dojot/healthcheck').HealthChecker;
+var DataTrigger = require('@dojot/healthcheck').DataTrigger;
+var endpoint = require('@dojot/healthcheck').getHTTPRouter;
+
+const configHealth = {
+  description: "Flowbroker",
+  releaseId: "0.3.0-nightly20181030 ",
+  status: "pass",
+  version: pjson.version,
+};
+const healthChecker = new HealthChecker(configHealth);
+
+const monitor = {
+  componentId: "service-memory",
+  componentName: "total memory used",
+  componentType: "system",
+  measurementName: "memory",
+  observedUnit: "MB",
+  status: "pass",
+};
+const collector = (trigger = DataTrigger) => {
+  console.log('Cheking memory.');
+  const used = process.memoryUsage().heapUsed / 1024 / 1024;
+  const round = Math.round(used * 100) / 100
+  if (round > 30) {
+    trigger.trigger(round, "fail", "i too high");
+  } else {
+    trigger.trigger(round, "pass", "I'm ok");
+  }
+  return round;
+};
+
+healthChecker.registerMonitor(monitor, collector, 10000);
+
 // initialized by init()
 var FlowManager;
 
 const app = express();
 app.use(bodyParser.json()); // for parsing application/json
-
+app.use(endpoint(healthChecker));
 // all APIs should be invoked with valid dojot-issued JWT tokens
 app.use(authChecker.authParse);
 app.use(authChecker.authEnforce);
-
 // allow FE to retrieve available nodes (node-red API)
 const nodeHandler = new NodeAPI();
 nodeHandler.registerExpress(app);
