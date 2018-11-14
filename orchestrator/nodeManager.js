@@ -36,13 +36,13 @@ class NodeManager {
             newNode = new k8sRemote(item.image, tenant + item.id);
           }
           newNode.stats(item.target)
-            .then((stats) => {
-              logger.debug(`...[remoteNode] container already up with id ${item.target}.`);
-            })
-            .catch((err) => {
-              logger.debug(`...[remoteNode] container not up. Going up container...`);
-              this.addRemote(item.image, item.id, tenant, false);
-            });
+            .then(() => {
+                logger.debug(`...[remoteNode] container already up with id ${item.target}.`);
+              })
+            .catch(() => {
+                logger.debug(`...[remoteNode] container not up. Going up container...`);
+                this.addRemote(item.image, item.id, tenant, false);
+              });
         });
       })
   }
@@ -52,9 +52,9 @@ class NodeManager {
       MongoManager.get().then((client) => {
         this.collection = client.db(`flowbroker_${tenant}`).collection('remoteNode');
         this.startContainer(tenant);
-      }).catch((error) => {
-        logger.debug("... impossible create a DB connection.");
-      });
+      }).catch(() => {
+          logger.debug("... impossible create a DB connection.");
+        });
     } catch (error) {
       logger.debug(`... Something wasn't work with this error ${error}.`);
     }
@@ -121,10 +121,12 @@ class NodeManager {
     return this.nodes[tenant][type];
   }
 
+
+
   async addRemote(image, id, tenant, save = true) {
     const node = await this.collection.findOne({ id: id });
     if (node === null) {
-      return new Promise((resolve, reject) => {
+      return new Promise(async (resolve, reject) => {
         let newNode, modelContainer = {};
 
         if (config.deploy.engine === "docker") {
@@ -136,16 +138,22 @@ class NodeManager {
         if (newNode === undefined) {
           reject('Invalid node');
         } else {
+          let continueStart = true;
           if (save) {
             modelContainer.id = id;
             modelContainer.image = image;
-            this.collection.insert(modelContainer).then(() => {
+
+            try {
+              await this.collection.insertOne(modelContainer);
               logger.debug("... remote node was successfully inserted into the database.");
-            }).catch((error) => {
-              logger.debug(`... remote node was not inserted into the database. Error is ${error}`);
-            });
+              continueStart = true;  
+            } catch (e) {
+              continueStart = false;
+              logger.debug(`... remote node was not inserted into the database. Error is ${e}`);
+            }
           }
-          newNode.create()
+          if (continueStart === true) {
+            newNode.create()
             .then(() => {
               newNode.init()
                 .then(() => {
@@ -167,14 +175,24 @@ class NodeManager {
                 });
             })
             .catch((err) => {
-              this.collection.findOneAndDelete({ id: id });
-              if (err.response.statusCode === 404) {
-                logger.debug(`... Invalid image`);
+              try {
+                if (err.response.statusCode === 404) {
+                  logger.debug(`... Invalid image`);
+                  this.collection.findOneAndDelete({ id: id });
+                  reject({ message: 'Invalid image' });
+                } else {
+                  throw err
+                }
+              } catch(e) {
+                logger.debug(`... Problem to start container.`);
                 this.collection.findOneAndDelete({ id: id });
-                reject({ message: 'Invalid image' });
-              };
-              reject({ message: 'Please, Try again.' });
+                reject({ message: 'Please, Try again.' });
+              }
             });
+          } else {
+            logger.debug(`... Problem to save in database.`);
+            reject({ message: 'Problem to save in database, please, Try again.' });
+          }
         }
       })
     } else {
@@ -183,7 +201,7 @@ class NodeManager {
     }
   }
 
-  async delRemote(image, id, tenant) {
+  async delRemote(id, tenant) {
     const node = await this.collection.findOne({ id: id });
     if (node) {
       let newNode;
