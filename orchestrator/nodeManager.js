@@ -184,7 +184,7 @@ class NodeManager {
                   throw err
                 }
               } catch(e) {
-                logger.debug(`... Problem to start container.`);
+                logger.debug(`... Problem to start container. Reason: ${e}`);
                 this.collection.findOneAndDelete({ id: id });
                 reject({ message: 'Please, Try again.' });
               }
