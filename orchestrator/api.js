@@ -85,6 +85,12 @@ function summarizeFlow(flow) {
 }
 
 app.post('/v1/node', (req, res) => {
+
+  const error = validateMandatoryFields(req.body, ['image', 'id']);
+  if (error) {
+    return res.status(400).send({'message': error});
+  }
+
   nodeManager.addRemote(req.body.image, req.body.id, req.service).then(() => {
     return res.status(200).send({message: 'ok'});
   }).catch((error) => {
