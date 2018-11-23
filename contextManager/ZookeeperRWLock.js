@@ -7,9 +7,21 @@ var ZooKeeperHelper = require ("./ZookeeperHelper.js");
 const READ = 0;
 const WRITE = 1;
 
+/**
+ * @description This function searches for the next node that should be watched
+ * in the write case, it means, it needs to find the node with a lower sequence
+ * number than a given node.
+ * For reference check step 3 on 'obtaining a write lock' at the zk lock recipe
+ * @param array a sorted array with all children nodes
+ * @param target the target node
+ * @return The node that should be watched or null if no node should be
+ * watched
+ */
 function findNextElemToBeWatchedWriteCase(array, target) {
     let previous;
     let previousValue = 0;
+    // the number 6 comes from the node prefixes: "rlock-" and "wlock-", we
+    // need to remove this prefix to obtain the node sequence number
     let targetValue = target.substring(6);
 
     array.forEach(element => {
@@ -26,9 +38,21 @@ function findNextElemToBeWatchedWriteCase(array, target) {
     return previous;
 }
 
+/**
+ * @description This function searches for the next node that should be watched
+ * in the read case, it means, it needs to find the write node that has a lower
+ * sequence number than a given node.
+ * For reference check step 3 on 'obtaining a read lock' at the zk lock recipe
+ * @param array a sorted array with all children nodes
+ * @param target the target node
+ * @return The node that should be watched or null if no node should be
+ * watched
+ */
 function findNextElemToBeWatchedReadCase(array, target) {
     let previous;
     let previousValue = 0;
+    // the number 6 comes from the node prefixes: "rlock-" and "wlock-", we
+    // need to remove this prefix to obtain the node sequence number
     let targetValue = target.substring(6);
 
     array.forEach(element => {
