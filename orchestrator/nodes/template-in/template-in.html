@@ -59,11 +59,12 @@
 
         // this will only work from the device management interface
         function list_all(page) {
-          extra = `?page_num=${page}`
+          var orderBy = 'sortBy=label';
+          var extra = `?page_num=${page}&${orderBy}`
           if (page === undefined) {
-             //order by label if dont receive a number page
-             extra='?sortBy=label';
+            extra = '?page_num=1&'+orderBy;
           }
+
           util.GET(`/template${extra}`).then((list) => {
             list.templates.map((dev) => {
               select.options[select.options.length] = new Option(dev.label, JSON.stringify({ 'id': dev.id }));

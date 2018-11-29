@@ -65,11 +65,14 @@
 
             // this will only work from the device management interface
             function list_all(page) {
-                extra = `?page_num=${page}`
                 if (page === undefined) {
-                     //order by label if dont receive a number page
-                     extra='?sortBy=label';
+                    page=1;
                 }
+                
+                var extra=`?page_num=${page}`
+                var orderByLabel = "sortBy=label";
+
+                extra+='&'+orderByLabel;
 
                 util.GET(`/device${extra}`).then((list) => {
                     list.devices.map((dev) => {
