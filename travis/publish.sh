@@ -1,16 +1,21 @@
+
 #!/bin/bash -ex
+if [ $TRAVIS_PULL_REQUEST == false ] ; then
+  version="latest"
+  if [ ${TRAVIS_BRANCH} != "master" ] ; then
+    version=${TRAVIS_BRANCH}
+  fi
 
-version="latest"
-if [ ${TRAVIS_BRANCH} != "master" ] ; then
-  version=${TRAVIS_BRANCH}
+  username=$(echo ${TRAVIS_REPO_SLUG}  | sed  "s/\(.*\)\/.*/\1/")
+  echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+  function buildPublish() {
+    tag=${username}"/"$1:$version
+    docker tag $1 ${tag}
+    echo "Pushing tag ${tag}"
+    docker push $tag
+  }
+
+  buildPublish "flowbroker"
+  buildPublish "flowbroker-context-manager"
 fi
-context_manager_img=${TRAVIS_REPO_SLUG}-context-manager
-tag=${TRAVIS_REPO_SLUG}:$version
-context_manager_tag=${context_manager_img}:$version
-
-
-docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
-docker tag ${TRAVIS_REPO_SLUG} ${tag}
-docker tag ${context_manager_img} ${context_manager_tag}
-docker push $tag
-docker push ${context_manager_tag}

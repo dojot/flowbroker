@@ -31,7 +31,7 @@ services:
         max-size: 100m
 
   flowbroker-context-manager:
-    image: dojot/flowbroker-context-manager
+    image: flowbroker-context-manager
     restart: always
     environment:
       ZOOKEEPER_HOST: zookeeper
@@ -54,7 +54,7 @@ services:
         max-size: 100m
 
   flowbroker:
-    image: dojot/flowbroker
+    image: flowbroker
     restart: always
     depends_on:
       - rabbitmq
@@ -75,7 +75,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:Z
 
   tester:
-    image: tests/flowbroker
+    image: tests-flowbroker
     depends_on:
       - flowbroker
 
