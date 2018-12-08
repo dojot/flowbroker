@@ -5,11 +5,10 @@ var ZooKeeper = require ('zookeeper');
 
 function _createNodes(basePath, pathArray, pathIndex, zkClient) {
     return new Promise ((resolve, reject) => {
-        
         let newZNode = '';
         do {
             if (pathIndex === pathArray.length) {
-                return resolve();            
+                return resolve();
             }
             newZNode = pathArray[pathIndex];
             ++pathIndex;

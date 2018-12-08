@@ -3,24 +3,92 @@
 var ZooKeeper = require ("zookeeper");
 var ZooKeeperHelper = require ("./ZookeeperHelper.js");
 
+
+const READ = 0;
+const WRITE = 1;
+
 /**
- * @description This class implements the zookeeper's recipe to locks
- * reference: https://zookeeper.apache.org/doc/r3.4.12/recipes.html#sc_recipes_Locks
- * access: July 10th 2018
+ * @description This function searches for the next node that should be watched
+ * in the write case, it means, it needs to find the node with a lower sequence
+ * number than a given node.
+ * For reference check step 3 on 'obtaining a write lock' at the zk lock recipe
+ * @param array a sorted array with all children nodes
+ * @param target the target node
+ * @return The node that should be watched or null if no node should be
+ * watched
  */
-module.exports = class ZookeeperLock {
-    
+function findNextElemToBeWatchedWriteCase(array, target) {
+    let previous;
+    let previousValue = 0;
+    // the number 6 comes from the node prefixes: "rlock-" and "wlock-", we
+    // need to remove this prefix to obtain the node sequence number
+    let targetValue = target.substring(6);
+
+    array.forEach(element => {
+        let elemValue = element.substring(6);
+        if ( (elemValue > previousValue) && (elemValue < targetValue) ) {
+            previousValue = elemValue;
+            previous = element;
+        }
+    });
+
+    if (previous === target) {
+        return null;
+    }
+    return previous;
+}
+
+/**
+ * @description This function searches for the next node that should be watched
+ * in the read case, it means, it needs to find the write node that has a lower
+ * sequence number than a given node.
+ * For reference check step 3 on 'obtaining a read lock' at the zk lock recipe
+ * @param array a sorted array with all children nodes
+ * @param target the target node
+ * @return The node that should be watched or null if no node should be
+ * watched
+ */
+function findNextElemToBeWatchedReadCase(array, target) {
+    let previous;
+    let previousValue = 0;
+    // the number 6 comes from the node prefixes: "rlock-" and "wlock-", we
+    // need to remove this prefix to obtain the node sequence number
+    let targetValue = target.substring(6);
+
+    array.forEach(element => {
+        if (element.charAt(0) === 'w') {
+            let elemValue = element.substring(6);
+            if ( (elemValue > previousValue) && (elemValue < targetValue) ) {
+                previousValue = elemValue;
+                previous = element;
+            }
+        }
+    });
+
+    if (previous === target) {
+        return null;
+    }
+    return previous;
+}
+
+/**
+ * @description This class implements the zookeeper's recipe to read write locks
+ * reference: https://zookeeper.apache.org/doc/r3.4.12/recipes.html#sc_recipes_Locks
+ * access: September 05th 2018
+ */
+module.exports = class ZookeeperRWLock {
+
     /**
      * @description Basic constructor
      * @param {ZooKeeper} zk The zookeeper client with an active connection
      */
     constructor(zk) {
-        this.libBasePath = "/zk-locks"; // this is the base path on zookeeper,
-                                        // all data created with this class
-                                        // stays under this path
-        this.zkClient = zk;             // The zookeeper client
+        this.libBasePath = "/zk-rwlocks"; // this is the base path on zookeeper,
+                                          // all data created with this class
+                                          // stays under this path
+        this.zkClient = zk;               // The zookeeper client
     }
-    
+
     /**
      * @description Initializes the
      * @param {string} appPathPrefix the path prefix, all data will be located
@@ -45,6 +113,14 @@ module.exports = class ZookeeperLock {
         });
     } // init
 
+    rlock(dataName, waitLockTimeout) {
+        return this._lock(dataName, waitLockTimeout, READ);
+    }
+
+    wlock(dataName, waitLockTimeout) {
+        return this._lock(dataName, waitLockTimeout, WRITE);
+    }
+
     /**
      * @description locks a specific data
      * @param {string} dataName the data to be locked, it can a name or a path. For
@@ -54,18 +130,22 @@ module.exports = class ZookeeperLock {
      * for the lock
      * @return a promise
      * on resolve:
-     * lock: a LockInstance object
+     *  lock: a LockInstance object
      * on reject:
-     * error: a string with the error. It can be 'internal error' or 'time out'
+     *  error: a string with the error. It can be 'internal error' or 'time out'
      */
-    lock(dataName, waitLockTimeout) {
+    _lock(dataName, waitLockTimeout, lockMode) {
         return new Promise ((resolve, reject) => {
             //todo: validate the input parameters
 
             let dataPath = this.pathPrefix + "/" + dataName;
+            let lockPrefix = '/rlock-';
+            if (lockMode === WRITE) {
+                lockPrefix = '/wlock-'
+            }
             ZooKeeperHelper.createPathIfNotExists(this.pathPrefix, dataName, this.zkClient).then(
                 () => {
-                    this.zkClient.a_create(dataPath + '/lock-',
+                    this.zkClient.a_create(dataPath + lockPrefix,
                         "",
                         ZooKeeper.ZOO_SEQUENCE | ZooKeeper.ZOO_EPHEMERAL,
                         (rc, error, path) => {
@@ -82,7 +162,7 @@ module.exports = class ZookeeperLock {
                                 let lockInstance = new LockInstance(this.zkClient, dataPath, lockNode);
                                 let timer = setTimeout(this._lockWaitTimeout, waitLockTimeout, lockInstance, reject);
 
-                                this._try_lock(dataPath, lockNode, lockInstance, timer).
+                                this._try_lock(dataPath, lockMode, lockNode, lockInstance, timer).
                                     then((lock) => {resolve(lock);}).catch(
                                          () => {reject('internal error');});
                                 return;
@@ -97,9 +177,9 @@ module.exports = class ZookeeperLock {
         });
     } // lock
 
-    _try_lock(dataPath, lockNode, lockInstance, timer) {
+    _try_lock(dataPath, lockMode, lockNode, lockInstance, timer) {
         return new Promise ((resolve, reject) => {
-            // console.log('trying acquire lock for ' + lockNode);
+            console.log('trying acquire lock for ' + lockNode);
             this.zkClient.a_get_children(dataPath,
                 false,
                 (rc, error, children) => {
@@ -108,26 +188,26 @@ module.exports = class ZookeeperLock {
                     reject();
                     return;
                 }
-                children.sort();
-                let indexCurrentNode = children.indexOf(lockNode);
-                if (indexCurrentNode === 0) {
+                let nodeToBeWatched;
+                if (lockMode === READ) {
+                    nodeToBeWatched = findNextElemToBeWatchedReadCase(children, lockNode);
+                } else { // write case
+                    nodeToBeWatched = findNextElemToBeWatchedWriteCase(children, lockNode);
+                }
+                if (!nodeToBeWatched) {
                     //lock acquired!
                     clearTimeout(timer);
                     console.log('%s/%s acquired the lock', dataPath, lockNode);
                     resolve(lockInstance);
                     return;
-                } else if (indexCurrentNode < 0) {
-                    console.log('%s/%s does not exist more [timed out]', dataPath, lockNode);
-                    reject('time out');
-                    return;
                 }
 
-                console.log('znode %s is watching %s/%s ', lockNode, dataPath, children[indexCurrentNode - 1]);
-                this.zkClient.aw_exists(dataPath + '/' + children[indexCurrentNode - 1],
+                console.log('znode %s is watching %s/%s ', lockNode, dataPath, nodeToBeWatched);
+                this.zkClient.aw_exists(dataPath + '/' + nodeToBeWatched,
                     (type, state, path) => {
                         if (state === ZooKeeper.ZOO_CONNECTED_STATE) {
                             console.log('event %d on %s', type, path);
-                            this._try_lock(dataPath, lockNode, lockInstance, timer).
+                            this._try_lock(dataPath, lockMode, lockNode, lockInstance, timer).
                                 then((lock) => {resolve(lock);},
                                      () => {reject();} );
                             return;
@@ -142,7 +222,7 @@ module.exports = class ZookeeperLock {
                             // let's try again
                             console.log('Selected lock znode does not ' +
                                         'exist any more, trying again');
-                            this._try_lock(dataPath, lockNode, lockInstance, timer).
+                            this._try_lock(dataPath, lockMode, lockNode, lockInstance, timer).
                                 then((lock) => {resolve(lock);},
                                     () => {reject();} );
                             return;
@@ -161,8 +241,8 @@ module.exports = class ZookeeperLock {
     /**
      * @description this function deals with the timeout situation when the
      * client's stipulated time for wait for a lock has been reached
-     * @param {LockInstance} lockInstance 
-     * @param {function} reject 
+     * @param {LockInstance} lockInstance
+     * @param {function} reject
      */
     _lockWaitTimeout(lockInstance, reject) {
         console.log("%s can not wait anymore. Timed out", lockInstance.getLockPath());
