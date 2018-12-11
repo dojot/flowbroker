@@ -18,10 +18,10 @@ var pjson = require('./package.json');
 var HealthChecker = require('@dojot/healthcheck').HealthChecker;
 var DataTrigger = require('@dojot/healthcheck').DataTrigger;
 var endpoint = require('@dojot/healthcheck').getHTTPRouter;
+const logger = require('./logger').logger;
 
 const configHealth = {
-  description: "Flowbroker",
-  releaseId: "0.3.0-nightly20181030 ",
+  description: pjson.name,
   status: "pass",
   version: pjson.version,
 };
@@ -35,12 +35,15 @@ const monitor = {
   observedUnit: "MB",
   status: "pass",
 };
+
+const min = process.env.MEMORY_VERIFY || 90;
+
 const collector = (trigger = DataTrigger) => {
-  console.log('Cheking memory.');
+  logger.debug('Checking memory.');
   const used = process.memoryUsage().heapUsed / 1024 / 1024;
   const round = Math.round(used * 100) / 100
-  if (round > 30) {
-    trigger.trigger(round, "fail", "i too high");
+  if (round > min) {
+    trigger.trigger(round, "fail", "Over memory");
   } else {
     trigger.trigger(round, "pass", "I'm ok");
   }
