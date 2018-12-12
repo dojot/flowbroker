@@ -1,4 +1,3 @@
-
 #!/bin/bash -ex
 if [ $TRAVIS_PULL_REQUEST == false ] ; then
   version="latest"
