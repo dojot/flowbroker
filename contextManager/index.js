@@ -2,7 +2,7 @@
 
 var zmq = require('zeromq');
 var ZooKeeper = require ('zookeeper');
-var ZookeeperLock = require ('./ZookeeperLock.js');
+var ZookeeperRWLock = require ('./ZookeeperRWLock.js');
 
 function checkField(target, field, message) {
   if (!target.hasOwnProperty(field)) {
@@ -10,19 +10,22 @@ function checkField(target, field, message) {
   }
 }
 
+const READ = 0;
+const WRITE = 1;
+
 /**
  * @description This class implements a context handler. It opens a ZeroMQ socket
  * (router type) and waits for commands to get and save contexts. These contexts
  * are stored in the zookeeper. This class ensures that the access to the context
- * is exclusive, i.e only one person has access to it at time.
- * 
+ * is exclusive following the read/write lock procedure.
+ *
  * The following messages are accepts by this handler:
- * 
- * [lock_and_get]: retrieves a given context and ensure the access is exclusive
+ *
+ * [rlock_and_get]: lock the context for reading and retrieve its content
  * message format: JSON
  * request:
  * {
- *   "command": "lock_and_get",
+ *   "command": "rlock_and_get",
  *   "data": {
  *     "context_name": <the context's name>
  *     "request_id": <a string that identifies the lock/unlock request, it must
@@ -42,8 +45,59 @@ function checkField(target, field, message) {
  *   "result": "error"
  *   "reason": <a string that describes the reason>
  * }
- * 
- * [save_and_unlock]: saves a given context and allow others to acquire it
+ *
+ * [wlock_and_get]: lock the context for writing and retrieve its content
+ * message format: JSON
+ * request:
+ * {
+ *   "command": "wlock_and_get",
+ *   "data": {
+ *     "context_name": <the context's name>
+ *     "request_id": <a string that identifies the lock/unlock request, it must
+ *                    be unique during the lock process>
+ *   }
+ * }
+ * response:
+ * on success:
+ * {
+ *   "request_id": <the request_id given in the request>
+ *   "context_content": <the context context in utf8 format>
+ *   "result": "ok"
+ * }
+ * on failure:
+ * {
+ *   "request_id": <the request_id given in the request>
+ *   "result": "error"
+ *   "reason": <a string that describes the reason>
+ * }
+ *
+ * [lock_get_and_unlock]: lock the context for reading and retrieve its content and
+ * unlock it immediately
+ * message format: JSON
+ * request:
+ * {
+ *   "command": "lock_get_and_unlock",
+ *   "data": {
+ *     "context_name": <the context's name>
+ *     "request_id": <a string that identifies the request, it must
+ *                    be unique during the process>
+ *   }
+ * }
+ * response:
+ * on success:
+ * {
+ *   "request_id": <the request_id given in the request>
+ *   "context_content": <the context context in utf8 format>
+ *   "result": "ok"
+ * }
+ * on failure:
+ * {
+ *   "request_id": <the request_id given in the request>
+ *   "result": "error"
+ *   "reason": <a string that describes the reason>
+ * }
+ *
+ * [save_and_unlock]: saves a given context and removes the lock
  * message format: JSON
  * request:
  * {
@@ -65,7 +119,29 @@ function checkField(target, field, message) {
  *   "result": "error"
  *   "reason": <a string that describes the reason>
  * }
- * 
+ *
+ * [unlock]: just unlock the context
+ * message format: JSON
+ * request:
+ * {
+ *   "command": "unlock",
+ *   "data": {
+ *     "request_id": <the request_id used in the lock request>
+ *   }
+ * }
+ * response:
+ * on success:
+ * {
+ *   "request_id": <the request_id given in the request>
+ *   "result": "ok"
+ * }
+ * on failure:
+ * {
+ *   "request_id": <the request_id given in the request>
+ *   "result": "error"
+ *   "reason": <a string that describes the reason>
+ * }
+ *
  * [dump]: dumps internal structures, for debug/development purpose
  * request:
  * {
@@ -91,11 +167,11 @@ class ContextHandler {
     this.waitLockTimeout = waitLockTimeout;
     this.controlMap = {};
     this.zkClient = null;
-    this.zkLock = null;
+    this.zkRWLock = null;
     this.zmqSock = null;
   }
 
-  init() {    
+  init() {
     this.zmqSock = zmq.socket('router');
 
     this.zkClient = new ZooKeeper({
@@ -112,12 +188,12 @@ class ContextHandler {
         return;
       }
 
-      this.zkLock = new ZookeeperLock(this.zkClient);
+      this.zkRWLock = new ZookeeperRWLock(this.zkClient);
 
-      this.zkLock.init('context-manager').then( () => {
+      this.zkRWLock.init('context-manager').then( () => {
         this.zmqSock.on("message", (identity, request) => {
           let payload;
-        
+
           //parse the payload
           try {
               payload = JSON.parse(request.toString());
@@ -125,33 +201,69 @@ class ContextHandler {
               console.log("Invalid JSON format. Discarding request: %s", request.toString());
               return;
           }
-  
+
           try {
-              // console.log('Got message. invoking handler ...', payload);
-              checkField(payload, 'command', "Request is missing command field");
-  
-              switch (payload.command) {
-                case 'lock_and_get':
-                    checkField(payload, 'data', "Request is missing data field");
-                    this._lock_and_get(identity, payload.data);
-                    break;
-                case 'save_and_unlock':
-                    checkField(payload, 'data', "Request is missing data field");
-                    this._save_and_unlock(identity, payload.data);
-                    break
-                case 'dump':
-                    this._dump();
-                    break;
-                default:
-                    console.log("Unknown command: %s", payload.command);
-                    return;    
-              }
+            // console.log('Got message. invoking handler ...', payload);
+            checkField(payload, 'command', "Request is missing command field");
+
+            switch (payload.command) {
+              case 'rlock_and_get':
+                checkField(payload, 'data', "Request is missing data field");
+                this._lock_and_get(identity, payload.data, READ).then( (response) => {
+                  this.zmqSock.send([identity, JSON.stringify(response)]);
+                }).catch((response) => {
+                  this.zmqSock.send([identity, JSON.stringify(response)]);
+                });
+                break;
+              case 'wlock_and_get':
+                checkField(payload, 'data', "Request is missing data field");
+                this._lock_and_get(identity, payload.data, WRITE).then( (response) => {
+                  this.zmqSock.send([identity, JSON.stringify(response)]);
+                }).catch((response) => {
+                  this.zmqSock.send([identity, JSON.stringify(response)]);
+                });
+                break;
+              case 'lock_get_and_unlock':
+                checkField(payload, 'data', "Request is missing data field");
+                this._lock_and_get(identity, payload.data, READ).then( (response) => {
+                  this._unlock(identity, payload.data).then( () => {
+                    this.zmqSock.send([identity, JSON.stringify(response)]);
+                  }).catch( (response) => {
+                    this.zmqSock.send([identity, JSON.stringify(response)]);
+                  });
+                }).catch((response) => {
+                  this.zmqSock.send([identity, JSON.stringify(response)]);
+                });
+                break;
+              case 'save_and_unlock':
+                checkField(payload, 'data', "Request is missing data field");
+                this._save_and_unlock(identity, payload.data).then( (response) => {
+                  this.zmqSock.send([identity, JSON.stringify(response)]);
+                }).catch((response) => {
+                  this.zmqSock.send([identity, JSON.stringify(response)]);
+                });
+                break;
+              case 'unlock':
+                checkField(payload, 'data', "Request is missing data field");
+                this._unlock(identity, payload.data).then( (response) => {
+                  this.zmqSock.send([identity, JSON.stringify(response)]);
+                }).catch((response) => {
+                  this.zmqSock.send([identity, JSON.stringify(response)]);
+                });
+                break;
+              case 'dump':
+                this._dump();
+                break;
+              default:
+                console.log("Unknown command: %s", payload.command);
+                return;
+            }
           } catch (error) {
               console.log("Exception: " + error);
               return;
           }
         }); // on message
-  
+
         this.zmqSock.bind('tcp://*:' + this.zmqPort.toString(), (err) => {
           if (err) {
             console.err('Failed on bind the zmq port. Error: ' + err);
@@ -160,30 +272,35 @@ class ContextHandler {
             console.log('zmq listening on %d', this.zmqPort);
           }
         });
-  
+
         process.on('SIGINT', () => {
           this.zmqSock.close();
         });
-      },
-      () => {
+      }).catch( () => {
         console.log("Fail to init zookeeper lock");
         process.exit(1);
       });
     });
   }
 
-  _lock_and_get(identity, data) {
+  _lock_and_get(identity, data, lockMode) {
     checkField(data, 'context_name', "Request is missing context_name field");
     checkField(data, 'request_id', "Request is missing request_id field");
 
-    this.zkLock.lock(data.context_name, this.waitLockTimeout).then(
-      (lock) => {
+    let targetLockMode;
+    if (lockMode === READ) {
+      targetLockMode = this.zkRWLock.rlock.bind(this.zkRWLock);
+    } else {
+      targetLockMode = this.zkRWLock.wlock.bind(this.zkRWLock);
+    }
 
+    return targetLockMode(data.context_name, this.waitLockTimeout).then( (lock) => {
+      return new Promise( (resolve, reject) => {
         console.log('ZMQ connection %s, requestId: %s acquired the lock %s',
-          identity.toString(), data.request_id, lock.getDataPath());
+          identity.toString('hex'), data.request_id, lock.getDataPath());
 
         // now that we have the lock, it is safe to retrieve the context content
-        this.zkClient.a_get(lock.getDataPath(), false, 
+        this.zkClient.a_get(lock.getDataPath(), false,
           (rc, error, stat, protectedData) => {
             if (rc !== 0) {
                 console.log("Failed to get data from context. Error: %s", error);
@@ -193,17 +310,17 @@ class ContextHandler {
                   result: "error",
                   reason: "internal error"
                 };
-                this.zmqSock.send([identity, JSON.stringify(response)]);
-                return;
+                return reject(response);
             }
 
             if (protectedData == null) {
               protectedData = "";
             }
-            
+
             // configure a timer to control how long a requestor can hold a lock
             let timer = setTimeout(this._timeout, this.holdLockTimeout, lock, identity, data, this);
             this.controlMap[identity + '.' + data.request_id] = {
+              lockMode: lockMode,
               lock: lock,
               timerToUnlock: timer
             };
@@ -213,26 +330,85 @@ class ContextHandler {
               context_content: protectedData.toString('utf8'),
               result: "ok"
             };
-            this.zmqSock.send([identity, JSON.stringify(response)]);
-        } // a_get
-      );
-      },
-      (error) => {
-        console.log ('lock failed. Error: %s', error);
-        let response = {
-          request_id: data.request_id,
-          result: "error",
-          reason: error
-        };
-        this.zmqSock.send([identity, JSON.stringify(response)]);
-      }
-    );
-
+            return resolve(response);
+        }); // a_get
+      });
+    }).catch( (error) => {
+      console.log ('lock failed. Error: %s', error);
+      let response = {
+        request_id: data.request_id,
+        result: "error",
+        reason: error
+      };
+      return reject(response);
+    });
   } //_lock_and_get
 
   _save_and_unlock(identity, data) {
+    return new Promise ((resolve, reject) => {
+      checkField(data, 'request_id', "Request is missing request_id field");
+      checkField(data, 'context_content', "Request is missing context_content field");
+
+      if (!this.controlMap.hasOwnProperty(identity + '.' + data.request_id)) {
+        console.log('entry does not exists');
+        let response = {
+          request_id: data.request_id,
+          result: "error",
+          reason: "lock does not exist"
+        };
+        return reject(response);
+      }
+
+      let controlEntry = this.controlMap[identity + '.' + data.request_id];
+      if (controlEntry.lockMode === READ) {
+        console.log('invalid operation');
+        let response = {
+          request_id: data.request_id,
+          result: "error",
+          reason: "trying to write while holding a read lock"
+        };
+        return reject(response);
+      }
+      delete this.controlMap[identity + '.' + data.request_id];
+
+      // cancel the lock hold timer
+      clearTimeout(controlEntry.timerToUnlock);
+
+      let buf = Buffer.from(data.context_content, 'utf8');
+
+      // -1 make it matches with any node's version
+      console.log("writing on %s data: %s", controlEntry.lock.getDataPath(), buf);
+      this.zkClient.a_set(controlEntry.lock.getDataPath(), buf, -1, (rc, error) => {
+        if (rc !== 0) {
+            console.log("failed to write context data. Error %s", error);
+            let response = {
+              request_id: data.request_id,
+              result: "error",
+              reason: "fail to write context"
+            };
+            return reject(response);
+        }
+
+        controlEntry.lock.unlock().then(() => {
+          let response = {
+            request_id: data.request_id,
+            result: "ok"
+          };
+          return resolve(response);
+        }).catch( () => {
+          let response = {
+            request_id: data.request_id,
+            result: "error",
+            reason: "internal error"
+          };
+          return reject(response);
+        });
+      });
+    });
+  } // _save_and_unlock
+
+  _unlock(identity, data) {
     checkField(data, 'request_id', "Request is missing request_id field");
-    checkField(data, 'context_content', "Request is missing context_content field");
 
     if (!this.controlMap.hasOwnProperty(identity + '.' + data.request_id)) {
       console.log('entry does not exists');
@@ -241,8 +417,7 @@ class ContextHandler {
         result: "error",
         reason: "lock does not exist"
       };
-      this.zmqSock.send([identity, JSON.stringify(response)]);
-      return;
+      return Promise.reject(response);
     }
 
     let controlEntry = this.controlMap[identity + '.' + data.request_id];
@@ -250,43 +425,22 @@ class ContextHandler {
 
     // cancel the lock hold timer
     clearTimeout(controlEntry.timerToUnlock);
-	
-    var buf = Buffer.from(data.context_content, 'utf8');
-    
-    // -1 make it matches with any node's version
-    console.log("writing on %s", controlEntry.lock.getDataPath());
-    this.zkClient.a_set(controlEntry.lock.getDataPath(), buf, -1, (rc, error) => {
-      if (rc !== 0) {
-          console.log("failed to write context data. Error %s", error);
-          let response = {
-            request_id: data.request_id,
-            result: "error",
-            reason: "fail to write context"
-          };
-          this.zmqSock.send([identity, JSON.stringify(response)]);
-          return;
-      }
-      
-      controlEntry.lock.unlock().then(
-        () => {
-          let response = {
+
+    return controlEntry.lock.unlock().then(() => {
+        let response = {
           request_id: data.request_id,
           result: "ok"
-          };
-          this.zmqSock.send([identity, JSON.stringify(response)]);
-        },
-        () => {
-          let response = {
-            request_id: data.request_id,
-            result: "error",
-            reason: "internal error"
-          };
-          this.zmqSock.send([identity, JSON.stringify(response)]);
-        }
-      );
-    });
-
-  } // _save_and_unlock
+        };
+        return Promise.resolve(response);
+      }).catch(() => {
+        let response = {
+          request_id: data.request_id,
+          result: "error",
+          reason: "internal error"
+        };
+        return Promise.reject(response);
+      });
+  } // _unlock
 
   _timeout(lock, identity, data, contextManager) {
     delete contextManager.controlMap[identity + '.' + data.request_id];
@@ -305,7 +459,7 @@ class ContextHandler {
       }
 	  );
   } // _timeout
-  
+
   _dump() {
     let count = 0;
     for (let k in this.controlMap) {
@@ -325,7 +479,7 @@ let zmqPort = process.env.ZEROMQ_PORT || 5556;
 let holdLockTimeout = process.env.HOLD_LOCK_TIMEOUT || 10000;
 let waitLockTimeout = process.env.WAIT_LOCK_TIMEOUT || 30000;
 
-var handler = new ContextHandler(zkHost,
+let handler = new ContextHandler(zkHost,
                                  zkPort,
                                  zmqPort,
                                  holdLockTimeout,
