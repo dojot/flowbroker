@@ -36,13 +36,28 @@ class NodeManager {
             newNode = new k8sRemote(item.image, tenant + item.id);
           }
           newNode.stats(item.target)
-            .then(() => {
-                logger.debug(`...[remoteNode] container already up with id ${item.target}.`);
-              })
+            .then(async () => {
+              try {
+                await newNode.remove(item.target);
+                await newNode.create();
+                await newNode.init();
+                this.collection.updateOne({ id: item.id }, {
+                  $set: {
+                    target: newNode.target,
+                  }
+                });
+                this.nodes[tenant][item.meta.name] = newNode;
+                logger.debug(`... This image already up. Image: ${item.image}`);
+              } catch (e) {
+                logger.debug("... Failed to start a container.");
+                this.collection.findOneAndDelete({ id: id });
+                logger.debug("... remote node was successfully removed to the database.");
+              }
+            })
             .catch(() => {
-                logger.debug(`...[remoteNode] container not up. Going up container...`);
-                this.addRemote(item.image, item.id, tenant, false);
-              });
+              logger.debug(`...[remoteNode] container not up. Going up container...`);
+              this.addRemote(item.image, item.id, tenant, false);
+            });
         });
       })
   }
@@ -53,8 +68,8 @@ class NodeManager {
         this.collection = client.db(`flowbroker_${tenant}`).collection('remoteNode');
         this.startContainer(tenant);
       }).catch(() => {
-          logger.debug("... impossible create a DB connection.");
-        });
+        logger.debug("... impossible create a DB connection.");
+      });
     } catch (error) {
       logger.debug(`... Something wasn't work with this error ${error}.`);
     }
@@ -125,28 +140,28 @@ class NodeManager {
 
   async addRemote(image, id, tenant, save = true) {
     const node = await this.collection.findOne({ id: id });
+    let newNode = {};
+
+    if (config.deploy.engine === "docker") {
+      newNode = new dockerRemote(image, tenant + id);
+    } else if (config.deploy.engine === "kubernetes") {
+      newNode = new k8sRemote(image, tenant + id);
+    }
     if (node === null) {
       return new Promise(async (resolve, reject) => {
-        let newNode, modelContainer = {};
-
-        if (config.deploy.engine === "docker") {
-          newNode = new dockerRemote(image, tenant + id);
-        } else if (config.deploy.engine === "kubernetes") {
-          newNode = new k8sRemote(image, tenant + id);
-        }
-
         if (newNode === undefined) {
           reject('Invalid node');
         } else {
           let continueStart = true;
           if (save) {
+            let modelContainer = {};
             modelContainer.id = id;
             modelContainer.image = image;
 
             try {
               await this.collection.insertOne(modelContainer);
               logger.debug("... remote node was successfully inserted into the database.");
-              continueStart = true;  
+              continueStart = true;
             } catch (e) {
               continueStart = false;
               logger.debug(`... remote node was not inserted into the database. Error is ${e}`);
@@ -154,41 +169,40 @@ class NodeManager {
           }
           if (continueStart === true) {
             newNode.create()
-            .then(() => {
-              newNode.init()
-                .then(() => {
-                  let meta = newNode.getMetadata();
-                  console.log('[nodes] container meta', JSON.stringify(meta));
-                  if (!(tenant in this.nodes)) {
-                    this.nodes[tenant] = {};
+              .then(() => {
+                newNode.init()
+                  .then(() => {
+                    let meta = newNode.getMetadata();
+                    if (!(tenant in this.nodes)) {
+                      this.nodes[tenant] = {};
+                    }
+                    this.nodes[tenant][meta.name] = newNode;
+                    if (save) {
+                      this.collection.updateOne({ id: id }, {
+                        $set: {
+                          target: newNode.target,
+                          meta: meta,
+                        }
+                      });
+                    }
+                    resolve();
+                  });
+              })
+              .catch((err) => {
+                try {
+                  if (err.response.statusCode === 404) {
+                    logger.debug(`... Invalid image`);
+                    this.collection.findOneAndDelete({ id: id });
+                    reject({ message: 'Invalid image' });
+                  } else {
+                    throw err
                   }
-                  this.nodes[tenant][meta.name] = newNode;
-                  if (save) {
-                    this.collection.updateOne({ id: id }, {
-                      $set: {
-                        target: newNode.target,
-                        meta: meta,
-                      }
-                    });
-                  }
-                  resolve();
-                });
-            })
-            .catch((err) => {
-              try {
-                if (err.response.statusCode === 404) {
-                  logger.debug(`... Invalid image`);
+                } catch (e) {
+                  logger.debug(`... Problem to start container. Reason: ${e}`);
                   this.collection.findOneAndDelete({ id: id });
-                  reject({ message: 'Invalid image' });
-                } else {
-                  throw err
+                  reject({ message: 'Please, Try again.' });
                 }
-              } catch(e) {
-                logger.debug(`... Problem to start container. Reason: ${e}`);
-                this.collection.findOneAndDelete({ id: id });
-                reject({ message: 'Please, Try again.' });
-              }
-            });
+              });
           } else {
             logger.debug(`... Problem to save in database.`);
             reject({ message: 'Problem to save in database, please, Try again.' });
@@ -196,7 +210,7 @@ class NodeManager {
         }
       })
     } else {
-      logger.debug(`... This image already up. Image: ${image}`);
+      logger.debug(`... This image already up. Image ${image}`);
       return Promise.reject(new Error(`... This image already up. Image: ${image}`));
     }
   }
