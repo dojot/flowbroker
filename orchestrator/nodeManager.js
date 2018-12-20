@@ -24,9 +24,10 @@ var MongoManager = require('./mongodb');
 class NodeManager {
   constructor() {
     this.nodes = {};
+    this.collection = {};
   }
   startContainer(tenant) {
-    this.collection.find().toArray()
+    this.collection[tenant].find().toArray()
       .then((values) => {
         values.forEach(item => {
           let newNode;
@@ -41,7 +42,7 @@ class NodeManager {
                 await newNode.remove(item.target);
                 await newNode.create();
                 await newNode.init();
-                this.collection.updateOne({ id: item.id }, {
+                this.collection[tenant].updateOne({ id: item.id }, {
                   $set: {
                     target: newNode.target,
                   }
@@ -50,7 +51,7 @@ class NodeManager {
                 logger.debug(`... This image already up. Image: ${item.image}`);
               } catch (e) {
                 logger.debug("... Failed to start a container.");
-                this.collection.findOneAndDelete({ id: id });
+                this.collection[tenant].findOneAndDelete({ id: id });
                 logger.debug("... remote node was successfully removed to the database.");
               }
             })
@@ -65,7 +66,7 @@ class NodeManager {
   createMongoConnection(tenant) {
     try {
       MongoManager.get().then((client) => {
-        this.collection = client.db(`flowbroker_${tenant}`).collection('remoteNode');
+        this.collection[tenant] = client.db(`flowbroker_${tenant}`).collection('remoteNode');
         this.startContainer(tenant);
       }).catch(() => {
         logger.debug("... impossible create a DB connection.");
@@ -139,7 +140,7 @@ class NodeManager {
 
 
   async addRemote(image, id, tenant, save = true) {
-    const node = await this.collection.findOne({ id: id });
+    const node = await this.collection[tenant].findOne({ id: id });
     let newNode = {};
 
     if (config.deploy.engine === "docker") {
@@ -159,7 +160,7 @@ class NodeManager {
             modelContainer.image = image;
 
             try {
-              await this.collection.insertOne(modelContainer);
+              await this.collection[tenant].insertOne(modelContainer);
               logger.debug("... remote node was successfully inserted into the database.");
               continueStart = true;
             } catch (e) {
@@ -178,7 +179,7 @@ class NodeManager {
                     }
                     this.nodes[tenant][meta.name] = newNode;
                     if (save) {
-                      this.collection.updateOne({ id: id }, {
+                      this.collection[tenant].updateOne({ id: id }, {
                         $set: {
                           target: newNode.target,
                           meta: meta,
@@ -192,14 +193,14 @@ class NodeManager {
                 try {
                   if (err.response.statusCode === 404) {
                     logger.debug(`... Invalid image`);
-                    this.collection.findOneAndDelete({ id: id });
+                    this.collection[tenant].findOneAndDelete({ id: id });
                     reject({ message: 'Invalid image' });
                   } else {
                     throw err
                   }
                 } catch (e) {
                   logger.debug(`... Problem to start container. Reason: ${e}`);
-                  this.collection.findOneAndDelete({ id: id });
+                  this.collection[tenant].findOneAndDelete({ id: id });
                   reject({ message: 'Please, Try again.' });
                 }
               });
@@ -216,7 +217,7 @@ class NodeManager {
   }
 
   async delRemote(id, tenant) {
-    const node = await this.collection.findOne({ id: id });
+    const node = await this.collection[tenant].findOne({ id: id });
     if (node) {
       let newNode;
       if (config.deploy.engine === "docker") {
@@ -236,7 +237,7 @@ class NodeManager {
           }
           return newNode.remove(node.target)
             .then(() => {
-              this.collection.findOneAndDelete({ id: id });
+              this.collection[tenant].findOneAndDelete({ id: id });
               logger.debug("... remote node was successfully removed to the database.");
             });
         });
