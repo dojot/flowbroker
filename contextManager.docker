@@ -1,14 +1,18 @@
-FROM node:8-alpine
+FROM node:8.14.0-alpine as basis
 
 WORKDIR /opt/flowbroker/contextManager
 
-RUN apk --no-cache add gcc g++ musl-dev make python
+RUN apk --no-cache add gcc g++ musl-dev make python bash zlib-dev
 
 COPY contextManager/package.json ./package.json
+COPY contextManager/package-lock.json ./package-lock.json
 RUN npm install
 
-RUN apk --no-cache del gcc g++ musl-dev make python
 
+FROM node:8.14.0-alpine
+
+COPY --from=basis /opt/flowbroker/contextManager /opt/flowbroker/contextManager
+WORKDIR /opt/flowbroker/contextManager
 COPY contextManager ./src
 
 CMD ["node", "src/index.js"]
