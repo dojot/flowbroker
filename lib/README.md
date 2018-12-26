@@ -59,3 +59,5 @@ curl -H "Authorization: Bearer ${JWT}" http://localhost:8000/flows/v1/node -H 'c
 ```
 
 Now the Kelvin node will be available on `converters` category into the FlowBroker Dojot's interface.
+
+Note: the DockerHub use is optional, you can use a private docker registry instead.
