@@ -55,19 +55,13 @@ class DataHandler extends dojot.DataHandlerBase {
       getContextPromise = contextHandler.getFlowContext(metadata.tenant, metadata.flowId, config.contextName);
     }
 
-    getContextPromise.then( (results) => {
-      let [contextId, contextContent] = results;
-
-      contextHandler.saveContext(contextId, contextContent).then( () => {
-        try {
-          this._set(config.contextContent, contextContent, message);
-          callback(undefined, [message]);
-        } catch (error) {
-          callback(error);
-        }
-      }).catch((error) => {
+    getContextPromise.then( (contextContent) => {
+      try {
+        this._set(config.contextContent, contextContent, message);
+        callback(undefined, [message]);
+      } catch (error) {
         callback(error);
-      })
+      }
     }).catch((error) => {
       callback(error);
     });
