@@ -4,14 +4,11 @@
             "name": "Name",
             "template": "Template",
             "property": "Set property",
-            "format": "Syntax Highlight",
             "syntax": "Format",
             "output": "Output as",
             "handlebars": "Handlebars template",
             "plain": "Plain text",
-            "json": "Parsed JSON",
-            "yaml": "Parsed YAML",
-            "none": "none"
+            "json": "Parsed JSON"
         },
         "templatevalue": "This is the payload: {{payload}} !"
     }
