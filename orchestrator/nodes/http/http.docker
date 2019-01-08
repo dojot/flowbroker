@@ -1,8 +1,0 @@
-FROM node:8
-
-ADD lib ./lib
-ADD nodes/http ./http
-RUN cd lib && npm install && cd ..
-WORKDIR http
-RUN npm install
-CMD ["node", "index.js"]

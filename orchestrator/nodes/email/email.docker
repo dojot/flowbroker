@@ -1,8 +1,0 @@
-FROM node:8
-
-ADD lib ./lib
-ADD nodes/email ./email
-RUN cd lib && npm install && cd ..
-WORKDIR email
-RUN npm install
-CMD ["node", "index.js"]
