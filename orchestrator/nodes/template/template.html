@@ -11,7 +11,7 @@
     <div class="form-row">
         <label for="node-input-syntax"><i class="fa fa-code"></i> <span data-i18n="template.label.syntax"></span></label>
         <select id="node-input-syntax" style="width:180px;">
-            <option value="mustache" data-i18n="template.label.mustache"></option>
+            <option value="handlebars" data-i18n="template.label.handlebars"></option>
             <option value="plain" data-i18n="template.label.plain"></option>
         </select>
     </div>
@@ -86,7 +86,7 @@
             field: {value:"payload", validate: RED.validators.typedInput("fieldType")},
             fieldType: {value:"msg"},
             format: {value:"handlebars"},
-            syntax: {value:"mustache"},
+            syntax: {value:"handlebars"},
             template: {value:"This is the payload: {{payload}} !"},
             output: {value:"str"}
         },
@@ -102,7 +102,7 @@
                 this.fieldType = 'msg';
             }
             if (!this.syntax) {
-                this.syntax = 'mustache';
+                this.syntax = 'handlebars';
                 $("#node-input-syntax").val(this.syntax);
             }
             $("#node-input-field").typedInput({

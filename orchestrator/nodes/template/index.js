@@ -3,7 +3,7 @@
 let fs = require('fs');
 let path = require('path');
 var dojot = require('@dojot/flow-node');
-let mustache = require('mustache');
+let handlebars = require('handlebars');
 var logger = require("../../logger").logger;
 
 // Sample node implementation
@@ -75,9 +75,13 @@ class DataHandler extends dojot.DataHandlerBase {
   handleMessage(config, message) {
     logger.debug("Executing template node...");
     try {
-      let data = config.template;
-      if (config.syntax === 'mustache') {
-        data = mustache.render(data, message);
+      let templateData = config.template;
+      let data = '';
+      if (config.syntax === 'handlebars') {
+        let template = handlebars.compile(templateData);
+        data = template(message);
+      } else if (config.syntax === 'plain') {
+        data = config.template;
       }
 
       if (config.output === 'json') {
