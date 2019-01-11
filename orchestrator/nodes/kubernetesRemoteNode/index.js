@@ -178,7 +178,7 @@ class DataHandler extends RemoteNode {
           let containerTemplate = {
             name: this.id,
             image: this.image,
-            imagePullPolicy: "Never",
+            imagePullPolicy: "Always",
             ports: [
               { name: "amqp", port: 5555, containerPort: 5555 }
             ]
