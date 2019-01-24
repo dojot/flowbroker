@@ -67,7 +67,6 @@ class DataHandler {
      *
      * @param  {[type]}       config   Node configuration to be used for this message
      * @param  {[type]}       message  Message to be processed
-     * @param  {Function}     callback Callback to call upon processing completion
      * @return {[undefined]}
      */
     handleMessage(config, message) {

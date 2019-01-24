@@ -76,10 +76,9 @@ class DataHandler extends dojot.DataHandlerBase {
      *
      * @param  {[type]}       config   Node configuration to be used for this message
      * @param  {[type]}       message  Message to be processed
-     * @param  {Function}     callback Callback to call upon processing completion
      * @return {[undefined]}
      */
-    handleMessage(config, message, callback) {
+    handleMessage(config, message) {
         logger.debug("Executing http node...");
         var nodeUrl = config.url;
         var isTemplatedUrl = (nodeUrl || "").indexOf("{{") !== -1;
@@ -94,7 +93,7 @@ class DataHandler extends dojot.DataHandlerBase {
         } catch (e) {
             logger.debug("... http node was not successfully executed.");
             logger.error(`Error while retrieving http payload: ${e}`);
-            return callback("httpin.errors.no-body", []);
+            return Promise.reject("httpin.errors.no-body");
         }
 
 
@@ -108,7 +107,7 @@ class DataHandler extends dojot.DataHandlerBase {
         if (!url) {
             logger.debug("... http node was not successfully executed.");
             logger.error("Node has no URL set.");
-            return callback("httpin.errors.no-url", []);
+            return Promise.reject("httpin.errors.no-url");
         }
 
         // If no transport protocol was set, then assume http.
@@ -120,7 +119,7 @@ class DataHandler extends dojot.DataHandlerBase {
         if (!/^(http|https):\/\//.test(url)) {
             logger.debug("... http node was not successfully executed.");
             logger.error("Node has an invalid transport protocol (no http nor https).");
-            return callback("httpin.errors.invalid-transport", []);
+            return Promise.reject("httpin.errors.invalid-transport");
         }
 
         var method = nodeMethod.toUpperCase() || "GET";
@@ -185,81 +184,83 @@ class DataHandler extends dojot.DataHandlerBase {
             }
             var urltotest = url;
 
-            logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`);
-            var req = ((/^https/.test(urltotest)) ? https : http).request(opts, (res) => {
-                // Force NodeJs to return a Buffer (instead of a string)
-                // See https://github.com/nodejs/node/issues/6038
-                res.setEncoding(null);
-                delete res._readableState.decoder;
+            return new Promise((resolve, reject) => {
+                logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`);
+                var req = ((/^https/.test(urltotest)) ? https : http).request(opts, (res) => {
+                    // Force NodeJs to return a Buffer (instead of a string)
+                    // See https://github.com/nodejs/node/issues/6038
+                    res.setEncoding(null);
+                    delete res._readableState.decoder;
 
-                this._set(config.response, {}, message);
-                var httpResponse = this._get(config.response, message);
-                httpResponse.statusCode = res.statusCode;
-                httpResponse.headers = res.headers;
-                httpResponse.responseUrl = res.responseUrl;
-                httpResponse.payload = [];
+                    this._set(config.response, {}, message);
+                    var httpResponse = this._get(config.response, message);
+                    httpResponse.statusCode = res.statusCode;
+                    httpResponse.headers = res.headers;
+                    httpResponse.responseUrl = res.responseUrl;
+                    httpResponse.payload = [];
 
-                // msg.url = url;   // revert when warning above finally removed
-                res.on('data', (chunk) => {
-                    if (!Buffer.isBuffer(chunk)) {
-                        // if the 'setEncoding(null)' fix above stops working in
-                        // a new Node.js release, throw a noisy error so we know
-                        // about it.
-                        logger.debug("... http node was not successfully executed.");
-                        logger.error("Returned HTTP Request data is not a buffer.");
-                        return callback(new Error("HTTP Request data chunk not a Buffer"));
-                    }
-                    httpResponse.payload.push(chunk);
-                });
+                    // msg.url = url;   // revert when warning above finally removed
+                    res.on('data', (chunk) => {
+                        if (!Buffer.isBuffer(chunk)) {
+                            // if the 'setEncoding(null)' fix above stops working in
+                            // a new Node.js release, throw a noisy error so we know
+                            // about it.
+                            logger.debug("... http node was not successfully executed.");
+                            logger.error("Returned HTTP Request data is not a buffer.");
+                            return reject(new Error("HTTP Request data chunk not a Buffer"));
+                        }
+                        httpResponse.payload.push(chunk);
+                    });
 
-                res.on('end', () => {
+                    res.on('end', () => {
 
-                    // Check that message[config.response] is an array - if the req error
-                    // handler has been called, it will have been set to a string
-                    // and the error already handled - so no further action should
-                    // be taken. #1344
-                    if (Array.isArray(httpResponse.payload)) {
-                        // Convert the payload to the required return type
-                        if (ret !== "bin") {
-                            let strData = httpResponse.payload;
-                            httpResponse.payload = strData.toString("utf8");
-                            if (ret === "obj") {
-                                try {
-                                    httpResponse.payload = JSON.parse(strData);
-                                } catch (e) {
-                                    logger.warn("Could not parse JSON. Forwarding as plain string.");
+                        // Check that message[config.response] is an array - if the req error
+                        // handler has been called, it will have been set to a string
+                        // and the error already handled - so no further action should
+                        // be taken. #1344
+                        if (Array.isArray(httpResponse.payload)) {
+                            // Convert the payload to the required return type
+                            if (ret !== "bin") {
+                                let strData = httpResponse.payload;
+                                httpResponse.payload = strData.toString("utf8");
+                                if (ret === "obj") {
+                                    try {
+                                        httpResponse.payload = JSON.parse(strData);
+                                    } catch (e) {
+                                        logger.warn("Could not parse JSON. Forwarding as plain string.");
+                                    }
                                 }
                             }
+                            logger.debug("... http node was successfully executed.");
+                            return resolve([message]);
                         }
-                        logger.debug("... http node was successfully executed.");
-                        return callback(undefined, [message]);
-                    }
+                    });
                 });
-            });
 
-            req.setTimeout(reqTimeout, function () {
-                setTimeout(function () {
+                req.setTimeout(reqTimeout, function () {
+                    setTimeout(function () {
+                        logger.debug("... http node was not successfully executed.");
+                        logger.error("No response was received within timeout period.");
+                        return reject(new Error("common.notification.errors.no-response"));
+                    }, 10);
+                    req.abort();
+                });
+
+                req.on('error', function (err) {
                     logger.debug("... http node was not successfully executed.");
-                    logger.error("No response was received within timeout period.");
-                    return callback(new Error("common.notification.errors.no-response"));
-                }, 10);
-                req.abort();
-            });
+                    logger.error(`Error was: ${err}`);
+                    return reject(err);
+                });
+                if (payload) {
+                    req.write(payload);
+                }
 
-            req.on('error', function (err) {
-                logger.debug("... http node was not successfully executed.");
-                logger.error(`Error was: ${err}`);
-                return callback(err);
+                req.end();
             });
-            if (payload) {
-                req.write(payload);
-            }
-
-            req.end();
         } catch (error) {
             logger.debug("... http node was not successfully executed.");
             logger.error(`An exception was thrown: ${error}`);
-            return callback(error);
+            return Promise.reject(error);
         }
     }
 }
