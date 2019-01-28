@@ -22,17 +22,42 @@ var config = require("./config");
 var MongoManager = require('./mongodb');
 
 class NodeManager {
-  constructor() {
+  constructor(engine, options) {
     this.nodes = {};
     this.collection = {};
+    this.engine = engine;
+
+    switch (engine) {
+      case "docker":
+        if (!options.socketPath) {
+          logger.error(`Missing docker socket path configuration.`);
+          throw new Error('Missing socketPath configuration');
+        }
+        this.socketPath = options.socketPath;
+        if (!options.network) {
+          logger.error(`Missing docker network configuration.`);
+          throw new Error('Missing network configuration');
+        }
+        this.network = options.network;
+      break;
+      case "kubernetes":
+        // for now there is not option for kubernetes
+      break;
+      default:
+        throw new Error('invalid engine: ' + engine);
+    }
+
+    logger.debug('Node manager is using the ' + engine + ' engine');
+  
   }
+
   startContainer(tenant) {
     this.collection[tenant].find().toArray()
       .then((values) => {
         values.forEach(item => {
           let newNode;
           if (config.deploy.engine === "docker") {
-            newNode = new dockerRemote(item.image, tenant + item.id);
+            newNode = new dockerRemote(item.image, tenant + item.id, this.socketPath, this.network);
           } else if (config.deploy.engine === "kubernetes") {
             newNode = new k8sRemote(item.image, tenant + item.id);
           }
@@ -44,7 +69,7 @@ class NodeManager {
                 await newNode.init();
                 this.collection[tenant].updateOne({ id: item.id }, {
                   $set: {
-                    target: newNode.target,
+                    target: newNode.serverAddress,
                   }
                 });
                 this.nodes[tenant][item.meta.name] = newNode;
@@ -137,15 +162,13 @@ class NodeManager {
     return this.nodes[tenant][type];
   }
 
-
-
   async addRemote(image, id, tenant, save = true) {
     const node = await this.collection[tenant].findOne({ id: id });
     let newNode = {};
 
-    if (config.deploy.engine === "docker") {
-      newNode = new dockerRemote(image, tenant + id);
-    } else if (config.deploy.engine === "kubernetes") {
+    if (this.engine === "docker") {
+      newNode = new dockerRemote(image, tenant + id, this.socketPath, this.network);
+    } else if (this.engine === "kubernetes") {
       newNode = new k8sRemote(image, tenant + id);
     }
     if (node === null) {
@@ -181,7 +204,7 @@ class NodeManager {
                     if (save) {
                       this.collection[tenant].updateOne({ id: id }, {
                         $set: {
-                          target: newNode.target,
+                          target: newNode.serverAddress,
                           meta: meta,
                         }
                       });
@@ -220,9 +243,9 @@ class NodeManager {
     const node = await this.collection[tenant].findOne({ id: id });
     if (node) {
       let newNode;
-      if (config.deploy.engine === "docker") {
-        newNode = new dockerRemote(node.image, tenant + id);
-      } else if (config.deploy.engine === "kubernetes") {
+      if (this.engine === "docker") {
+        newNode = new dockerRemote(node.image, tenant + id, this.socketPath, this.network);
+      } else if (this.engine === "kubernetes") {
         newNode = new k8sRemote(node.image, tenant + id);
       }
       return Promise.resolve()
@@ -232,6 +255,7 @@ class NodeManager {
           }
           for (let n in this.nodes[tenant]) {
             if (n === id) {
+              this.nodes[tenant][n].deinit();
               delete this.nodes[tenant][n];
             }
           }
@@ -246,4 +270,11 @@ class NodeManager {
   }
 }
 
-module.exports = { Manager: new NodeManager() };
+let options = {};
+if (config.deploy.engine === "docker") {
+  options.socketPath = config.deploy.docker.socketPath;
+  options.network = config.deploy.docker.network;
+}
+let instance = new NodeManager(config.deploy.engine, options);
+
+module.exports = { Manager: instance };

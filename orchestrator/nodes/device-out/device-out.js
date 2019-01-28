@@ -40,12 +40,12 @@ class DataHandler extends dojot.DataHandlerBase {
     return {};
   }
 
-  handleMessage(config, message, callback, metadata) {
+  handleMessage(config, message, metadata) {
     logger.debug("Executing device-out node...");
     if ((config.attrs === undefined) || (config.attrs.length === 0)) {
       logger.debug("... device-out node was not successfully executed.");
       logger.error("Node has no output field set.");
-      return callback(new Error('Invalid data source: field is mandatory'));
+      return Promise.reject(new Error('Invalid data source: field is mandatory'));
     }
 
     try {
@@ -56,7 +56,7 @@ class DataHandler extends dojot.DataHandlerBase {
       } catch (e) {
         logger.debug("... device-out node was not successfully executed.");
         logger.error(`Error while executing device-out node: ${e}`);
-        return callback(e);
+        return Promise.reject(e);
       }
 
       let deviceId;
@@ -65,7 +65,7 @@ class DataHandler extends dojot.DataHandlerBase {
           if (config._device_id === undefined) {
             logger.debug("... device-out node was not successfully executed.");
             logger.error("There is not device configured to device out");
-            return callback(new Error('Invalid Device id'));
+            return Promise.reject(new Error('Invalid Device id'));
           }
           deviceId = config._device_id;
         break;
@@ -76,18 +76,18 @@ class DataHandler extends dojot.DataHandlerBase {
           if ((config.device_source_msg === undefined) || (config.device_source_msg.length === 0)) {
             logger.debug("... device-out node was not successfully executed.");
             logger.error("Missing device source msg.");
-            return callback(new Error('Invalid device source msg: field is mandatory'));
+            return Promise.reject(new Error('Invalid device source msg: field is mandatory'));
           }
           try {
             deviceId = this._get(config.device_source_msg, message);
           } catch (error) {
             logger.debug("... device-out node was not successfully executed.");
             logger.error(`Error while executing device out node: ${error}`);
-            return callback(error);
+            return Promise.reject(error);
           }
         break;
         default:
-          return callback(new Error('Invalid device source'));
+          return Promise.reject(new Error('Invalid device source'));
       }
 
       output.metadata.deviceid = deviceId;
@@ -99,11 +99,11 @@ class DataHandler extends dojot.DataHandlerBase {
       this.publisher.publish(output);
       logger.debug("... device was updated.");
       logger.debug("... device-out node was successfully executed.");
-      return callback();
+      return Promise.resolve();
     } catch (error) {
       logger.debug("... device-out node was not successfully executed.");
       logger.error(`Error while executing device-out node: ${error}`);
-      return callback(error);
+      return Promise.reject(error);
     }
   }
 }

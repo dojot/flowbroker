@@ -90,14 +90,14 @@ class DataHandler extends dojot.DataHandlerBase {
      * @param  {Function}     callback Callback to call upon processing completion
      * @return {[undefined]}
      */
-    handleMessage(config, message, callback) {
+    handleMessage(config, message) {
         logger.debug("Executing e-mail node...");
 
         // Sanity checks
         if (!message.hasOwnProperty("payload")) {
             logger.debug("... e-mail node was not successfully executed.");
             logger.error("E-mail node has no payload.");
-            return callback(new Error("email.errors.nopayload"));
+            return Promise.reject(new Error("email.errors.nopayload"));
         }
         // End of sanity checks
 
@@ -118,7 +118,7 @@ class DataHandler extends dojot.DataHandlerBase {
         } catch (e) {
             logger.debug("... e-mail node was not successfully executed.");
             logger.error(`Error while retrieving e-mail body: ${e}`);
-            return callback(new Error("email.errors.nobody"));
+            return Promise.reject(new Error("email.errors.nobody"));
         }
 
         // plaintext body
@@ -160,7 +160,7 @@ class DataHandler extends dojot.DataHandlerBase {
             logger.debug("... e-mail transport was not successfully created.");
             logger.debug("... e-mail node was not successfully executed.");
             logger.error("Could not create SMTP transport.");
-            return callback(new Error("email.errors.nosmtptransport"));
+            return Promise.reject(new Error("email.errors.nosmtptransport"));
         } else {
             logger.debug("... e-mail transport was successfully created.");
         }
@@ -170,11 +170,11 @@ class DataHandler extends dojot.DataHandlerBase {
             if (error) {
                 logger.debug("... e-mail node was not successfully executed.");
                 logger.error(`Error while executing e-mail node: ${error}`);
-                return callback(error);
+                return Promise.reject(error);
             } else {
                 logger.debug("... e-mail was successfully sent.");
                 logger.debug("... e-mail node was successfully executed.");
-                return callback(undefined, []);
+                return Promise.resolve([]);
             }
         });
 

@@ -46,33 +46,32 @@ module.exports = class Executor {
                 tenant: event.metadata.tenant,
                 originatorDeviceId: event.metadata.originator
             }
-            handler.handleMessage(at, event.message, (error, result) => {
-                if (error) {
+            handler.handleMessage(at, event.message, metadata, this.contextHandler)
+                .then((result) => {
+                    console.log(`[executor] hop (${at.type}) result: ${JSON.stringify(result)}`);
+                    for (let output = 0; output < at.wires.length; output++) {
+                        let newEvent = result[output];
+                        if (newEvent) {
+                            for (let hop of at.wires[output]) {
+                                // event that are being processed must use
+                                // the maximum priority, in this way new
+                                // coming event will need to wait until
+                                // the previous being processed
+                                this.producer.sendMessage(JSON.stringify({
+                                    hop: hop,
+                                    message: newEvent,
+                                    flow: event.flow,
+                                    metadata: event.metadata
+                                }), 1);
+                            }
+                        }
+                    }
+                    return ack();
+                }).catch( (error) => {
                     console.error(`[executor] Node execution failed. ${error}. Aborting flow ${event.flow.id}.`);
                     // TODO notify alarmManager
                     return ack();
-                }
-
-                console.log(`[executor] hop (${at.type}) result: ${JSON.stringify(result)}`);
-                for (let output = 0; output < at.wires.length; output++) {
-                    let newEvent = result[output];
-                    if (newEvent) {
-                        for (let hop of at.wires[output]) {
-                            // event that are being processed must use
-                            // the maximum priority, in this way new
-                            // coming event will need to wait until
-                            // the previous being processed
-                            this.producer.sendMessage(JSON.stringify({
-                                hop: hop,
-                                message: newEvent,
-                                flow: event.flow,
-                                metadata: event.metadata
-                            }), 1);
-                        }
-                    }
-                }
-                return ack();
-            }, metadata, this.contextHandler);
+                });
         } else {
             console.error(`[executor] Unknown node ${at.type} detected. Igoring.`);
             return ack();

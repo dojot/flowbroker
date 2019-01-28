@@ -73,14 +73,14 @@ class DataHandler {
      * @param  {Function}     callback Callback to call upon processing completion
      * @return {[undefined]}
      */
-    handleMessage(config, message, callback) {
+    handleMessage(config, message) {
         logger.debug("Executing geo node...");
         let geolocation = getLatLng(message.payload);
 
         if (!geolocation) {
             logger.debug("... geo node was not successfully executed.");
             logger.error("Message has no geographic position attached.");
-            return callback(new Error("Message has no geographic position attached"));
+            return Promise.reject(new Error("Message has no geographic position attached"));
         }
 
         let inout = geolib.isPointInside(geolocation, config.points);
@@ -95,19 +95,19 @@ class DataHandler {
             }
             logger.debug("... geo node was successfully executed.");
             logger.debug("Its test had a hit.");
-            return callback(undefined, [message]);
+            return Promise.resolve([message]);
         }
 
         if (!inout && (config.filter === "outside")) {
             logger.debug("... geo node was successfully executed.");
             logger.debug("Its test had a hit.");
-            return callback(undefined, [message]);
+            return Promise.resolve([message]);
         }
 
 
         logger.debug("... geo node was successfully executed.");
         logger.debug("Its test didn't have a hit.");
-        return callback(undefined, []);
+        return Promise.resolve([]);
 
         /**
          * Look for a lat,lng string repesentation and return an

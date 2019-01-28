@@ -68,7 +68,7 @@ class DataHandler extends RemoteNode {
    * @param {string} id Node ID
    */
   constructor(image, id) {
-    super();
+    super(id);
     logger.debug("Using kubernetes driver.");
     this.image = image;
     this.id = id;

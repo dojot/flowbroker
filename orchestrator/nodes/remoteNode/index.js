@@ -1,32 +1,39 @@
 "use strict";
 
 var dojot = require('@dojot/flow-node');
-var dispatcher = require('../../dispatcher');
+var Dispatcher = require('../../dispatcher');
 var fs = require('fs');
 
 class RemoteNodeHandler extends dojot.DataHandlerBase {
 
   /**
    * Constructor
-   * @param {string} image The image to be added to Kubernetes pod
    * @param {string} id Node ID
+   * @param {string} serverAddress server address
+   * @param {integer} serverPort server port
    */
-  constructor() {
+  constructor(id, serverAddress, serverPort) {
     super();
-    
+    this.id = id;
+    this.serverAddress = serverAddress;
+    this.serverPort = serverPort;
+    this.dispatcher = null;
   }
 
   init() {
+    this.dispatcher = new Dispatcher(this.serverAddress, this.serverPort);
+    this.dispatcher.init();
+
     // Fetch all meta information from newly created remote impl
-    return dispatcher(this.target, {command: 'metadata'})
+    return this.dispatcher.sendRequest({command: 'metadata'})
       .then(meta => {
         this.metadata = meta.payload;
-        return dispatcher(this.target, { command: 'html' })
+        return this.dispatcher.sendRequest({ command: 'html' })
       })
       .then(html => {
-        this.html = '/tmp/' + this.target;
+        this.html = '/tmp/' + this.id;
         fs.writeFileSync(this.html, html.payload);
-        return dispatcher(this.target, { command: 'locale', locale: 'en-US' })
+        return this.dispatcher.sendRequest({ command: 'locale', locale: 'en-US' })
       })
       .then(reply => {
         this.locale = reply.payload;
@@ -34,6 +41,12 @@ class RemoteNodeHandler extends dojot.DataHandlerBase {
   }
   getNodeRepresentationPath() {
     return this.html;
+  }
+
+  deinit() {
+    if (this.dispatcher) {
+      this.dispatcher.deinit();
+    }
   }
 
   /**
@@ -54,7 +67,7 @@ class RemoteNodeHandler extends dojot.DataHandlerBase {
     return this.locale;
   }
 
-  handleMessage(config, message, callback, metadata) {
+  handleMessage(config, message, metadata) {
     // invoke remote
     let command = {
       command: 'message',
@@ -62,18 +75,21 @@ class RemoteNodeHandler extends dojot.DataHandlerBase {
       config: config,
       metadata: metadata
     };
-    dispatcher(this.target, command).then((reply) => {
-      if (reply.error) {
-        return callback(reply.error);
-      }
 
-      if (Array.isArray(reply)){
-        return callback(undefined, reply);
-      }
+    return new Promise ( (resolve, reject) => {
+      this.dispatcher.sendRequest(command).then((reply) => {
+        if (reply.error) {
+          return reject(reply.error);
+        }
 
-      return callback(new Error("Invalid response received from node"));
-    }).catch((error) => {
-      callback(error);
+        if (Array.isArray(reply)){
+          return resolve(reply);
+        }
+
+        return reject(new Error("Invalid response received from node"));
+      }).catch((error) => {
+        reject(error);
+      });
     });
   }
 }

@@ -45,27 +45,28 @@ class DataHandler extends dojot.DataHandlerBase {
     return {};
   }
 
-  handleMessage(config, message, callback, metadata, contextHandler) {
-    
-    let getContextPromise;
+  handleMessage(config, message, metadata, contextHandler) {
+    return new Promise ( (resolve, reject) => {
+      let getContextPromise;
 
-    if (config.contextLayer === 'tenant') {
-      getContextPromise = contextHandler.getTenantContext(metadata.tenant, config.contextName); 
-    } else { // flow layer
-      getContextPromise = contextHandler.getFlowContext(metadata.tenant, metadata.flowId, config.contextName);
-    }
-
-    getContextPromise.then( (contextContent) => {
-      try {
-        this._set(config.contextContent, contextContent, message);
-        callback(undefined, [message]);
-      } catch (error) {
-        callback(error);
+      if (config.contextLayer === 'tenant') {
+        getContextPromise = contextHandler.getTenantContext(metadata.tenant, config.contextName);
+      } else { // flow layer
+        getContextPromise = contextHandler.getFlowContext(metadata.tenant, metadata.flowId, config.contextName);
       }
-    }).catch((error) => {
-      callback(error);
+
+      getContextPromise.then( (contextContent) => {
+        try {
+          this._set(config.contextContent, contextContent, message);
+          return resolve([message]);
+        } catch (error) {
+          return reject(error);
+        }
+      }).catch((error) => {
+        return reject(error);
+      });
     });
-  }  
+  }
 }
 
 module.exports = { Handler: DataHandler };
