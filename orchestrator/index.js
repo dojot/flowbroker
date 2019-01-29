@@ -180,12 +180,13 @@ kafkaMessenger.init().then(() => {
 
   // chain other initialization steps
   return MongoManager.get();
-  
+
   }).then((client) => {
     let FlowManager = new FlowManagerBuilder(client);
     APIHandler.init(FlowManager);
     let ingestor = new Ingestor(FlowManager, kafkaMessenger);
     ingestor.init();
   }).catch((error) => {
-  fail(error);
+    fail(error);
+    process.kill(process.pid, "SIGTERM");
 });
