@@ -81,7 +81,7 @@ class DataHandler extends RemoteNode {
         Tty: true
       };
 
-      const options = { name: 'flowbroker.' + makeId(7) };
+      const options = { name: 'flowbroker.' + this.info.userid + '.' + makeId(7) };
       const imageOptions = { fromImage: this.info.image };
       this.client.images().create(imageOptions).then(() => {
         console.log(`[nodes] image ${this.info.image} created`);
