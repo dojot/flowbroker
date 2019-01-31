@@ -18,6 +18,7 @@
     <div class="form-row">
         <label for="node-input-contextName"><i class="fa fa-edit"></i> <span>Context name</span></label>
         <input type="text" id="node-input-contextName" placeholder="Context name" style="width:250px;">
+        <input type="hidden" id="node-input-contextNameType">
     </div>
 
     <!-- Output fields -->
@@ -40,7 +41,8 @@
         defaults: {
             name: { value: "", required: false },
             contextLayer: {value: "tenant", required: true},
-            contextName: {required: true},
+            contextName: {required: true, validate: RED.validators.typedInput("contextNameType")},
+            contextNameType: {value: 'str'},
             contextContent: {required: true}
         },
         inputs: 1,
@@ -53,6 +55,14 @@
             return this.name ? "node_label_italic" : "";
         },
         oneditprepare: function () {
+            if (!this.fieldType) {
+                this.fieldType = 'str';
+            }
+            $("#node-input-contextName").typedInput({
+                default: 'str',
+                types: ['str', 'msg'],
+                typeField: $("#node-input-contextNameType")
+            });
         },
         oneditsave: function () {
         }

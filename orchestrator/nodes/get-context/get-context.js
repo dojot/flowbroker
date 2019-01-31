@@ -48,11 +48,16 @@ class DataHandler extends dojot.DataHandlerBase {
   handleMessage(config, message, metadata, contextHandler) {
     return new Promise ( (resolve, reject) => {
       let getContextPromise;
+      let contextName = config.contextName;
+
+      if (config.contextNameType === 'msg') {
+        contextName = this._get(config.contextName, message);
+      }
 
       if (config.contextLayer === 'tenant') {
-        getContextPromise = contextHandler.getTenantContext(metadata.tenant, config.contextName);
+        getContextPromise = contextHandler.getTenantContext(metadata.tenant, contextName);
       } else { // flow layer
-        getContextPromise = contextHandler.getFlowContext(metadata.tenant, metadata.flowId, config.contextName);
+        getContextPromise = contextHandler.getFlowContext(metadata.tenant, metadata.flowId, contextName);
       }
 
       getContextPromise.then( (contextContent) => {
