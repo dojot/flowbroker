@@ -7,7 +7,7 @@
             "format": "Syntax Highlight",
             "syntax": "Format",
             "output": "Output as",
-            "mustache": "Mustache template",
+            "handlebars": "Handlebars template",
             "plain": "Plain text",
             "json": "Parsed JSON",
             "yaml": "Parsed YAML",
