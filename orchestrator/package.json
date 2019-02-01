@@ -9,7 +9,7 @@
   "author": "Matheus Magalhaes",
   "license": "GPL-3.0",
   "dependencies": {
-    "@dojot/dojot-module": "0.0.1-beta.1",
+    "@dojot/dojot-module": "^0.0.1-beta",
     "@dojot/flow-node": "^3.0.0-alpha2",
     "@dojot/healthcheck": "0.0.1-alpha.1",
     "amqplib": "^0.5.2",
