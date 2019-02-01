@@ -1,8 +1,0 @@
-FROM node:8
-
-ADD lib ./lib
-ADD nodes/change ./change
-RUN cd lib && npm install && cd ..
-WORKDIR change
-RUN npm install
-CMD ["node", "index.js"]
