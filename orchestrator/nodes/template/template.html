@@ -11,7 +11,7 @@
     <div class="form-row">
         <label for="node-input-syntax"><i class="fa fa-code"></i> <span data-i18n="template.label.syntax"></span></label>
         <select id="node-input-syntax" style="width:180px;">
-            <option value="mustache" data-i18n="template.label.mustache"></option>
+            <option value="handlebars" data-i18n="template.label.handlebars"></option>
             <option value="plain" data-i18n="template.label.plain"></option>
         </select>
     </div>
@@ -19,19 +19,6 @@
     <div class="form-row" style="position: relative; margin-bottom: 0px;">
         <label for="node-input-template"><i class="fa fa-file-code-o"></i> <span data-i18n="template.label.template"></span></label>
         <input type="hidden" id="node-input-template" autofocus="autofocus">
-        <div style="position: absolute; right:0;display:inline-block; text-align: right; font-size: 0.8em;">
-            <span data-i18n="template.label.format"></span>:
-            <select id="node-input-format" style="width:110px; font-size: 10px !important;  height: 24px; padding:0;">
-                <option value="handlebars">mustache</option>
-                <option value="html">HTML</option>
-                <option value="json">JSON</option>
-                <option value="javascript">Javascript</option>
-                <option value="css">CSS</option>
-                <option value="markdown">Markdown</option>
-                <option value="yaml">YAML</option>
-                <option value="text" data-i18n="template.label.none"></option>
-            </select>
-        </div>
     </div>
     <div class="form-row node-text-editor-row">
         <div style="height: 250px; min-height:150px;" class="node-text-editor" id="node-input-template-editor" ></div>
@@ -85,8 +72,7 @@
             name: {value:""},
             field: {value:"payload", validate: RED.validators.typedInput("fieldType")},
             fieldType: {value:"msg"},
-            format: {value:"handlebars"},
-            syntax: {value:"mustache"},
+            syntax: {value:"handlebars"},
             template: {value:"This is the payload: {{payload}} !"},
             output: {value:"str"}
         },
@@ -102,7 +88,7 @@
                 this.fieldType = 'msg';
             }
             if (!this.syntax) {
-                this.syntax = 'mustache';
+                this.syntax = 'handlebars';
                 $("#node-input-syntax").val(this.syntax);
             }
             $("#node-input-field").typedInput({
@@ -123,14 +109,6 @@
                 fields:['name','outputs']
             });
             this.editor.focus();
-
-            $("#node-input-format").change(function() {
-                var mod = "ace/mode/"+$("#node-input-format").val();
-                that.editor.getSession().setMode({
-                    path: mod,
-                    v: Date.now()
-                });
-            });
         },
         oneditsave: function() {
             $("#node-input-template").val(this.editor.getValue());
