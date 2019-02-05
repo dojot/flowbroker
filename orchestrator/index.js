@@ -153,7 +153,7 @@ for (let i = 0; i < args.workers; i++) {
 }
 
 // Kafka listeners and writers
-var kafkaMessenger = new dojotModule.Messenger("flowbroker", config.kafkaMessenger);
+var kafkaMessenger = new dojotModule.Messenger("flowbroker");
 
 // Initializes kafka listeners ...
 logger.debug("Initializing kafka messenger ...");
@@ -180,12 +180,13 @@ kafkaMessenger.init().then(() => {
 
   // chain other initialization steps
   return MongoManager.get();
-  
+
   }).then((client) => {
     let FlowManager = new FlowManagerBuilder(client);
     APIHandler.init(FlowManager);
     let ingestor = new Ingestor(FlowManager, kafkaMessenger);
     ingestor.init();
   }).catch((error) => {
-  fail(error);
+    fail(error);
+    process.kill(process.pid, "SIGTERM");
 });
