@@ -59,27 +59,37 @@ class DataHandler extends dojot.DataHandlerBase {
         return Promise.reject(e);
       }
 
-      let deviceId;
+      let devicesIds = [];
       switch (config.device_source) {
         case 'configured':
-          if (config._device_id === undefined) {
+          if ((config.devices_source_configured === undefined) ||
+            (config.devices_source_configured.length === 0) ) {
             logger.debug("... device-out node was not successfully executed.");
             logger.error("There is not device configured to device out");
             return Promise.reject(new Error('Invalid Device id'));
           }
-          deviceId = config._device_id;
+          devicesIds = config.devices_source_configured;
         break;
         case 'self':
-          deviceId = metadata.originatorDeviceId;
+          devicesIds.push(metadata.originatorDeviceId);
         break;
         case 'dynamic':
-          if ((config.device_source_msg === undefined) || (config.device_source_msg.length === 0)) {
+          if ((config.devices_source_dynamic === undefined) ||
+            (config.devices_source_dynamic.length === 0)) {
             logger.debug("... device-out node was not successfully executed.");
             logger.error("Missing device source msg.");
             return Promise.reject(new Error('Invalid device source msg: field is mandatory'));
           }
           try {
-            deviceId = this._get(config.device_source_msg, message);
+            let devices = this._get(config.devices_source_dynamic, message);
+            if (Array.isArray(devices)) {
+              devicesIds = devices;
+            } else {
+              if (devices === undefined) {
+                throw Error('devices is undefines');
+              }
+              devicesIds.push(devices);
+            }
           } catch (error) {
             logger.debug("... device-out node was not successfully executed.");
             logger.error(`Error while executing device out node: ${error}`);
@@ -90,13 +100,21 @@ class DataHandler extends dojot.DataHandlerBase {
           return Promise.reject(new Error('Invalid device source'));
       }
 
-      output.metadata.deviceid = deviceId;
       output.metadata.timestamp = Date.now();
       output.metadata.tenant = metadata.tenant;
 
       logger.debug("Updating device... ");
       logger.debug(`Message is: ${util.inspect(output, { depth: null })}`);
-      this.publisher.publish(output);
+
+      // avoid send the same event to the same device, it can occurr due to
+      // an errouneus configuration
+      let devicesSet = new Set(devicesIds);
+
+      for (let deviceId of devicesSet) {
+        let event = JSON.parse(JSON.stringify(output));
+        event.metadata.deviceid = deviceId;
+        this.publisher.publish(event);
+      }
       logger.debug("... device was updated.");
       logger.debug("... device-out node was successfully executed.");
       return Promise.resolve();
