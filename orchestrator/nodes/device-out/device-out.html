@@ -4,27 +4,28 @@
         <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
-        <label for="node-input-device"><i class="fa fa-gears"></i> Action</label>
-        <select id="node-input-device_source" onchange="displayDeviceSourceElement()">
+        <label for="node-input-device_source"><i class="fa fa-gears"></i> Action</label>
+        <select id="node-input-device_source" onchange="nodeDeviceOut_displayDeviceSourceElement()">
             <option value="self">The device which triggered the flow</option>
-            <option value="configured">A specific device</option>
-            <option value="dynamic">A device defined during the flow</option>
+            <option value="configured">Specific device(s)</option>
+            <option value="dynamic">Device(s) defined during the flow</option>
         </select>
     </div>
-    <div class="form-row">
-        <label for="node-input-device_source_msg" id="node-input-device_source_msg_label"><i class="fa fa-tag"></i> Attribute</label>
-        <label for="node-input-device_source_id" id="node-input-device_source_id_label"><i class="fa fa-wifi"></i> Device</label>
-        <input type="text" id="node-input-device_source_msg" placeholder="Enter an attribute" />
-        <input type="text" list="node-input-list_devices_id" id="node-input-device_source_id" placeholder="Select a device"/>
+    <div class="form-row" id="node-input-dynamic">
+        <label for="node-input-devices_source_dynamic" id="node-input-devices_source_dynamic_label"><i class="fa fa-tag"></i> Attribute</label>
+        <input type="text" id="node-input-devices_source_dynamic" placeholder="Enter an attribute" />
+        <input type="hidden" id="node-input-devices_source_dynamicFieldType">
+    </div>
+    <div class="form-row" id="node-input-configured">
+        <label for="form-row node-input-rule-container-row" id="node-input-devices_source_configured_label"><i class="fa fa-wifi"></i> Device(s)</label>
+        <div class="form-row node-input-rule-container-row">
+            <ol id="node-input-rule-container"></ol>
+        </div>
         <datalist id="node-input-list_devices_id"></datalist>
     </div>
     <div class="form-row">
         <label for="node-input-attrs"><i class="fa fa-cube"></i> Source</label>
         <input type="text" id="node-input-attrs" style=""></input>
-    </div>
-
-    <div style="display:none">
-        <input type='text' id='node-input-_device_id'/>
     </div>
 </script>
 
@@ -38,12 +39,13 @@
         defaults: {              // defines the editable properties of the node
             name: { value: "", required: false },
             device_source: { value: 'self', required: true },
-            device_source_msg: { value: '', required: false },
-            device_source_id: { value: '', required: false },
+            devices_source_dynamic: { value: '', required: false },
+            devices_source_dynamicFieldType: { value: "msg" },
+            devices_source_configured: { value: [ "" ], required: false },
             attrs: { value: "", required: true },
 
-            // those are the internal types
-            _device_id: { value: undefined, required: false }
+            // private
+            _devices_loaded: {value: false, required: false}
         },
         inputs: 1,                // set the number of inputs - only 0 or 1
         outputs: 0,               // set the number of outputs - 0 to n
@@ -59,81 +61,152 @@
             return this.name ? "node_label_italic" : "";
         },
         oneditprepare: function () {
-            var listDevices = $("#node-input-list_devices_id");
+            let node = this;
+            let listDevices = $("#node-input-list_devices_id");
+            nodeDeviceOut_displayDeviceSourceElement();
 
-            displayDeviceSourceElement();
+            if (!this.devices_source_dynamicFieldType) {
+                this.devices_source_dynamicFieldType = 'msg';
+            }
+            $("#node-input-devices_source_dynamic").typedInput({
+                default: 'msg',
+                types: ['msg'],
+                typeField: $("#node-input-devices_source_dynamicFieldType")
+            });
 
-            // this will only work from the device management interface
+            // request to the device manager all devices
             function list_all(page) {
-                if (page === undefined) {
-                    page=1;
-                }
-                
-                var extra=`?page_num=${page}`
-                var orderByLabel = "sortBy=label";
-
-                extra+='&'+orderByLabel;
-
-                util.GET(`/device${extra}`).then((list) => {
-                    list.devices.map((dev) => {
-                        listDevices.append('<option data-value="' + dev.id +
-                            '" value="' + dev.label + ' (' + dev.id + ')"/>');
-                    });
-                    if (list.pagination.has_next) {
-                        list_all(list.pagination.next_page);
+                return new Promise( (resolve,reject) => {
+                    if (page === undefined) {
+                        page=1;
                     }
-                }).catch((error) => {
-                    console.error('Failed to retrieve the list of available devices', error);
+                    
+                    var extra=`?page_num=${page}`
+                    var orderByLabel = "sortBy=label";
+
+                    extra+='&'+orderByLabel;
+
+                    util.GET(`/device${extra}`).then((list) => {
+                        list.devices.map((dev) => {
+                            listDevices.append('<option data-value="' + dev.id +
+                                '" value="' + dev.label + ' (' + dev.id + ')"/>');
+                        });
+                        if (list.pagination.has_next) {
+                            return list_all(list.pagination.next_page).then(() => {
+                                return resolve();
+                            });
+                        } else {
+                            node._devices_loaded = true;
+                            return resolve();
+                        }
+                    }).catch((error) => {
+                        console.error('Failed to retrieve the list of available devices', error);
+                        node._devices_loaded = false;
+                        return reject();
+                    });
                 });
             }
 
             $('#node-input-device_source').css('width', '70%');
             
-            list_all();
+            list_all().then( () => {
+                // define the rule box
+                $("#node-input-rule-container").css('min-height','150px').
+                    css('min-width','450px').editableList( {
+
+                    addItem: function(container, index, data) {
+                        let fieldConfig = {
+                            type: "text",
+                            list: "node-input-list_devices_id",
+                            id: `node-input-device_source_id`,
+                            placeholder: "Select a device"
+                        };
+
+                        if (Object.entries(data).length > 0) {
+                            let configuredDeviceEntry = $('#node-input-list_devices_id').find(
+                                'option[data-value="' + data + '"]');
+                            if (configuredDeviceEntry) {
+                                fieldConfig.value = configuredDeviceEntry.attr('value');
+                            } else {
+                                fieldConfig.value = `Missing device: ${data}`;
+                            }
+                        }
+
+                        $('<input/>', fieldConfig).appendTo(container);
+
+                    },
+                    sortable: true,
+                    removable: true
+                });
+
+                // load the previous configuration
+                for (let i=0; i < node.devices_source_configured.length; ++i) {
+                    $("#node-input-rule-container").editableList('addItem',
+                        node.devices_source_configured[i]);
+                }
+            }).catch(() => {
+                node._devices_loaded = false;
+                console.log("Failed to retrieve devices from device manager");
+            });
+
         },
         oneditsave: function () {
-            if ($('#node-input-device_source').val() === 'configured') {
-                let deviceLabel = $('#node-input-device_source_id').val();
+            let node = this;
+            
+            switch($('#node-input-device_source').val()) {
+                case "configured":
+                    node.devices_source_dynamic = "";
 
-                let deviceId = $('#node-input-list_devices_id').find(
-                    'option[value="' + deviceLabel + '"]').attr('data-value');
+                    // skip save the devices due to problem with the device manager
+                    // communication
+                    if (!node._devices_loaded) {
+                        console.log('Skipping save the devices');
+                        return
+                    }
+                    // rebuilt the list with the devices ids
+                    node.devices_source_configured = [];
+                    let entries = $("#node-input-rule-container").editableList('items');
+                    entries.each(function(i) {
+                        let userLabel = this.find("#node-input-device_source_id").val();
+                        let entry = $('#node-input-list_devices_id').find(
+                            'option[value="' + userLabel + '"]');
+                        if (entry) {
+                            let deviceId = entry.attr('data-value');
+                            if (deviceId) {
+                                node.devices_source_configured.push(deviceId);
+                            }
+                        }
 
-                if (!deviceId) {
-                    $('#node-input-_device_id').val(undefined);
-                } else {
-                    $('#node-input-_device_id').val(deviceId);
-                }
-            } else {
-                $('#node-input-_device_id').val(undefined);
+                    });
+                    break;
+                case "self":
+                    node.devices_source_configured = [""];
+                    node.devices_source_dynamic = "";
+                    break;
+                case "dynamic":
+                    node.devices_source_configured = [""];
+                    break;
             }
         }
     });
 
-    function displayDeviceSourceElement() {
-        var deviceSource = $('#node-input-device_source');
-        var deviceSourceId = $('#node-input-device_source_id');
-        var deviceSourceMsg = $('#node-input-device_source_msg');
-        var deviceSourceIdLabel = $('#node-input-device_source_id_label');
-        var deviceSourceMsgLabel = $('#node-input-device_source_msg_label');
+    function nodeDeviceOut_displayDeviceSourceElement () {
+        let deviceSource = $('#node-input-device_source');
+        let devicesSourceConfigured = $('#node-input-configured');
+        let devicesSourceDynamic = $('#node-input-dynamic');
 
         switch(deviceSource.val()) {
             case "self":
-                deviceSourceId.hide();
-                deviceSourceMsg.hide();
-                deviceSourceIdLabel.hide();
-                deviceSourceMsgLabel.hide();
+                devicesSourceConfigured.hide();
+                devicesSourceDynamic.hide();
             break;
             case "configured":
-                deviceSourceId.show();
-                deviceSourceMsg.hide();
-                deviceSourceIdLabel.show();
-                deviceSourceMsgLabel.hide();
+                devicesSourceConfigured.show();
+                devicesSourceDynamic.hide();
             break;
             case "dynamic":
-                deviceSourceId.hide();
-                deviceSourceMsg.show();
-                deviceSourceIdLabel.hide();
-                deviceSourceMsgLabel.show();
+                devicesSourceConfigured.hide();
+                devicesSourceDynamic.show();
             break;
         }
     }
