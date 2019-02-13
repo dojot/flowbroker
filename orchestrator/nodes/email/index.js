@@ -165,19 +165,20 @@ class DataHandler extends dojot.DataHandlerBase {
             logger.debug("... e-mail transport was successfully created.");
         }
 
-        logger.debug("Sending e-mail...");
-        smtpTransport.sendMail(sendopts, function (error) {
-            if (error) {
-                logger.debug("... e-mail node was not successfully executed.");
-                logger.error(`Error while executing e-mail node: ${error}`);
-                return Promise.reject(error);
-            } else {
-                logger.debug("... e-mail was successfully sent.");
-                logger.debug("... e-mail node was successfully executed.");
-                return Promise.resolve([]);
-            }
+        return new Promise( (resolve, reject) => {
+            logger.debug("Sending e-mail...");
+            smtpTransport.sendMail(sendopts, function (error) {
+                if (error) {
+                    logger.debug("... e-mail node was not successfully executed.");
+                    logger.error(`Error while executing e-mail node: ${error}`);
+                    return reject(error);
+                } else {
+                    logger.debug("... e-mail was successfully sent.");
+                    logger.debug("... e-mail node was successfully executed.");
+                    return resolve([]);
+                }
+            });
         });
-
 
         function ensureString(o) {
             if (Buffer.isBuffer(o)) {
