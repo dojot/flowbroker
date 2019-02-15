@@ -67,44 +67,45 @@ Any HTML element provided in the node template can specify a data-i18n attribute
 <a href="#" data-i18n="[title]myNode.label.linkTitle;myNode.label.linkText"></a>
 ```
 
-## Sample
-A sample node is attached to this package to illustrate the steps described in
-the previous section. It's a simple node that converts a Celcius temperature
-measure into Kelvin.
+## Samples
+The directory samples contains some examples of nodes, they can be used as
+reference to build your own node.
 
-### How to build
+### How to build your own node and add in to Dojot
+This section explains how to build the nodes in a generic way, if you want
+specific instructions, please, consult the node's documentation.
 
 Build the docker image:
 ```sh
-cd sampleNode
-docker build -t <your dockerHub username>/kelvin .
+docker build -t <your dockerHub username>/<image name> .
 ```
 
 Publish it on your DockerHub:
 ```sh
-docker push <your dockerHub username>/kelvin
+docker push <your dockerHub username>/<image name>
 ```
 
 Acquire a Dojot's token:
 ```sh
-curl -X POST http://127.0.0.1:8000/auth \
+JWT=$(curl -s -X POST http://localhost:8000/auth \
 -H 'Content-Type:application/json' \
--d '{"username": "admin", "passwd" : "admin"}'
+-d '{"username": "admin", "passwd" : "admin"}' | jq -r ".jwt")
 ```
 
-This command will return a JWT token, you need to store it on an environment
-variable:
+Note: the previous command requires the `jq` command, you can install it on ubuntu
+with the following command:
+```
+sudo apt-get install jq
+```
+
+Add the node to Dojot.
 ```sh
-export JWT=<the value returned>
+curl -H "Authorization: Bearer ${JWT}" http://localhost:8000/flows/v1/node -H 'content-type: application/json' -d '{"image": "<your dockerHub username>/<node name>:<image tag>", "id":"<node name>"}'
 ```
 
-Add the Kelvin node to Dojot.
-```sh
-curl -H "Authorization: Bearer ${JWT}" http://localhost:8000/flows/v1/node -H 'content-type: application/json' -d '{"image": "<your dockerHub username>/kelvin:latest", "id":"kelvin"}'
-```
-
-Now the Kelvin node will be available on `converters` category into the FlowBroker Dojot's interface.
+Now the node will be available on the FlowBroker Dojot's interface.
 
 Note: the DockerHub use is optional, you can use a private docker registry instead.
 
-
+Note2: All commands considers that you are running Dojot locally, if it is not
+the case, please, adapt them to refect your scenario.
