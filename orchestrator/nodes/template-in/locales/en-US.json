@@ -3,10 +3,16 @@
   "label": {
     "name": "Name",
     "device_template": "Device Template",
-    "status": "Status"
+    "events": "Events"
   },
   "text": {
-    "exclude": "exclude device status changes",
-    "include": "include device status changes"
+    "select_template": "Select a template"
+  },
+  "events": {
+    "create": "Creation",
+    "update": "Update",
+    "remove": "Removal",
+    "actuate": "Actuation",
+    "publish": "Publication"
   }
 }

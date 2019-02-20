@@ -3,11 +3,13 @@
   "label": {
     "device": "Dispositivo",
     "name": "Nome",
-    "status": "Status"
+    "events": "Eventos"
   },
   "text": {
-    "select_device": "Selecione um dispositivo",
-    "exclude": "excluir alterações de status do dispositivo",
-    "include": "incluir alterações de status do dispositivo"
+    "select_device": "Selecione um dispositivo"
+  },
+  "events": {
+    "actuate": "Atuação",
+    "publish": "Publicação"
   }
 }

@@ -118,7 +118,7 @@ class FlowManager {
           break;
         case "device template in":
           parsed.heads.push(node.id);
-          parsed.templates.push(node.device_template_id);
+          parsed.templates.push(node.template_id);
           break;
       }
     }

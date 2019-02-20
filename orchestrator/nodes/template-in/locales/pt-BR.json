@@ -3,10 +3,16 @@
   "label": {
     "name": "Nome",
     "device_template": "Modelo de dispositivo",
-    "status": "Status"
+    "events": "Eventos"
   },
   "text": {
-    "exclude": "excluir alterações de status do dispositivo",
-    "include": "incluir alterações de status do dispositivo"
+    "select_template": "Selecione um modelo de dispositivo"
+  },
+  "events": {
+    "create": "Criação",
+    "update": "Atualização",
+    "remove": "Remoção",
+    "actuate": "Atuação",
+    "publish": "Publicação"
   }
 }
