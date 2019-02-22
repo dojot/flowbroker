@@ -1,0 +1,23 @@
+{
+  "info": {
+    "tip0": "Você pode remover os nós ou links selecionados com {{core: delete-selection}}",
+    "tip1": "Pesquise por nós usando {{core: search}}",
+    "tip2": "{{core: toggle-sidebar}} irá alternar a visualização desta barra lateral",
+    "tip3": "Você pode gerenciar sua paleta de nós com {{core: manage-palette}}",
+    "tip4": "Seus nós de configuração de fluxo estão listados no painel da barra lateral. Ele pode ser acessado a partir do menu ou com {{core: show-config-tab}}",
+    "tip5": "Ativar ou desativar essas dicas da opção nas configurações",
+    "tip6": "Mova os nós selecionados usando as teclas [esquerda] [para cima] [para baixo] e [direita]. Segure [shift] para pressioná-los ainda mais",
+    "tip7": "Arrastar um nó para um fio irá uni-lo ao link",
+    "tip8": "Exportar os nós selecionados, ou a aba atual com {{core: show-export-dialog}}",
+    "tip9": "Importe um fluxo arrastando seu JSON para o editor ou com {{core: show-import-dialog}}",
+    "tip10": "[shift] [clique] e arraste na porta de um nó para mover todos os fios conectados ou apenas o selecionado",
+    "tip11": "Mostra a aba Info com {{core: show-info-tab}} ou a aba Debug com {{core: show-debug-tab}}",
+    "tip12": "[ctrl] [clique] na área de trabalho para abrir a caixa de diálogo de adição rápida",
+    "tip13": "Mantenha pressionado [ctrl] quando você [clica] em uma porta de nó para habilitar a fiação rápida",
+    "tip14": "Mantenha pressionado [shift] quando você [clique] em um nó para também selecionar todos os nós conectados",
+    "tip15": "Mantenha pressionado [ctrl] quando você [clica] em um nó para adicioná-lo ou removê-lo da seleção atual",
+    "tip16": "Alterne as guias de fluxo com {{core: show-previous-tab}} e {{core: show-next-tab}}",
+    "tip17": "Você pode confirmar suas alterações na bandeja de edição de nós com {{core: confirm-edit-tray}} ou cancelá-las com {{core: cancel-edit-tray}}",
+    "tip18": "Pressionar {{core: editar nó selecionado}} irá editar o primeiro nó na seleção atual"
+  }
+}

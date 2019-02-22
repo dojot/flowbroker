@@ -62,7 +62,7 @@ module.exports = {
                     "batch.num.messages": 1000000,
                     "dr_cb": true
                 },
-        
+
                 consumer: {
                     "group.id": process.env.KAFKA_GROUP_ID || "flowbroker",
                     "metadata.broker.list": process.env.KAFKA_HOSTS || "kafka:9092"
@@ -85,5 +85,16 @@ module.exports = {
                 deviceData: process.env.DOJOT_SUBJECT_DEVICE_DATA || "device-data"
               }
             }
+        },
+    language: {
+        //language supported by flowBroker
+        supportedLanguages: ["pt-BR", "en-US"],
+        //map of similar language, like pt is similar to pt-pt and pt
+        //default its the default language when anyone of listed language are found
+        mapSimilarLanguage: {
+            "pt": "pt-BR",
+            "pt-pt": "pt-BR",
+            default: "en-US"
         }
+    }
 };

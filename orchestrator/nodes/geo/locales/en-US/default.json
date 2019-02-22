@@ -1,0 +1,13 @@
+{
+  "title": "geofence",
+  "label": {
+    "filter": "Filter",
+    "name": "Name",
+    "geofence_name": "Geofence name"
+  },
+  "text": {
+    "inside": "only points inside",
+    "outside": "only points outside"
+  },
+  "category": "location"
+}

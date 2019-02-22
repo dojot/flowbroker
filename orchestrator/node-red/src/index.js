@@ -2,28 +2,34 @@
 /* jshint esversion: 6 */
 "use strict";
 
-var fs = require('fs');
-var path = require('path');
-var express = require('express');
-
-var nodes = require('../../nodeManager').Manager;
+const fs = require('fs');
+const path = require('path');
+const express = require('express');
+const nodes = require('../../nodeManager').Manager;
+const Locale = require('../../locale');
 
 module.exports = class NodeAPI {
-    constructor() { }
+    constructor() {
+    }
 
     registerExpress(app) {
         // images required by node-red GUI, keymap file
         app.use(express.static(path.join(__dirname, '../public')));
 
-        app.get('/locales/*', (req, res) => {
-            // '/locales/'.lenth = 9
+        app.get('/locales/*', async (req, res) => {
+
+            const language = Locale.getSlugLanguage(req);
+
             const resource = req.path.slice(9);
             const service = req.service;
 
             let data;
             if (['editor', 'jsonata', 'infotips', 'node-red'].includes(resource)) {
-                const filepath = path.join(__dirname, '../locales/en-US/' + resource + '.json');
+                let filepath = path.join(__dirname, '../locales/' + language + '/' + resource + '.json');
                 try {
+                    if (!fs.existsSync(filepath)) {
+                        filepath = path.join(__dirname, '../locales/' + Locale.getSlugDefaultLanguage() + '/' + resource + '.json');
+                    }
                     data = JSON.parse(fs.readFileSync(filepath));
                     return res.status(200).send(data);
                 } catch (e) {
@@ -35,15 +41,17 @@ module.exports = class NodeAPI {
                 const nodeid = resource.match(/[^/]+$/)[0];
                 let handler = nodes.getNode(nodeid, service);
                 if (handler) {
-                    return res.status(200).send(handler.getLocaleData('en-US'));
+                    const localData = await handler.getLocaleData(language, Locale.getSlugDefaultLanguage() );
+                    return res.status(200).send(localData);
                 }
 
                 handler = nodes.getNode(nodeid.replace(/-/g, ' '), service);
                 if (handler) {
-                    return res.status(200).send(handler.getLocaleData('en-US'));
+                    const localData = await handler.getLocaleData(language, Locale.getSlugDefaultLanguage() );
+                    return res.status(200).send(localData);
                 }
 
-                return res.status(404).send({ message: "Unknown node" });
+                return res.status(404).send({message: "Unknown node"});
             }
             /*
              * For newer node-red GUI versions, a single call to /locales/nodes is perfomred
@@ -63,4 +71,6 @@ module.exports = class NodeAPI {
             });
         });
     }
+
+
 };

@@ -40,21 +40,6 @@ class DataHandler extends dojot.DataHandlerBase {
         };
     }
 
-    /**
-     * Returns object with locale data (for the given locale)
-     * @param  {[string]} locale Locale string, such as "en-US"
-     * @return {[object]}        Locale settings used by the module
-     */
-    getLocaleData(locale) {
-
-        let filepath = path.join(__dirname, "locales/" + locale + "/http.json");
-        if (fs.existsSync(filepath)) {
-            return require(filepath);
-        } else {
-            return null;
-        }
-
-    }
 
     /**
      * Check if the node configuration is valid
@@ -64,6 +49,14 @@ class DataHandler extends dojot.DataHandlerBase {
     checkConfig() {
 
         return [true, null];
+    }
+
+    /**
+     * Returns full path to locales
+     * @returns {void | Promise<void> | Promise<any>}
+     */
+    getLocalesPath() {
+        return path.resolve(__dirname, './locales');
     }
 
     /**

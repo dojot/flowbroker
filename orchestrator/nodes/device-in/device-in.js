@@ -30,12 +30,11 @@ class DataHandler extends dojot.DataHandlerBase {
     }
 
     /**
-     * Returns object with locale data (for the given locale)
-     * @param  {[string]} locale Locale string, such as "en-US"
-     * @return {[object]}        Locale settings used by the module
+     * Returns full path to locales
+     * @returns {void | Promise<void> | Promise<any>}
      */
-    getLocaleData() {
-        return {};
+    getLocalesPath() {
+        return path.resolve(__dirname, './locales');
     }
 
     handleMessage() {

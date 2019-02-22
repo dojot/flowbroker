@@ -1,0 +1,14 @@
+{
+  "template": "modelo",
+  "label": {
+    "name": "Nome",
+    "template": "Modelo",
+    "property": "Propriedade",
+    "syntax": "Formato",
+    "output": "Saída",
+    "handlebars": "Handlebars modelo",
+    "plain": "Texto simples",
+    "json": "Parsed JSON"
+  },
+  "template_value": "Este é o payload: "
+}
