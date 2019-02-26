@@ -33,7 +33,7 @@ function parse(al) {
 }
 
 function mapSupported(supportedLanguages) {
-    let supported = supportedLanguages.map(function (support) {
+    return supportedLanguages.map(function (support) {
         let bits = support.split('-');
         let hasScript = bits.length === 3;
 
@@ -43,13 +43,12 @@ function mapSupported(supportedLanguages) {
             region: hasScript ? bits[2] : bits[1]
         };
     });
-    return supported;
 }
 
 function pick(supportedLanguages, acceptLanguage, options) {
     options = options || {};
 
-    if (!supportedLanguages || !supportedLanguages.length || !acceptLanguage) {
+    if (!supportedLanguages || !acceptLanguage) {
         return null;
     }
 
