@@ -1,11 +1,10 @@
 "use strict";
 
-let fs = require('fs');
-let path = require('path');
-let nodemailer = require("nodemailer");
-var logger = require("../../logger").logger;
-var util = require('util');
-var dojot = require('@dojot/flow-node');
+const path = require('path');
+const nodemailer = require("nodemailer");
+const logger = require("../../logger").logger;
+const util = require('util');
+const dojot = require('@dojot/flow-node');
 
 // Sample node implementation
 class DataHandler extends dojot.DataHandlerBase {

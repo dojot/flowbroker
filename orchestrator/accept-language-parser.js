@@ -32,17 +32,7 @@ function parse(al) {
     });
 }
 
-function pick(supportedLanguages, acceptLanguage, options) {
-    options = options || {};
-
-    if (!supportedLanguages || !supportedLanguages.length || !acceptLanguage) {
-        return null;
-    }
-
-    if (isString(acceptLanguage)) {
-        acceptLanguage = parse(acceptLanguage);
-    }
-
+function mapSupported(supportedLanguages) {
     let supported = supportedLanguages.map(function (support) {
         let bits = support.split('-');
         let hasScript = bits.length === 3;
@@ -53,6 +43,20 @@ function pick(supportedLanguages, acceptLanguage, options) {
             region: hasScript ? bits[2] : bits[1]
         };
     });
+    return supported;
+}
+
+function pick(supportedLanguages, acceptLanguage, options) {
+    options = options || {};
+
+    if (!supportedLanguages || !supportedLanguages.length || !acceptLanguage) {
+        return null;
+    }
+
+    if (isString(acceptLanguage)) {
+        acceptLanguage = parse(acceptLanguage);
+    }
+    let supported = mapSupported(supportedLanguages);
 
     for (let i = 0; i < acceptLanguage.length; i++) {
         let lang = acceptLanguage[i];
