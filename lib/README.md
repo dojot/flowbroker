@@ -31,17 +31,35 @@ The __language__ part of the path identifies the language the corresponding file
 
 A example of content in a  __Message Catalog__:
 
-`{
-   "title": "to kelvin",
-   "label": {
-     "name": "Name",
-     "input_from": "input from",
-     "output_to": "output to",
-   },
-   }
+```json 
+{
+     "myNode" : {
+         "message1": "This is my first message",
+         "message2": "This is my second message"
+     }
  }
-`
+```
 
+#### Using i18n messages 
+
+##### Runtime 
+The runtime part of a node can access messages using the RED._() function. For example:
+
+```javascript 
+console.log(RED._("myNode.message1"));
+```
+
+##### Editor 
+
+Any HTML element provided in the node template can specify a data-i18n attribute to provide the message identify to use. For example:
+
+```html 
+<span data-i18n="myNode.label.foo"></span>
+
+<input type="text" data-i18n="[placeholder]myNode.placeholder.foo">
+
+<a href="#" data-i18n="[title]myNode.label.linkTitle;myNode.label.linkText"></a>
+```
 
 ## Sample
 A sample node is attached to this package to illustrate the steps described in
