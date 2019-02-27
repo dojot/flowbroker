@@ -1,0 +1,21 @@
+{
+  "title": "to kelvin",
+  "label": {
+    "name": "Name",
+    "input_from": "input from",
+    "output_to": "output to",
+    "payload": "payload"
+  },
+  "text": {
+    "text_1": "text_1"
+  },
+  "category": "converters",
+  "example_options": {
+    "label": "Select example",
+    "values": {
+      "value_1": "Value 1",
+      "value_2": "Value 2"
+    }
+
+  }
+}

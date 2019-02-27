@@ -1,18 +1,28 @@
 <script type="text/x-red" data-template-name="kelvin">
     <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.name"></label>
         <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
-        <label for="node-input-in"><i class="fa fa-edit"></i> <span>input from</span></label>
-        <input type="text" id="node-input-in" placeholder="payload" style="width:250px;">
+        <label for="node-input-in"><i class="fa fa-edit"></i> <span><span data-i18n="label.input_from"></span></label>
+        <input type="text" id="node-input-in" data-i18n="[placeholder]label.payload" style="width:250px;">
         <input type="hidden" id="node-input-inFieldType">
     </div>
     <div class="form-row">
-        <label for="node-input-out"><i class="fa fa-edit"></i> <span>output to</span></label>
-        <input type="text" id="node-input-out" placeholder="payload" style="width:250px;">
+        <label for="node-input-out"><i class="fa fa-edit"></i> <span><span data-i18n="label.output_to"></span></label>
+        <input type="text" id="node-input-out" data-i18n="[placeholder]label.payload" style="width:250px;">
         <input type="hidden" id="node-input-outFieldType">
     </div>
+<!--  just a example for select-->
+<!--
+    <div class="form-row">
+        <label for="node-input-device"><i class="fa fa-edit"></i> <span data-i18n="example_options.label"></label>
+        <select id="node-input-device_source" onchange="someFunction()">
+            <option value="value_1" data-i18n="example_options.values.value_1"></option>
+            <option value="value_2" data-i18n="example_options.values.value_2"></option>
+        </select>
+    </div>
+ -->
 </script>
 
 <script type="text/x-red" data-help-name="kelvin">
@@ -20,7 +30,7 @@
 
 <script type="text/javascript">
     RED.nodes.registerType('kelvin', {
-        category: 'converters',
+        category: RED._("sample/kelvin:category"),
         color: "rgb(231, 231, 174)",
         defaults: {
             name: { value: "", required: false },
@@ -33,8 +43,9 @@
         outputs: 1,
         icon: "cog.png",
         label: function () {
-            return this.name || "to kelvin";
+            return this.name || RED._('sample/kelvin:title');
         },
+        paletteLabel: RED._('sample/kelvin:title'),
         labelStyle: function () {
             return this.name ? "node_label_italic" : "";
         },
