@@ -22,6 +22,27 @@ __must be__ implemented:
 5) Call the FlowBroker endpoint to add a new node. Please check the [FlowBroker documentation](https://dojot.github.io/flowbroker/apiary_latest.html) to check
 how this endpoint works.
 
+## Internationalisation
+
+The method `getLocalesPath`  should return the full path, where there're __Message Catalog__ (Eg.: `myNode/locales/__language__.json` ).
+
+The locales directory must be in the same directory as the node’s .js file.
+The __language__ part of the path identifies the language the corresponding files provide. Eg.: 'en-US'.
+
+A example of content in a  __Message Catalog__:
+
+`{
+   "title": "to kelvin",
+   "label": {
+     "name": "Name",
+     "input_from": "input from",
+     "output_to": "output to",
+   },
+   }
+ }
+`
+
+
 ## Sample
 A sample node is attached to this package to illustrate the steps described in
 the previous section. It's a simple node that converts a Celcius temperature
@@ -61,3 +82,5 @@ curl -H "Authorization: Bearer ${JWT}" http://localhost:8000/flows/v1/node -H 'c
 Now the Kelvin node will be available on `converters` category into the FlowBroker Dojot's interface.
 
 Note: the DockerHub use is optional, you can use a private docker registry instead.
+
+
