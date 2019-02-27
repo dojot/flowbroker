@@ -9,6 +9,6 @@
   "author": "Matheus Magalhaes",
   "license": "GPL-3.0",
   "dependencies": {
-    "@dojot/flow-node": "^3.0.0-alpha13"
+    "@dojot/flow-node": "^3.0.0-alpha3"
   }
 }
