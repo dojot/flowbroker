@@ -31,7 +31,7 @@ class DataHandler extends dojot.DataHandlerBase {
 
     /**
      * Returns full path to locales
-     * @returns {void | Promise<void> | Promise<any>}
+     * @returns String
      */
     getLocalesPath() {
         return path.resolve(__dirname, './locales');
