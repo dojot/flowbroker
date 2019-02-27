@@ -1,0 +1,12 @@
+{
+  "title": "modelo de dispositivo",
+  "label": {
+    "name": "Nome",
+    "device_template": "Modelo de dispositivo",
+    "status": "Status"
+  },
+  "text": {
+    "exclude": "excluir alterações de status do dispositivo",
+    "include": "incluir alterações de status do dispositivo"
+  }
+}

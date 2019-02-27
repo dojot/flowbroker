@@ -1,0 +1,16 @@
+{
+  "title": "device",
+  "label": {
+    "name": "Name",
+    "action": "Action",
+    "attribute": "Attribute",
+    "devices": "Device(s)",
+    "source": "Source"
+  },
+  "text": {
+    "triggered": "The device which triggered the flow",
+    "specific": "Specific device(s)",
+    "defined": "Device(s) defined during the flow",
+    "enter_attribute": "Enter an attribute"
+  }
+}
