@@ -9,7 +9,7 @@ class is the responsable by implements your node behavior. The following methods
 __must be__ implemented:
   - getNodeRepresentationPath
   - getMetadata
-  - getLocaleData
+  - getLocalesPath
   - handleMessage
 
 2) Is necessary to create a `.html` file that describes your node. You can find how to create it using the [NodeRed documentation](https://nodered.org/docs/creating-nodes/). Dojot's FlowBroker uses the [NodeRed](https://nodered.org/) frontend.
