@@ -9,7 +9,7 @@
       "status": "Código de status",
       "headers": "Cabeçalhos",
       "other": "outros",
-      "body": "Solicitar corpo",
+      "body": "Corpo da solicitação",
       "response": "Resposta",
       "name": "Nome"
     },

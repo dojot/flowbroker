@@ -34,8 +34,8 @@
       "rule": "regra"
     },
     "and": "e",
-    "checkall": "verificando todas as regras",
-    "stopfirst": "parando após o primeiro",
+    "checkall": "verificar todas as regras",
+    "stopfirst": "parar após a primeira correspondência",
     "ignorecase": "ignorar maiúsculas e minúsculas",
     "rules": {
       "btwn": "está entre",

@@ -18,7 +18,6 @@ class RemoteNodeHandler extends dojot.DataHandlerBase {
     this.serverAddress = serverAddress;
     this.serverPort = serverPort;
     this.dispatcher = null;
-    this.getLocaleData = this.getLocaleData.bind(this);
   }
 
   init() {
