@@ -11,6 +11,7 @@
     "triggered": "O dispositivo que desencadeou o fluxo",
     "specific": "Dispositivo(s) específico(s)",
     "defined": "Dispositivo(s) definido(s) durante o fluxo",
-    "enter_attribute": "Digite um atributo"
+    "enter_attribute": "Digite um atributo",
+    "select_device": "Selecione um dispositivo"
   }
 }

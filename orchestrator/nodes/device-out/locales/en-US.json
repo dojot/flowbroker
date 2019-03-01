@@ -11,6 +11,7 @@
     "triggered": "The device which triggered the flow",
     "specific": "Specific device(s)",
     "defined": "Device(s) defined during the flow",
-    "enter_attribute": "Enter an attribute"
+    "enter_attribute": "Enter an attribute",
+    "select_device": "Select a device"
   }
 }
