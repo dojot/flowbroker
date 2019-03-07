@@ -6,7 +6,6 @@ var dojot = require('@dojot/flow-node');
 // Sample node implementation
 class DataHandler extends dojot.DataHandlerBase {
   constructor() {
-    console.log('Constructor');
     super();
   }
 
