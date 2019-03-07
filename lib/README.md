@@ -24,7 +24,8 @@ how this endpoint works.
 
 ## Internationalisation
 
-The method `getLocalesPath`  should return the full path, where there're __Message Catalog__ (Eg.: `myNode/locales/__language__.json` ).
+The method `getLocalesPath`  should return the full path (`myNode/locales` ), 
+where there're __Message Catalog__ (`myNode/locales/__language__.json` ).
 
 The locales directory must be in the same directory as the node’s .js file.
 The __language__ part of the path identifies the language the corresponding files provide. Eg.: 'en-US'.
@@ -47,6 +48,11 @@ The runtime part of a node can access messages using the RED._() function. For e
 
 ```javascript 
 console.log(RED._("myNode.message1"));
+```
+
+With namespace, the namespace will be the __id__ of node
+```javascript 
+console.log(RED._("__id__:myNode.message1"));
 ```
 
 ##### Editor 

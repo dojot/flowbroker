@@ -58,8 +58,9 @@
         outputs: 1,
         icon: "switch.png",
         label: function() {
-            return this.name||"switch";
+            return this.name||RED._('dojot/switch:title');
         },
+        paletteLabel:  RED._('dojot/switch:title'),
         oneditprepare: function() {
             var node = this;
             var previousValueType = {value:"prev",label:this._("inject.previous"),hasValue:false};

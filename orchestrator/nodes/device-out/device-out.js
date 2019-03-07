@@ -31,14 +31,14 @@ class DataHandler extends dojot.DataHandlerBase {
     };
   }
 
-  /**
-   * Returns object with locale data (for the given locale)
-   * @param  {[string]} locale Locale string, such as "en-US"
-   * @return {[object]}        Locale settings used by the module
-   */
-  getLocaleData() {
-    return {};
-  }
+
+    /**
+     * Returns full path to locales
+     * @returns String
+     */
+    getLocalesPath() {
+        return path.resolve(__dirname, './locales');
+    }
 
   _getDevicesIds(deviceSource, configuredDevices, dynamicDevices, originatorDeviceId, message) {
     let devicesIds = [];

@@ -25,11 +25,11 @@
     </div>
     <div class="form-row">
         <label for="node-input-subject"><i class="fa fa-envelope"></i> <span data-i18n="email.label.subject"></span></label>
-        <input type="text" id="node-input-subject" placeholder="Message title">
+        <input type="text" id="node-input-subject" data-i18n="[placeholder]email.label.subject" >
     </div>
     <div class="form-row">
         <label for="node-input-body"><i class="fa fa-envelope"></i> <span data-i18n="email.label.body"></span></label>
-        <input type="text" id="node-input-body" placeholder="Message body">
+        <input type="text" id="node-input-body" data-i18n="[placeholder]email.label.body" >
     </div>
     <!--
         <div class="form-row">
@@ -42,8 +42,8 @@
     -->
     <br/>
     <div class="form-row">
-        <label for="node-input-dname"><i class="fa fa-tag"></i> <span data-i18n="node-red:common.label.name"></span></label>
-        <input type="text" id="node-input-dname" data-i18n="[placeholder]node-red:common.label.name">
+        <label for="node-input-dname"><i class="fa fa-tag"></i> <span data-i18n="email.label.name"></span></label>
+        <input type="text" id="node-input-dname" data-i18n="[placeholder]email.label.name">
     </div>
 </script>
 
@@ -85,8 +85,9 @@
             outputs:0,
             icon: "envelope.png",
             align: "right",
+            paletteLabel:  RED._('dojot/email:title'),
             label: function() {
-                return this.dname || this.name || "email";
+                return this.dname || this.name || RED._('dojot/email:title');
             },
             labelStyle: function() {
                 return (this.dname||!this.topic)?"node_label_italic":"";
