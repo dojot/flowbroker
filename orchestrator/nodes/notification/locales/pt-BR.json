@@ -1,0 +1,17 @@
+{
+  "title": "Notificação",
+  "label": {
+    "name": "Nome",
+    "action": "Açao",
+    "attribute": "Atributo",
+    "devices": "Dispositivo(s)",
+    "source": "Fonte"
+  },
+  "text": {
+    "triggered": "O dispositivo que desencadeou o fluxo",
+    "specific": "Dispositivo(s) específico(s)",
+    "defined": "Dispositivo(s) definido(s) durante o fluxo",
+    "enter_attribute": "Digite um atributo",
+    "select_device": "Selecione um dispositivo"
+  }
+}
