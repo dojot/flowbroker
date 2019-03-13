@@ -19,7 +19,7 @@ var dojotModule = require("@dojot/dojot-module");
 
 function fail(error) {
   logger.error('[flowbroker] Initialization failed.', error.message);
-  process.exit(1);
+  process.kill(process.pid, "SIGTERM");
 }
 
 class IdleManager {
@@ -188,5 +188,4 @@ kafkaMessenger.init().then(() => {
     ingestor.init();
   }).catch((error) => {
     fail(error);
-    process.kill(process.pid, "SIGTERM");
 });
