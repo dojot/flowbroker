@@ -1,5 +1,6 @@
 var path = require('path');
 var util = require('util');
+var uuid4 = require('uuid4');
 var logger = require("../../logger").logger;
 var dojot = require('@dojot/flow-node');
 
@@ -41,15 +42,44 @@ class DataHandler extends dojot.DataHandlerBase {
     }
 
 
+    /**
+     * Statelessly handle a single given message, using given node configuration parameters
+     *
+     * This method should perform all computation required by the node, transforming its inputs
+     * into outputs. When such processing is done, the node should issue a call to the provided
+     * callback, notifying either failure to process the message with given config, or the set
+     * of transformed messages to be sent to the flow's next hop.
+     *
+     * @param  {[type]}       config   Node configuration to be used for this message
+     * @param  {[type]}       message  Message to be processed
+     * @param  {Function}     callback Callback to call upon processing completion
+     * @return {[Promise]}
+     */
     handleMessage(config, message, metadata) {
+
         try {
-            logger.debug("Executing device-out node...");
-            logger.debug("... device was updated.");
-            logger.debug("... device-out node was successfully executed.");
+            var msgNoti = config.messagenoti;
+
+            let output = {
+                msgID: uuid4(),
+                timestamp: Date.now(),
+                message: msgNoti,
+                metaAttrsFilter: {
+                    level: 10,
+                    device: "Device name 4"
+                },
+                metadata,
+                subject: "user_notification"
+            };
+
+            logger.debug(`output is: ${util.inspect(output, { depth: null })}`);
+
+            this.publisher.publish(output);
+
+            logger.debug("...notification node was successfully executed.");
             return Promise.resolve();
         } catch (error) {
-            logger.debug("... device-out node was not successfully executed.");
-            logger.error(`Error while executing device-out node: ${error}`);
+            logger.error(`Error while executing notification node: ${error}`);
             return Promise.reject(error);
         }
     }

@@ -1,11 +1,7 @@
 {
-  "title": "Notification",
+  "title": "notification",
   "label": {
-    "name": "Name",
-    "action": "Action",
-    "attribute": "Attribute",
-    "devices": "Device(s)",
-    "source": "Source"
+    "message": "Message"
   },
   "text": {
     "triggered": "The device which triggered the flow",
