@@ -1,7 +1,15 @@
 <script type="text/x-red" data-template-name="notification">
     <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.name"></label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.message"></label>
-        <input type="text" id="node-input-messagenoti">
+        <input type="text" id="node-input-message_notification">
+    </div>
+        <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.source"></label>
+        <input type="text" id="node-input-source">
     </div>
 
 </script>
@@ -14,7 +22,9 @@
         category: 'output',
         color: "rgb(231, 231, 174)",
         defaults: {
-            messagenoti: {value: "", required: false},
+            name: { value: "", required: false },
+            message_notification: {value: "", required: true},
+            source: {value: "", required: false},
         },
         inputs: 1,
         outputs: 1,

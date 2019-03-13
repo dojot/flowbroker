@@ -56,26 +56,22 @@ class DataHandler extends dojot.DataHandlerBase {
      * @return {[Promise]}
      */
     handleMessage(config, message, metadata) {
-
         try {
-            var msgNoti = config.messagenoti;
-
+            let meta = {};
+            if (config.source) {
+                meta = this._get(config.source, message);
+            }
             let output = {
                 msgID: uuid4(),
                 timestamp: Date.now(),
-                message: msgNoti,
-                metaAttrsFilter: {
-                    level: 10,
-                    device: "Device name 4"
-                },
+                message: config.message_notification,
+                metaAttrsFilter: meta,
                 metadata,
                 subject: "user_notification"
             };
-
-            logger.debug(`output is: ${util.inspect(output, { depth: null })}`);
+            logger.debug(`output is: ${util.inspect(output, {depth: null})}`);
 
             this.publisher.publish(output);
-
             logger.debug("...notification node was successfully executed.");
             return Promise.resolve();
         } catch (error) {

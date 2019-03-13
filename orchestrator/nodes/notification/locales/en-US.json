@@ -1,13 +1,8 @@
 {
   "title": "notification",
   "label": {
-    "message": "Message"
-  },
-  "text": {
-    "triggered": "The device which triggered the flow",
-    "specific": "Specific device(s)",
-    "defined": "Device(s) defined during the flow",
-    "enter_attribute": "Enter an attribute",
-    "select_device": "Select a device"
+    "message": "Message",
+    "name": "Name",
+    "source": "Source"
   }
 }

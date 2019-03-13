@@ -16,7 +16,7 @@ module.exports = class DeviceIngestor {
     // using redis as cache
     this.redis = new redisManager();
     this.client = this.redis.getClient();
-    
+
     // flow builder
     this.fmBuiler = fmBuilder;
 
@@ -24,7 +24,7 @@ module.exports = class DeviceIngestor {
     this.preProcessEvent = this.preProcessEvent.bind(this);
     this.amqpTaskProducer = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
     this.amqpEventProducer = new amqp.AMQPProducer(config.amqp.event_queue, config.amqp.url, 1);
-    this.amqpEventConsumer = new amqp.AMQPConsumer(config.amqp.event_queue, this.preProcessEvent, 
+    this.amqpEventConsumer = new amqp.AMQPConsumer(config.amqp.event_queue, this.preProcessEvent,
       config.amqp.url, 1);
 
     // kafka messenger
@@ -35,16 +35,19 @@ module.exports = class DeviceIngestor {
    * Initializes device ingestor: Kafka, RabbitMQ ...
    */
   init() {
+      // Create a channel using a particular for notificarions
+      this.kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.notificationUser, "rw");
+
     //tenancy subject
     logger.debug("Registering callbacks for tenancy subject...");
-    this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.tenancy, 
+    this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.tenancy,
       "new-tenant", (tenant, newtenant) => {
         node.addTenant(newtenant, this.kafkaMessenger)});
     logger.debug("... callbacks for tenancy registered.");
 
     //device-manager subject
     logger.debug("Registering callbacks for device-manager device subject...");
-    this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.devices, 
+    this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.devices,
       "message", (tenant, msg) => {
         try {
           let parsed = JSON.parse(msg);
@@ -59,7 +62,7 @@ module.exports = class DeviceIngestor {
 
     // device-data subject
     logger.debug("Registering callbacks for device-data device subject...");
-    this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.deviceData, 
+    this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.deviceData,
       "message", (tenant, msg) => {
 
       this.enqueueEvent(msg);
@@ -77,14 +80,14 @@ module.exports = class DeviceIngestor {
 
     // Connects to RabbitMQ
     Promise.all(
-      [this.amqpTaskProducer.connect(), 
+      [this.amqpTaskProducer.connect(),
         this.amqpEventProducer.connect(),
         this.amqpEventConsumer.connect()]).then(() => {
           logger.debug('Connections established with RabbitMQ!');
         }).catch( errors => {
           logger.error(`Failed to establish connections with RabbitMQ. Error = ${errors}`);
           process.exit(1);
-        }); 
+        });
   }
 
   _publish(node, message, flow, metadata) {
@@ -143,7 +146,7 @@ module.exports = class DeviceIngestor {
     logger.debug(`[ingestor] got new device event: ${util.inspect(event, { depth: null })}`);
     let flowManager = this.fmBuiler.get(event.metadata.tenant);
 
-    return this.client.getDeviceInfo(event.metadata.tenant, event.metadata.deviceid, 
+    return this.client.getDeviceInfo(event.metadata.tenant, event.metadata.deviceid,
       this.redis.getState()).then((data) => {
 
         // update event with template and static attr info
@@ -160,11 +163,11 @@ module.exports = class DeviceIngestor {
             event.attrs[attr] = data.staticAttrs[attr];
           }
         }
-        
+
         let flowsPromise = [];
         // [0]: flows starting with a given device
         flowsPromise.push(flowManager.getByDevice(event.metadata.deviceid));
-        
+
         // [1..N]: flows starting with a given template
         for (let template of data.templates) {
           flowsPromise.push(flowManager.getByTemplate(template));
@@ -182,7 +185,7 @@ module.exports = class DeviceIngestor {
         // [1..N]: flows starting with a given template
         for (let flows of flowLists) {
           for (let flow of flows) {
-            this.handleFlow(event, flow, true);      
+            this.handleFlow(event, flow, true);
           }
         }
       });

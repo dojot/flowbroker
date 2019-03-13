@@ -141,6 +141,7 @@ class DataHandler extends dojot.DataHandlerBase {
       for (let rule of config.rules) {
         if (rule.t === "set") {
           let v2;
+          console.log('rule.tot', rule.tot, rule);
           switch (rule.tot) {
             case "str":
               this._set(rule.p, rule.to, message);
@@ -148,7 +149,8 @@ class DataHandler extends dojot.DataHandlerBase {
             case "num":
               this._set(rule.p, Number(rule.to), message);
               break;
-            case "boolean":
+              case "bool":
+              case "boolean":
               v2 = ['1', 'true'].includes(rule.to.toLowerCase());
               this._set(rule.p, v2, message);
               break;
