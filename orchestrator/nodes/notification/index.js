@@ -61,6 +61,10 @@ class DataHandler extends dojot.DataHandlerBase {
             if (config.source) {
                 meta = this._get(config.source, message);
             }
+            if(!meta.hasOwnProperty('shouldPersist')){
+                meta.shouldPersist = true;
+            }
+
             let output = {
                 msgID: uuid4(),
                 timestamp: Date.now(),

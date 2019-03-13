@@ -4,11 +4,11 @@
         <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.message"></label>
+        <label for="node-input-name"><i class="fa fa-edit"></i> <span data-i18n="label.message"></label>
         <input type="text" id="node-input-message_notification">
     </div>
         <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.source"></label>
+        <label for="node-input-name"><i class="fa fa-cube"></i> <span data-i18n="label.source"></label>
         <input type="text" id="node-input-source">
     </div>
 
@@ -20,7 +20,7 @@
 <script type="text/javascript">
     RED.nodes.registerType('notification', {
         category: 'output',
-        color: "rgb(231, 231, 174)",
+        color: "#87A980",
         defaults: {
             name: { value: "", required: false },
             message_notification: {value: "", required: true},
@@ -28,7 +28,7 @@
         },
         inputs: 1,
         outputs: 1,
-        icon: "cog.png",
+        icon: "alert.png",
         label: function () {
             return this.name || RED._('dojot/notification:title');
         },

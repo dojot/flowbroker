@@ -141,7 +141,6 @@ class DataHandler extends dojot.DataHandlerBase {
       for (let rule of config.rules) {
         if (rule.t === "set") {
           let v2;
-          console.log('rule.tot', rule.tot, rule);
           switch (rule.tot) {
             case "str":
               this._set(rule.p, rule.to, message);
