@@ -1,12 +1,13 @@
 var path = require('path');
-var dojot = require('@dojot/flow-node');
+var util = require('util');
 var logger = require("../../logger").logger;
-var util = require("util");
+var dojot = require('@dojot/flow-node');
 
 class DataHandler extends dojot.DataHandlerBase {
-  constructor(publisher) {
+  constructor(kafkaMessenger, subject) {
     super();
-    this.publisher = publisher;
+    this.kafkaMessenger = kafkaMessenger;
+    this.subject = subject;
   }
 
   /**
@@ -27,9 +28,10 @@ class DataHandler extends dojot.DataHandlerBase {
       'id': 'dojot/actuate',
       'name': 'actuate',
       'module': 'dojot',
-      'version': '1.1.0',
+      'version': '2.0.0',
     };
   }
+
 
     /**
      * Returns full path to locales
@@ -39,65 +41,100 @@ class DataHandler extends dojot.DataHandlerBase {
         return path.resolve(__dirname, './locales');
     }
 
-  handleMessage(config, message, metadata) {
-
-    logger.debug("Executing actuate node...");
-    if ((config.attrs === undefined) || (config.attrs.length === 0)) {
-      logger.debug("... actuate node was not successfully executed.");
-      logger.error("Missing data source.");
-      return Promise.reject(new Error('Invalid data source: field is mandatory'));
-    }
-
-    let deviceId;
-    switch (config.device_source) {
+  _getDevicesIds(deviceSource, configuredDevices, dynamicDevices, originatorDeviceId, message) {
+    let devicesIds = [];
+    switch (deviceSource) {
       case 'configured':
-        if (config._device_id === undefined) {
-          logger.debug("... actuate node was not successfully executed.");
-          logger.error("There is not device configured to actuate");
-          return Promise.reject(new Error('Invalid Device id'));
+        if ((configuredDevices === undefined) || (configuredDevices.length === 0) ) {
+          logger.debug("Empty configured devices");
+          return [];
         }
-        deviceId = config._device_id;
+        devicesIds = configuredDevices;
       break;
       case 'self':
-        deviceId = metadata.originatorDeviceId;
+        devicesIds.push(originatorDeviceId);
       break;
       case 'dynamic':
-        if ((config.device_source_msg === undefined) || (config.device_source_msg.length === 0)) {
-          logger.debug("... actuate node was not successfully executed.");
-          logger.error("Missing device source msg.");
-          return Promise.reject(new Error('Invalid device source msg: field is mandatory'));
+        if ((dynamicDevices === undefined) || (dynamicDevices.length === 0)) {
+          logger.debug("Empty dynamic devices");
+          return [];
         }
         try {
-          deviceId = this._get(config.device_source_msg, message);
+          let devices = this._get(dynamicDevices, message);
+          if (Array.isArray(devices)) {
+            devicesIds = devices;
+          } else {
+            if (devices === undefined) {
+              logger.debug('Dynamic devices is undefined');
+              return [];
+            }
+            devicesIds.push(devices);
+          }
         } catch (error) {
-          logger.debug("... actuate node was not successfully executed.");
-          logger.error(`Error while executing actuate node: ${error}`);
-          return Promise.reject(error);
+          logger.error(`Error while executing device out node: ${error}`);
+          return [];
         }
       break;
       default:
-        return Promise.reject(new Error('Invalid device source'));
+        logger.error(`Invalid device source ${deviceSource}`);
+        return [];
+    }
+
+    return devicesIds;
+  }
+
+  handleMessage(config, message, metadata) {
+    logger.debug("Executing actuate node...");
+    if ((config.attrs === undefined) || (config.attrs.length === 0)) {
+      logger.debug("... actuate node was not successfully executed.");
+      logger.error("Node has no output field set.");
+      return Promise.reject(new Error('Invalid data source: field is mandatory'));
     }
 
     try {
-      let output = {
-        meta: {
-          deviceid: deviceId,
-          service: metadata.tenant
-        },
-        metadata: {
-          tenant: metadata.tenant
-        },
+      let output = { 
         event: 'configure',
         data: {
-          attrs: this._get(config.attrs, message),
-          id: deviceId
+          attrs: {},
+        },
+        meta: {
+          service: metadata.tenant
         }
       };
-      logger.debug(`Sending message... `);
+
+      try {
+        output.data.attrs = this._get(config.attrs, message);
+      } catch (e) {
+        logger.debug("... actuate node was not successfully executed.");
+        logger.error(`Error while executing actuate node: ${e}`);
+        return Promise.reject(e);
+      }
+
+      let devicesIds = this._getDevicesIds(config.device_source,
+        config.devices_source_configured,
+        config.devices_source_dynamic,
+        metadata.originatorDeviceId,
+        message);
+
+      if (devicesIds.length === 0) {
+        logger.debug("... actuate node was not successfully executed.");
+        return Promise.reject(new Error('Could not define target devices'));
+      }
+
+      logger.debug("Sending message to device(s)... ");
       logger.debug(`Message is: ${util.inspect(output, { depth: null })}`);
-      this.publisher.publish(output);
-      logger.debug(`... message was sent.`);
+
+      // avoid send the same event to the same device, it can occurr due to
+      // an errouneus configuration
+      let devicesSet = new Set(devicesIds);
+
+      for (let deviceId of devicesSet) {
+        let event = JSON.parse(JSON.stringify(output));
+        event.data.id = deviceId;
+
+        this.kafkaMessenger.publish(this.subject, metadata.tenant, JSON.stringify(event));
+      }
+      logger.debug("... message sent.");
       logger.debug("... actuate node was successfully executed.");
       return Promise.resolve();
     } catch (error) {

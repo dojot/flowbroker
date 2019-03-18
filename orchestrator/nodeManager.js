@@ -117,8 +117,7 @@ class NodeManager {
         "notification": new notification(
             kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
         "device template in": new device_tpl(),
-        "actuate": new actuate(
-            new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
+        "actuate": new actuate(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant),
         "get context": new get_context(),
     };
   }

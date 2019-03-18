@@ -1,18 +1,17 @@
 {
+  "title": "atuador",
   "label": {
     "name": "Nome",
-    "actuate": "atuador",
-    "action": "Ação",
-    "self": "O dispositivo que desencadeou o fluxo",
-    "configured": "Um dispositivo específico",
-    "dynamic": "Um dispositivo definido durante o fluxo",
+    "action": "Açao",
     "attribute": "Atributo",
-    "device": "Dispositivo",
+    "devices": "Dispositivo(s)",
     "source": "Fonte"
   },
   "text": {
-    "value_virtual": "Configure o valor de um dispositivo virtual com base nos resultados das operações anteriores no fluxo.",
-    "attr_placeholder": "Digite um atributo",
-    "select_dev_placeholder": "Selecione um dispositivo"
+    "triggered": "O dispositivo que desencadeou o fluxo",
+    "specific": "Dispositivo(s) específico(s)",
+    "defined": "Dispositivo(s) definido(s) durante o fluxo",
+    "enter_attribute": "Digite um atributo",
+    "select_device": "Selecione um dispositivo"
   }
 }
