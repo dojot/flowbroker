@@ -3,6 +3,11 @@
   "label": {
     "message": "Message",
     "name": "Name",
-    "source": "Source"
+    "source": "Metadatas",
+    "value": "Value"
+  },
+  "text": {
+    "dynamic": "Dynamic",
+    "static": "Static"
   }
 }

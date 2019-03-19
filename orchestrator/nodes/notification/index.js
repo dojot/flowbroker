@@ -5,9 +5,12 @@ var logger = require("../../logger").logger;
 var dojot = require('@dojot/flow-node');
 
 class DataHandler extends dojot.DataHandlerBase {
-    constructor(publisher) {
+
+    constructor(kafka, subject, tenant) {
         super();
-        this.publisher = publisher;
+        this.kafkaMessenger = kafka;
+        this.subject = subject;
+        this.tenant = tenant;
     }
 
     /**
@@ -55,12 +58,22 @@ class DataHandler extends dojot.DataHandlerBase {
      * @param  {Function}     callback Callback to call upon processing completion
      * @return {[Promise]}
      */
-    handleMessage(config, message, metadata) {
+    handleMessage(config, message) {
+
         try {
             let meta = {};
+            let contentMessage = "";
+
             if (config.source) {
                 meta = this._get(config.source, message);
             }
+
+            if (config.msgType === 'dynamic') {
+                contentMessage = this._get(config.messageDynamic, message);
+            }else {
+                contentMessage = config.messageStatic;
+            }
+
             if(!meta.hasOwnProperty('shouldPersist')){
                 meta.shouldPersist = true;
             }
@@ -68,16 +81,18 @@ class DataHandler extends dojot.DataHandlerBase {
             let output = {
                 msgID: uuid4(),
                 timestamp: Date.now(),
-                message: config.message_notification,
+                message: contentMessage,
                 metaAttrsFilter: meta,
-                metadata,
                 subject: "user_notification"
             };
+
             logger.debug(`output is: ${util.inspect(output, {depth: null})}`);
 
-            this.publisher.publish(output);
+            this.kafkaMessenger.publish(this.subject, this.tenant, JSON.stringify(output));
+
             logger.debug("...notification node was successfully executed.");
-            return Promise.resolve();
+
+            return Promise.resolve([message])
         } catch (error) {
             logger.error(`Error while executing notification node: ${error}`);
             return Promise.reject(error);

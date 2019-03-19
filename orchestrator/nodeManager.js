@@ -115,7 +115,7 @@ class NodeManager {
         "device out": new device_out(
             new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
         "notification": new notification(
-            new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.notificationUser, tenant)),
+            kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
         "device template in": new device_tpl(),
         "actuate": new actuate(
             new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
