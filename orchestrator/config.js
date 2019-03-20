@@ -80,9 +80,10 @@ module.exports = {
             dojot: {
               managementService: process.env.DOJOT_SERVICE_MANAGEMENT || "dojot-management",
               subjects: {
-                tenancy: process.env.DOJOT_SUBJECT_TENANCY || "dojot.tenancy",
-                devices: process.env.DOJOT_SUBJECT_DEVICES || "dojot.device-manager.device",
-                deviceData: process.env.DOJOT_SUBJECT_DEVICE_DATA || "device-data"
+                  tenancy: process.env.DOJOT_SUBJECT_TENANCY || "dojot.tenancy",
+                  devices: process.env.DOJOT_SUBJECT_DEVICES || "dojot.device-manager.device",
+                  deviceData: process.env.DOJOT_SUBJECT_DEVICE_DATA || "device-data",
+                  notification: process.env.DOJOT_SUBJECT_DEVICE_DATA || "dojot.notifications"
               }
             }
         },
