@@ -148,7 +148,8 @@ class DataHandler extends dojot.DataHandlerBase {
             case "num":
               this._set(rule.p, Number(rule.to), message);
               break;
-            case "boolean":
+              case "bool":
+              case "boolean":
               v2 = ['1', 'true'].includes(rule.to.toLowerCase());
               this._set(rule.p, v2, message);
               break;
