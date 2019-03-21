@@ -36,7 +36,7 @@ module.exports = class DeviceIngestor {
    */
   init() {
       // Create a channel using a particular for notificarions
-      this.kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.notificationUser, "rw");
+      this.kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.notification, "rw");
 
     //tenancy subject
     logger.debug("Registering callbacks for tenancy subject...");
