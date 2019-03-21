@@ -17,6 +17,8 @@ var ContextHandler = require('@dojot/flow-node').ContextHandler;
 
 var dojotModule = require("@dojot/dojot-module");
 
+var healthCheck = require('./healthcheck');
+
 function fail(error) {
   logger.error('[flowbroker] Initialization failed.', error.message);
   process.kill(process.pid, "SIGTERM");
@@ -183,7 +185,8 @@ kafkaMessenger.init().then(() => {
 
   }).then((client) => {
     let FlowManager = new FlowManagerBuilder(client);
-    APIHandler.init(FlowManager);
+    healthCheck.init(kafkaMessenger, FlowManager);
+    APIHandler.init(FlowManager, healthCheck.get());
     let ingestor = new Ingestor(FlowManager, kafkaMessenger);
     ingestor.init();
   }).catch((error) => {
