@@ -6,6 +6,7 @@ var change = require('./nodes/change/index').Handler;
 var email = require('./nodes/email/index').Handler;
 var geo = require('./nodes/geo/index').Handler;
 var http = require('./nodes/http/index').Handler;
+var ftp = require('./nodes/ftp/index').Handler;
 var select = require('./nodes/switch/index').Handler;
 var template = require('./nodes/template/index').Handler;
 var device_in = require('./nodes/device-in/device-in').Handler;
@@ -109,6 +110,7 @@ class NodeManager {
         "email": new email(),
         "geofence": new geo(),
         "http": new http(),
+        "ftp": new ftp(),
         "switch": new select(),
         "template": new template(),
         "device in": new device_in(),
