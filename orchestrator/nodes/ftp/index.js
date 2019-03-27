@@ -4,16 +4,12 @@ var fs = require('fs');
 var path = require('path');
 var logger = require('../../logger').logger;
 
-
-var urllib = require("url");
-var mustache = require("mustache");
 var util = require("util");
 
 var dojot = require('@dojot/flow-node');
 
 var stream = require("stream");
 var ftp = require("basic-ftp");
-var uuid = require("uuid");
 
 class ReadStream extends stream.Readable {
     constructor(object) {
@@ -100,7 +96,7 @@ class DataHandler extends dojot.DataHandlerBase {
         var url = config.url;
         var tokens = config.url.match(/(ftp|ftps):\/\/(.*)/);
         var transport = "ftp";
-        var host = "localhost";
+        var host;
         var port = 21;
         var remaining;
         logger.debug(`URL parsing tokens: ${util.inspect(tokens)}`);
