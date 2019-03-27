@@ -67,7 +67,7 @@ class DataHandler extends dojot.DataHandlerBase {
         if (fs.existsSync(filepath)) {
             return require(filepath);
         } else {
-            return null;
+            return require(path.join(__dirname, "locales/en-US/ftp.json"));
         }
 
     }
@@ -96,29 +96,42 @@ class DataHandler extends dojot.DataHandlerBase {
      */
     async handleMessage(config, message) {
         logger.debug("Executing ftp node...");
-        var nodeUrl = config.url;
-        var isTemplatedUrl = (nodeUrl || "").indexOf("{{") !== -1;
-        var nodeMethod = config.method || "PUT";
-        var ret = config.ret || "txt";
-        var reqTimeout = 120000;
-        var url = nodeUrl || message.url;
-        var ftpRequest;
+        logger.debug(`Config is: ${util.inspect(config)}`);
+        var url = config.url;
+        var tokens = config.url.match(/(ftp|ftps):\/\/(.*)/);
+        var transport = "ftp";
+        var host = "localhost";
+        var port = 21;
+        var remaining;
+        logger.debug(`URL parsing tokens: ${util.inspect(tokens)}`);
+        if (tokens !== null) {
+            transport = tokens[1];
+            remaining = tokens[2];
+        } else {
+            remaining = config.url;
+        }
+        tokens = remaining.match(/(.*):(.*)/);
+        logger.debug(`Port parsing tokens: ${util.inspect(tokens)}`);
+        if (tokens !== null) {
+            host = tokens[1];
+            port = tokens[2];
+        } else {
+            host = remaining;
+        }
+
+        logger.debug(`Connecting to host ${host}:${port}, using ${transport}`);
+        logger.debug(`Original config was ${config.url}`);
+
+        var method = config.method.toUpperCase() || "PUT";
+        const filename = this._get(config.filename, message);
         var stream;
         try {
-            const buffer = Buffer.from(this._get(config.body, message), 'base64');
+            const buffer = Buffer.from(this._get(config.filecontent, message), 'base64');
             stream = new ReadStream(buffer);
         } catch (e) {
             logger.debug("... ftp node was not successfully executed.");
             logger.error(`Error while retrieving ftp payload: ${e}`);
             return Promise.reject("ftpin.errors.no-body");
-        }
-
-
-        // Pre-process URL.
-
-        // First, resolve URL if it uses a mustache string.
-        if (isTemplatedUrl) {
-            url = mustache.render(nodeUrl, message);
         }
 
         if (!url) {
@@ -127,51 +140,29 @@ class DataHandler extends dojot.DataHandlerBase {
             return Promise.reject("ftpin.errors.no-url");
         }
 
-        // If no transport protocol was set, then assume ftp.
-        // if (!/^.*:\/\//.test(url)) {
-        //     url = "ftp://" + url;
-        // }
+        const client = new ftp.Client();
+        client.ftp.verbose = true;
+        await client.access({
+            host,
+            port,
+            password: "dojot",
+            secure: (transport === "ftps"),
+            user: "dojot",
+        });
 
-        // Then, check whether it is correctly set - starts with ftp:// or ftps://
-        // if (!/^(ftp|ftps):\/\//.test(url)) {
-        //     logger.debug("... ftp node was not successfully executed.");
-        //     logger.error("Node has an invalid transport protocol (no ftp nor ftps).");
-        //     return Promise.reject("ftpin.errors.invalid-transport");
-        // }
-
-        var method = nodeMethod.toUpperCase() || "GET";
-
-        if (message.method && config.method && (config.method === "use")) {
-            method = message.method.toUpperCase();
+        var response;
+        switch (method) {
+            case "PUT":
+                response = await client.upload(stream, filename);
+                this._set(config.response, {}, response);
+            break;
+            case "GET": {
+                response = await client.download(filename);
+                this._set(config.response, {}, response);
+            }
         }
-
-        try {
-            return new Promise((resolve, reject) => {
-                const client = new ftp.Client();
-                client.ftp.verbose = true;
-                client.access({
-                    host: url,
-                    password: "dojot",
-                    secure: false,
-                    user: "dojot",
-                }).then(() => {
-                    const filename = uuid.v4() + ".png";
-                    client.upload(stream, filename).then((response) => {
-                        client.close();
-                        this._set(config.response, {}, response);
-                        return resolve([message]);
-                    }).catch((error) => {
-                        return reject(error);
-                    });
-                }).catch((error) => {
-                    return reject(error);
-                });
-            });
-        } catch (error) {
-            logger.debug("... ftp node was not successfully executed.");
-            logger.error(`An exception was thrown: ${error}`);
-            return Promise.reject(error);
-        }
+        client.close();
+        return [message];
     }
 }
 
