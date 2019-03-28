@@ -109,7 +109,7 @@ class NodeManager {
             logger.debug(`Succeeded to remove container.`);
           }
           catch(error) {
-            logger.warn(`Failed to remove container (${error}). Keep going ...`);
+            logger.warn(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`);
           }
           finally {
             node.create().then((containerId) => {
@@ -282,7 +282,7 @@ class NodeManager {
    * @param {*} tenant identifier of the tenant.
    */
   delRemoteNode(id, tenant) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
 
       // Step 1: Checks if the 'remote node' exists
       if(this.collection.hasOwnProperty(tenant)) {
@@ -291,9 +291,16 @@ class NodeManager {
           // Step 2: Remove docker container
           let node = this.nodes[tenant][id];
           node.deinit();
-          node.remove().then(() => {
+          try {
+            logger.debug(`Trying to remove docker container ${node.containerId}`);
+            await node.remove(node.containerId);
+            logger.debug(`Succeeded to remove container.`);
+          }
+          catch(error) {
+            logger.warn(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`);
+          }
+          finally {
             delete this.nodes[tenant][id];
-
             // Step 3: Remove remote node configuration from database
             this.collection[tenant].findOneAndDelete({ id: id }).then(() => {
               logger.debug(`Succeeded to delete remote node with id ${id} for tenant ${tenant}.`);
@@ -303,11 +310,7 @@ class NodeManager {
               for remote node ${temant}/${id} (${error}).`);
               return reject(new Error('Failed to remove remote node configuration from database.'));
             });
-          }).catch((error) => {
-            logger.error(`Failed to remove docker container for remote node
-            ${tenant}/${id} (${JSON.stringify(error)}).`);
-            return reject(new Error('Failed to remove docker container'));
-          });
+          }
         }
         else {
           return reject(new Error(`Not found remote node with id ${id}.`));
