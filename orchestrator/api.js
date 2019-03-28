@@ -91,7 +91,7 @@ app.post('/v1/node', (req, res) => {
     return res.status(400).send({'message': error});
   }
 
-  nodeManager.addRemote(req.body.image, req.body.id, req.service).then(() => {
+  nodeManager.addRemoteNode(req.body.image, req.body.id, req.service).then(() => {
     return res.status(200).send({message: 'ok'});
   }).catch((error) => {
     if (error instanceof InvalidFlowError) {
@@ -102,7 +102,7 @@ app.post('/v1/node', (req, res) => {
 });
 
 app.delete('/v1/node/:id', (req, res) => {
-  nodeManager.delRemote(req.params.id, req.service).then(() => {
+  nodeManager.delRemoteNode(req.params.id, req.service).then(() => {
     return res.status(200).send({message: 'ok'});
   }).catch((error) => {
     console.log(error)
