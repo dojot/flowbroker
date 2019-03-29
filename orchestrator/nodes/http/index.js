@@ -257,5 +257,4 @@ class DataHandler extends dojot.DataHandlerBase {
     }
 }
 
-// var main = new DojotHandler(new DataHandler());
 module.exports = { Handler: DataHandler };
