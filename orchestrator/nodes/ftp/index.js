@@ -59,11 +59,11 @@ class DataHandler extends dojot.DataHandlerBase {
      */
     getLocaleData(locale) {
 
-        let filepath = path.join(__dirname, "locales/" + locale + "/ftp.json");
+        let filepath = path.join(__dirname, "locales/" + locale + ".json");
         if (fs.existsSync(filepath)) {
             return require(filepath);
         } else {
-            return require(path.join(__dirname, "locales/en-US/ftp.json"));
+            return require(path.join(__dirname, "locales/en-US.json"));
         }
 
     }

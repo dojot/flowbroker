@@ -1,0 +1,47 @@
+{
+  "ftpin": {
+    "label": {
+        "method": "Método",
+        "url": "URL",
+        "doc": "Docs",
+        "return": "Retorno",
+        "upload": "Aceitar upload de arquivos?",
+        "status": "Código de estado",
+        "headers": "Cabeçalhos",
+        "other": "outro",
+        "body": "Corpo da requisição",
+        "response": "Resposta",
+        "name": "Nome",
+        "username": "Usuário",
+        "password": "Senha",
+        "filecontent": "Conteúdo do arquivo",
+        "filename": "Nome do arquivo",
+        "authentication": "Autenticação"
+    },
+    "setby": "- configurado por msg.method -",
+    "basicauth": "Usar autenticação básica",
+    "use-tls": "Habilitar conexão segura (SSL/TLS)",
+    "tls-config":"Configuração TLS",
+    "utf8": "uma string UTF-8",
+    "binary": "um buffer binário",
+    "json": "um objeto JSON",
+    "tip": {
+        "in": "A URL será relativa a ",
+        "res": "As mensagens enviadas para este nó <b>devem</b> ser originadas em um nó de entrada FTP",
+        "req": "Dica: se a análise do JSON falhar, a string obtida é retornada ainda assim."
+    },
+    "ftpreq": "requisição FTP",
+    "errors": {
+        "not-created": "Não é possível criar nó ftp-in quando ftpNodeRoot é falso",
+        "missing-path": "Faltando caminho",
+        "no-response": "Sem objeto de resposta",
+        "json-error": "Análise do JSON falhou",
+        "no-url": "Sem URL especificada",
+        "deprecated-call":"Chamada para __method__ descontinuada",
+        "invalid-transport":"Protocolo de transporte pedido não é FTP"
+    },
+    "status": {
+        "requesting": "Requerendo"
+    }
+  }
+}
