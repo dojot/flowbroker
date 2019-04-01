@@ -3,7 +3,8 @@
 var fs = require('fs');
 
 var change = require('./nodes/change/index').Handler;
-var email = require('./nodes/email/index').Handler;
+//disable email node for now
+//var email = require('./nodes/email/index').Handler;
 var geo = require('./nodes/geo/index').Handler;
 var http = require('./nodes/http/index').Handler;
 var select = require('./nodes/switch/index').Handler;
@@ -106,7 +107,8 @@ class NodeManager {
     this.createMongoConnection(tenant);
     this.nodes[tenant] = {
         "change": new change(),
-        "email": new email(),
+        //disable email node for now
+        //"email": new email(),
         "geofence": new geo(),
         "http": new http(),
         "switch": new select(),
