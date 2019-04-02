@@ -23,8 +23,6 @@ class ReadStream extends stream.Readable {
     }
 }
 
-
-// Sample node implementation
 class DataHandler extends dojot.DataHandlerBase {
     constructor() {
         super();
@@ -52,20 +50,12 @@ class DataHandler extends dojot.DataHandlerBase {
         };
     }
 
-    /**
-     * Returns object with locale data (for the given locale)
-     * @param  {[string]} locale Locale string, such as "en-US"
-     * @return {[object]}        Locale settings used by the module
+        /**
+     * Returns full path to locales
+     * @returns {String} Path segments into an absolute path.
      */
-    getLocaleData(locale) {
-
-        let filepath = path.join(__dirname, "locales/" + locale + ".json");
-        if (fs.existsSync(filepath)) {
-            return require(filepath);
-        } else {
-            return require(path.join(__dirname, "locales/en-US.json"));
-        }
-
+    getLocalesPath() {
+        return path.resolve(__dirname, './locales');
     }
 
     /**
@@ -162,5 +152,4 @@ class DataHandler extends dojot.DataHandlerBase {
     }
 }
 
-// var main = new DojotHandler(new DataHandler());
 module.exports = { Handler: DataHandler };

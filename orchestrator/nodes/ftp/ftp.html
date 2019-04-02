@@ -102,9 +102,9 @@
             url: { value: "", validate: function (v) { return (v.trim().length === 0) || (v.indexOf("://") === -1) || (v.trim().indexOf("ftp") === 0) } },
             username: { value: "dojot" },
             password: { value: "dojot" },
-            filename: { value: "filename.txt" },
+            filename: { value: "" },
             filecontent: { value: ""},
-            response: { value: { } }
+            response: { value: "" }
         },
         inputs:1,
         outputs:1,
@@ -120,11 +120,6 @@
             $("#node-input-filename").typedInput({ default: "msg", types: ["msg"] } );
             $("#node-input-filecontent").typedInput({default:'msg',types:['msg']});
             $("#node-input-response").typedInput({default:'msg',types:['msg']});
-        },
-        oneditsave: function() {
-            // if (!$("#node-input-usetls").is(':checked')) {
-            //     $("#node-input-tls").val("_ADD_");
-            // }
         }
     });
 </script>
