@@ -1,4 +1,5 @@
 {
+  "title": "FTP request",
   "ftpin": {
     "label": {
         "method": "Method",
@@ -30,7 +31,6 @@
         "res": "The messages sent to this node <b>must</b> originate from an <i>ftp input</i> node",
         "req": "Tip: If the JSON parse fails the fetched string is returned as-is."
     },
-    "ftpreq": "ftp request",
     "errors": {
         "not-created": "Cannot create ftp-in node when ftpNodeRoot set to false",
         "missing-path": "missing path",

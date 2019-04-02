@@ -1,4 +1,5 @@
 {
+  "title": "Requisição FTP",
   "ftpin": {
     "label": {
         "method": "Método",
@@ -30,7 +31,6 @@
         "res": "As mensagens enviadas para este nó <b>devem</b> ser originadas em um nó de entrada FTP",
         "req": "Dica: se a análise do JSON falhar, a string obtida é retornada ainda assim."
     },
-    "ftpreq": "requisição FTP",
     "errors": {
         "not-created": "Não é possível criar nó ftp-in quando ftpNodeRoot é falso",
         "missing-path": "Faltando caminho",
