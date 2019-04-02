@@ -1,6 +1,5 @@
 "use strict";
 
-var fs = require('fs');
 var path = require('path');
 var logger = require('../../logger').logger;
 
@@ -75,7 +74,7 @@ class DataHandler extends dojot.DataHandlerBase {
      * into outputs. When such processing is done, the node should issue a call to the provided
      * callback, notifying either failure to process the message with given config, or the set
      * of transformed messages to be sent to the flow's next hop.
-     *
+     *filename.txt
      * @param  {[type]}       config   Node configuration to be used for this message
      * @param  {[type]}       message  Message to be processed
      * @return {[undefined]}
