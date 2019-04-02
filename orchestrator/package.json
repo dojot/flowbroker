@@ -11,7 +11,7 @@
   "dependencies": {
     "@dojot/dojot-module": "^0.0.1-beta",
     "@dojot/flow-node": "^3.0.0-alpha2",
-    "@dojot/healthcheck": "0.0.1-alpha.1",
+    "@dojot/healthcheck": "^0.0.1-alpha",
     "amqplib": "^0.5.2",
     "argparse": "^1.0.9",
     "axios": "^0.18.0",
