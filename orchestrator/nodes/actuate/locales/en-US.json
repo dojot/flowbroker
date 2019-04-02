@@ -1,17 +1,18 @@
 {
-  "title": "actuate",
   "label": {
     "name": "Name",
+    "actuate": "actuate",
     "action": "Action",
+    "self": "The device which triggered the flow",
+    "configured": "A specific device",
+    "dynamic": "A device defined during the flow",
     "attribute": "Attribute",
-    "devices": "Device(s)",
+    "device": "Device",
     "source": "Source"
   },
   "text": {
-    "triggered": "The device which triggered the flow",
-    "specific": "Specific device(s)",
-    "defined": "Device(s) defined during the flow",
-    "enter_attribute": "Enter an attribute",
-    "select_device": "Select a device"
+    "value_virtual": "Set the value of a virtual device, based on the results of the previous operations on the flow.",
+    "attr_placeholder": "Enter an attribute",
+    "select_dev_placeholder": "Select a device"
   }
 }

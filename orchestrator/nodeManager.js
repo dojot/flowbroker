@@ -11,6 +11,7 @@ var template = require('./nodes/template/index').Handler;
 var device_in = require('./nodes/device-in/device-in').Handler;
 var device_tpl = require('./nodes/template-in/template-in').Handler;
 var actuate = require('./nodes/actuate/actuate').Handler;
+var multi_actuate = require('./nodes/multi-actuate/multi_actuate').Handler;
 var device_out = require('./nodes/device-out/device-out').Handler;
 var notification = require('./nodes/notification/index').Handler;
 var get_context = require('./nodes/get-context/get-context').Handler;
@@ -117,7 +118,9 @@ class NodeManager {
         "notification": new notification(
             kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
         "device template in": new device_tpl(),
-        "actuate": new actuate(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant),
+        "actuate": new actuate(
+          new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
+        "multi actuate": new multi_actuate(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant),
         "get context": new get_context(),
     };
   }
