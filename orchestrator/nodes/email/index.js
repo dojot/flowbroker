@@ -1,11 +1,10 @@
 "use strict";
 
-let fs = require('fs');
-let path = require('path');
-let nodemailer = require("nodemailer");
-var logger = require("../../logger").logger;
-var util = require('util');
-var dojot = require('@dojot/flow-node');
+const path = require('path');
+const nodemailer = require("nodemailer");
+const logger = require("../../logger").logger;
+const util = require('util');
+const dojot = require('@dojot/flow-node');
 
 // Sample node implementation
 class DataHandler extends dojot.DataHandlerBase {
@@ -36,19 +35,11 @@ class DataHandler extends dojot.DataHandlerBase {
     }
 
     /**
-     * Returns object with locale data (for the given locale)
-     * @param  {[string]} locale Locale string, such as "en-US"
-     * @return {[object]}        Locale settings used by the module
+     * Returns full path to locales
+     * @returns String
      */
-    getLocaleData(locale) {
-
-        let filepath = path.join(__dirname, "locales/" + locale + "/email.json");
-        if (fs.existsSync(filepath)) {
-            return require(filepath);
-        } else {
-            return null;
-        }
-
+    getLocalesPath() {
+        return path.resolve(__dirname, './locales');
     }
 
     /**

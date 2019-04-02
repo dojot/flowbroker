@@ -3,7 +3,8 @@
 var fs = require('fs');
 
 var change = require('./nodes/change/index').Handler;
-var email = require('./nodes/email/index').Handler;
+//disable email node for now
+//var email = require('./nodes/email/index').Handler;
 var geo = require('./nodes/geo/index').Handler;
 var http = require('./nodes/http/index').Handler;
 var select = require('./nodes/switch/index').Handler;
@@ -12,6 +13,7 @@ var device_in = require('./nodes/device-in/device-in').Handler;
 var device_tpl = require('./nodes/template-in/template-in').Handler;
 var actuate = require('./nodes/actuate/actuate').Handler;
 var device_out = require('./nodes/device-out/device-out').Handler;
+var notification = require('./nodes/notification/index').Handler;
 var get_context = require('./nodes/get-context/get-context').Handler;
 var dockerRemote = require('./nodes/dockerComposeRemoteNode/index').Handler;
 var k8sRemote = require('./nodes/kubernetesRemoteNode/index').Handler;
@@ -48,7 +50,7 @@ class NodeManager {
     }
 
     logger.debug('Node manager is using the ' + engine + ' engine');
-  
+
   }
 
   startContainer(tenant) {
@@ -104,19 +106,22 @@ class NodeManager {
   addTenant(tenant, kafkaMessenger) {
     this.createMongoConnection(tenant);
     this.nodes[tenant] = {
-      "change": new change(),
-      "email": new email(),
-      "geofence": new geo(),
-      "http": new http(),
-      "switch": new select(),
-      "template": new template(),
-      "device in": new device_in(),
-      "device out": new device_out(
-        new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
-      "device template in": new device_tpl(),
-      "actuate": new actuate(
-        new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
-      "get context": new get_context(),
+        "change": new change(),
+        //disable email node for now
+        //"email": new email(),
+        "geofence": new geo(),
+        "http": new http(),
+        "switch": new select(),
+        "template": new template(),
+        "device in": new device_in(),
+        "device out": new device_out(
+            new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
+        "notification": new notification(
+            kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
+        "device template in": new device_tpl(),
+        "actuate": new actuate(
+            new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
+        "get context": new get_context(),
     };
   }
 

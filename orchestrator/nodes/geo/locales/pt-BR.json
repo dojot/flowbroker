@@ -1,0 +1,13 @@
+{
+  "title": "geo referência",
+  "label": {
+    "filter": "Filtro",
+    "name": "Nome",
+    "geofence_name": "Geo referência nome"
+  },
+  "text": {
+    "inside": "apenas pontos dentro",
+    "outside": "apenas pontos fora"
+  },
+  "category": "localização"
+}

@@ -1,30 +1,30 @@
 <script type="text/x-red" data-template-name="device out">
     <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.name"></label>
         <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
-        <label for="node-input-device_source"><i class="fa fa-gears"></i> Action</label>
+        <label for="node-input-device_source"><i class="fa fa-gears"></i> <span data-i18n="label.action"></label>
         <select id="node-input-device_source" onchange="nodeDeviceOut_displayDeviceSourceElement()">
-            <option value="self">The device which triggered the flow</option>
-            <option value="configured">Specific device(s)</option>
-            <option value="dynamic">Device(s) defined during the flow</option>
+            <option value="self" data-i18n="text.triggered"></option>
+            <option value="configured" data-i18n="text.specific"></option>
+            <option value="dynamic" data-i18n="text.defined"></option>
         </select>
     </div>
     <div class="form-row" id="node-input-dynamic">
-        <label for="node-input-devices_source_dynamic" id="node-input-devices_source_dynamic_label"><i class="fa fa-tag"></i> Attribute</label>
-        <input type="text" id="node-input-devices_source_dynamic" placeholder="Enter an attribute" />
+        <label for="node-input-devices_source_dynamic" id="node-input-devices_source_dynamic_label"><i class="fa fa-tag"></i> <span data-i18n="label.attribute"></label>
+        <input type="text" id="node-input-devices_source_dynamic" data-i18n="[placeholder]text.enter_attribute" />
         <input type="hidden" id="node-input-devices_source_dynamicFieldType">
     </div>
     <div class="form-row" id="node-input-configured">
-        <label for="form-row node-input-rule-container-row" id="node-input-devices_source_configured_label"><i class="fa fa-wifi"></i> Device(s)</label>
+        <label for="form-row node-input-rule-container-row" id="node-input-devices_source_configured_label"><i class="fa fa-wifi"></i> <span data-i18n="label.devices"></label>
         <div class="form-row node-input-rule-container-row">
             <ol id="node-input-rule-container"></ol>
         </div>
         <datalist id="node-input-list_devices_id"></datalist>
     </div>
     <div class="form-row">
-        <label for="node-input-attrs"><i class="fa fa-cube"></i> Source</label>
+        <label for="node-input-attrs"><i class="fa fa-cube"></i> <span data-i18n="label.source"></label>
         <input type="text" id="node-input-attrs" style=""></input>
     </div>
 </script>
@@ -54,12 +54,13 @@
         color: "#f3b567",        // background-color
         label: function () {
             // sets the default label contents
-            return this.name || "device";
+            return this.name || RED._('dojot/device-out:title');
         },
         labelStyle: function () {
             // sets the class to apply to the label
             return this.name ? "node_label_italic" : "";
         },
+        paletteLabel:  RED._('dojot/device-out:title'),
         oneditprepare: function () {
             let node = this;
             let listDevices = $("#node-input-list_devices_id");
@@ -80,7 +81,7 @@
                     if (page === undefined) {
                         page=1;
                     }
-                    
+
                     var extra=`?page_num=${page}`
                     var orderByLabel = "sortBy=label";
 
@@ -108,7 +109,7 @@
             }
 
             $('#node-input-device_source').css('width', '70%');
-            
+
             list_all().then( () => {
                 // define the rule box
                 $("#node-input-rule-container").css('min-height','150px').
@@ -119,7 +120,7 @@
                             type: "text",
                             list: "node-input-list_devices_id",
                             id: `node-input-device_source_id`,
-                            placeholder: "Select a device"
+                            placeholder: RED._('dojot/device-out:text.select_device')
                         };
 
                         if (Object.entries(data).length > 0) {
@@ -152,7 +153,7 @@
         },
         oneditsave: function () {
             let node = this;
-            
+
             switch($('#node-input-device_source').val()) {
                 case "configured":
                     node.devices_source_dynamic = "";

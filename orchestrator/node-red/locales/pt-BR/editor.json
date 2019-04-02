@@ -1,0 +1,173 @@
+{
+  "common": {
+    "label": {
+      "name": "Nome",
+      "ok": "Ok",
+      "done": "Salvar",
+      "cancel": "Cancelar",
+      "delete": "Excluir",
+      "close": "Excluir",
+      "load": "Carregar",
+      "save": "Salvar",
+      "import": "Importar",
+      "export": "Exportar"
+    }
+  },
+  "workspace": {
+    "defaultName": "Fluxo __number__",
+    "editFlow": "Editar flow: __name__",
+    "confirmDelete": "Confirme a exclusão",
+    "delete": "Tem certeza de que deseja excluir '__label__'?",
+    "dropFlowHere": "Solte o fluxo aqui",
+    "status": "Status",
+    "enabled": "Ativo",
+    "disabled": "Desativado",
+    "info": "Descrição",
+    "tip": "Descrição aceita Markdown e aparecerá na guia Informações."
+  },
+  "menu": {
+    "label": {
+      "view": {
+        "view": "Visão",
+        "grid": "Grade",
+        "showGrid": "Show grid",
+        "snapGrid": "Mostre grades",
+        "gridSize": "Tamanho da grade",
+        "textDir": "Direção do texto",
+        "defaultDir": "Padrão",
+        "ltr": "Esquerda para a direita",
+        "rtl": "Direita para esquerda",
+        "auto": "Contextual"
+      },
+      "sidebar": {
+        "show": "Mostrar barra lateral"
+      },
+      "settings": "Definições",
+      "userSettings": "Configurações do usuário",
+      "nodes": "Nós",
+      "displayStatus": "Mostrar status do nó",
+      "displayConfig": "Nós de configuração",
+      "import": "Importar",
+      "export": "Exportar",
+      "search": "Pesquisar fluxo",
+      "searchInput": "pesquise seus fluxos",
+      "clipboard": "Clipboard",
+      "library": "Biblioteca",
+      "examples": "Exemplos",
+      "subflows": "Subfluxos",
+      "createSubflow": "Criar subfluxo",
+      "selectionToSubflow": "Seleção para o Subfluxo",
+      "flows": "Fluxos",
+      "add": "Adicionar",
+      "rename": "Renomear",
+      "delete": "Excluir",
+      "keyboardShortcuts": "Atalhos do teclado",
+      "login": "Entrar",
+      "logout": "Sair",
+      "editPalette": "Gerenciar paleta",
+      "other": "Outros",
+      "showTips": "Mostrar as dicas",
+      "help": "Site Node-RED"
+    }
+  },
+  "user": {
+    "loggedInAs": "Logado como __name__",
+    "username": "Nome de usuário",
+    "password": "Senha",
+    "login": "Entrar",
+    "loginFailed": "Falha na autenticação",
+    "notAuthorized": "Não autorizado",
+    "errors": {
+      "settings": "Você precisa estar logado para acessar as configurações",
+      "deploy": "Você deve estar logado para implantar as mudanças",
+      "notAuthorized": "Você precisa estar logado para realizar esta ação"
+    }
+  },
+  "notification": {
+    "warning": "<strong>Aviso</strong>: __message__",
+    "warnings": {
+      "undeployedChanges": "nó não implantada mudanças",
+      "nodeActionDisabled": "ações de nó desativadas no subfluxo",
+      "missing-types": "<p>Fluxos interrompidos devido a tipos de nó ausentes.</p>",
+      "restartRequired": "O Node-RED deve ser reiniciado para ativar os módulos atualizados",
+      "credentials_load_failed": "<p> Os fluxos pararam porque as credenciais não puderam ser descriptografadas. </p> <p> O arquivo de credencial de fluxo é criptografado, mas a chave de criptografia do projeto está ausente ou é inválida. </p> ",
+      "missing_flow_file": "<p> Arquivo de fluxo do projeto não encontrado. </p> <p> O projeto não está configurado com um arquivo de fluxo. </p>",
+      "project_empty": "<p> O projeto está vazio. </ p> <p> Você quer criar um conjunto padrão de arquivos de projeto? <br/> Caso contrário, você terá que adicionar manualmente arquivos ao projeto fora do editor. </ p>",
+      "project_not_found": "<p>Projeto '__project__' não encontrado.</p>"
+    },
+    "error": "<strong>Erro</strong>: __message__",
+    "errors": {
+      "lostConnection": "Conexão perdida ao servidor, reconectando ...",
+      "lostConnectionReconnect": "Conexão perdida com o servidor, reconectando em __time__s.",
+      "lostConnectionTry": "Tente agora",
+      "cannotAddSubflowToItself": "Não é possível adicionar subfluxo a si mesmo",
+      "cannotAddCircularReference": "Não é possível adicionar subfluxo - referência circular detectada",
+      "unsupportedVersion": "Usando uma versão não suportada do Node.js <br/> Você deve atualizar para a versão mais recente do Node.js LTS"
+    }
+  },
+  "clipboard": {
+    "nodes": "Nós",
+    "selectNodes": "Selecione o texto acima e copie para a área de transferência",
+    "pasteNodes": "Colar nós aqui",
+    "importNodes": "Nós de importação",
+    "exportNodes": "Export nodes to clipboard",
+    "importUnrecognised": "Imported unrecognised type:",
+    "importUnrecognised_plural": "Imported unrecognised types:",
+    "nodesExported": "Nodes exported to clipboard",
+    "nodeCopied": "__count__ node copied",
+    "nodeCopied_plural": "__count__ nodes copied",
+    "invalidFlow": "Invalid flow: __message__",
+    "export": {
+      "selected": "selected nodes",
+      "current": "current flow",
+      "all": "all flows",
+      "compact": "compact",
+      "formatted": "formatted",
+      "copy": "Export to clipboard"
+    },
+    "import": {
+      "import": "Import to",
+      "newFlow": "new flow"
+    },
+    "copyMessagePath": "Path copied",
+    "copyMessageValue": "Value copied",
+    "copyMessageValue_truncated": "Truncated value copied"
+  },
+  "editor": {
+    "configEdit": "Editar",
+    "configAdd": "Adicionar",
+    "configUpdate": "Atualizar",
+    "configDelete": "Apagar",
+    "nodesUse": "__count__ nó usa essa configuração",
+    "nodesUse_plural": "__count__ nós usam essa configuração",
+    "addNewConfig": "Adicionar novo __type__ config node",
+    "editNode": "Editar nó __type__ ",
+    "editConfig": "Editar nó __type__  de configuração",
+    "addNewType": "Adicionar novo __type__...",
+    "nodeProperties": "propriedades do nó",
+    "portLabels": "configurações de nó",
+    "labelInputs": "Entradas",
+    "labelOutputs": "Saídas",
+    "settingIcon": "Ícone",
+    "noDefaultLabel": "nenhum",
+    "defaultLabel": "usar rótulo padrão",
+    "errors": {
+      "scopeChange": "A alteração do escopo o tornará indisponível para nós em outros fluxos que o usam"
+    }
+  },
+  "palette": {
+    "label": {
+      "subflows": "subfluxos",
+      "input": "entrada",
+      "output": "saída",
+      "function": "função",
+      "social": "social",
+      "storage": "armazenamento",
+      "analysis": "análise",
+      "advanced": "avançado"
+    }
+  },
+  "editableList": {
+    "add": "adicionar"
+  }
+}

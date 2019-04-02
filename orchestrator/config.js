@@ -80,13 +80,13 @@ module.exports = {
             dojot: {
               managementService: process.env.DOJOT_SERVICE_MANAGEMENT || "dojot-management",
               subjects: {
-                tenancy: process.env.DOJOT_SUBJECT_TENANCY || "dojot.tenancy",
-                devices: process.env.DOJOT_SUBJECT_DEVICES || "dojot.device-manager.device",
-                deviceData: process.env.DOJOT_SUBJECT_DEVICE_DATA || "device-data"
+                  tenancy: process.env.DOJOT_SUBJECT_TENANCY || "dojot.tenancy",
+                  devices: process.env.DOJOT_SUBJECT_DEVICES || "dojot.device-manager.device",
+                  deviceData: process.env.DOJOT_SUBJECT_DEVICE_DATA || "device-data",
+                  notification: process.env.DOJOT_SUBJECT_DEVICE_DATA || "dojot.notifications"
               }
             }
         },
-
         healthChecker: {
             timeout: {
               uptime: process.env.HC_UPTIME_TIMEOUT || 300000,
@@ -95,5 +95,16 @@ module.exports = {
               mongodb: process.env.HC_MONGODB_TIMEOUT || 30000,
               kafka: process.env.HC_KAFKA_TIMEOUT || 30000
             }
+        },
+    language: {
+        //language supported by flowBroker
+        supportedLanguages: ["pt-BR", "en-US"],
+        //map of similar language, like pt is similar to pt-pt and pt
+        //default its the default language when anyone of listed language are found
+        mapSimilarLanguage: {
+            "pt": "pt-BR",
+            "pt-pt": "pt-BR",
+            default: "en-US"
         }
+    }
 };
