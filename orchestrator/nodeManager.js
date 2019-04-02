@@ -3,7 +3,8 @@
 const fs = require('fs');
 
 const change = require('./nodes/change/index').Handler;
-const email = require('./nodes/email/index').Handler;
+//disable email node for now
+//const email = require('./nodes/email/index').Handler;
 const geo = require('./nodes/geo/index').Handler;
 const http = require('./nodes/http/index').Handler;
 const select = require('./nodes/switch/index').Handler;
@@ -164,7 +165,8 @@ class NodeManager {
           // local nodes
           this.nodes[tenant] = {
             "change": new change(),
-            "email": new email(),
+            //disable email node for now
+            //"email": new email(),
             "geofence": new geo(),
             "http": new http(),
             "switch": new select(),
