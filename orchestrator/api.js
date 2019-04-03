@@ -14,50 +14,13 @@ var nodeManager = require('./nodeManager').Manager;
 
 var InvalidFlowError = require('./flowManager').InvalidFlowError;
 
-var pjson = require('./package.json');
-var HealthChecker = require('@dojot/healthcheck').HealthChecker;
-var DataTrigger = require('@dojot/healthcheck').DataTrigger;
-var endpoint = require('@dojot/healthcheck').getHTTPRouter;
-const logger = require('./logger').logger;
-
-const configHealth = {
-  description: pjson.name,
-  status: "pass",
-  version: pjson.version,
-};
-const healthChecker = new HealthChecker(configHealth);
-
-const monitor = {
-  componentId: "service-memory",
-  componentName: "total memory used",
-  componentType: "system",
-  measurementName: "memory",
-  observedUnit: "MB",
-  status: "pass",
-};
-
-const min = process.env.MEMORY_VERIFY || 90;
-
-const collector = (trigger = DataTrigger) => {
-  logger.debug('Checking memory.');
-  const used = process.memoryUsage().heapUsed / 1024 / 1024;
-  const round = Math.round(used * 100) / 100
-  if (round > min) {
-    trigger.trigger(round, "fail", "Over memory");
-  } else {
-    trigger.trigger(round, "pass", "I'm ok");
-  }
-  return round;
-};
-
-healthChecker.registerMonitor(monitor, collector, 10000);
+var healthCheck = require('@dojot/healthcheck');
 
 // initialized by init()
 var FlowManager;
 
 const app = express();
 app.use(bodyParser.json()); // for parsing application/json
-app.use(endpoint(healthChecker));
 // all APIs should be invoked with valid dojot-issued JWT tokens
 app.use(authChecker.authParse);
 app.use(authChecker.authEnforce);
@@ -275,8 +238,9 @@ app.delete('/v1/flow/:id', (req, res) => {
 });
 
 module.exports = {
-  init: (flowManager) => {
+  init: (flowManager, healthChecker) => {
     FlowManager = flowManager;
+    app.use(healthCheck.getHTTPRouter(healthChecker));
     app.listen(80, () => {console.log('[api] Service listening on port 80');});
   }
 };
