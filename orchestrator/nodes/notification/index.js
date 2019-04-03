@@ -6,11 +6,10 @@ var dojot = require('@dojot/flow-node');
 
 class DataHandler extends dojot.DataHandlerBase {
 
-    constructor(kafka, subject, tenant) {
+    constructor(kafka, subject) {
         super();
         this.kafkaMessenger = kafka;
         this.subject = subject;
-        this.tenant = tenant;
     }
 
     /**
@@ -58,7 +57,7 @@ class DataHandler extends dojot.DataHandlerBase {
      * @param  {Function}     callback Callback to call upon processing completion
      * @return {[Promise]}
      */
-    handleMessage(config, message) {
+    handleMessage(config, message, metadata) {
 
         try {
             let meta = {};
@@ -88,11 +87,11 @@ class DataHandler extends dojot.DataHandlerBase {
 
             logger.debug(`output is: ${util.inspect(output, {depth: null})}`);
 
-            this.kafkaMessenger.publish(this.subject, this.tenant, JSON.stringify(output));
+            this.kafkaMessenger.publish(this.subject, metadata.tenant, JSON.stringify(output));
 
             logger.debug("...notification node was successfully executed.");
 
-            return Promise.resolve([message])
+            return Promise.resolve([])
         } catch (error) {
             logger.error(`Error while executing notification node: ${error}`);
             return Promise.reject(error);
