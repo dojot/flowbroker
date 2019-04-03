@@ -70,7 +70,7 @@ class NodeManager {
       let collection = client.db(`flowbroker_${tenant}`).collection('remoteNode');
       return collection;
     }).catch(() => {
-      thrown(new Error (`Failed to create mongoDB collection for tenant ${tenant}.`));
+      throw new Error (`Failed to create mongoDB collection for tenant ${tenant}.`);
     });
   }
 
@@ -102,42 +102,40 @@ class NodeManager {
           //Note: The current implementation is very naive, it tries to remove/create
           //      existing remote nodes. Nevertheless, the most appropriate solution is to handle
           //      them according to the status of their containers. This demands changes
-          //      in the docker-compose e kubernetes libraries.
+          //      in the docker-compose and kubernetes libraries.
           node.deinit();
           try {
             logger.debug(`Trying to remove docker container ${item.containerId}`);
             await node.remove(item.containerId);
             logger.debug(`Succeeded to remove container.`);
           }
-          catch(error) {
+          catch (error) {
             logger.warn(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`);
           }
-          finally {
-            node.create().then((containerId) => {
-              node.init().then(() => {
-                // update map
-                this.nodes[tenant][item.id] = node;
-                //update database
-                this.collection[tenant].updateOne({_id: item._id},
-                  {$set: {containerId: containerId}}).catch((error) => {
-                  logger.error(`Failed to update database for
-                  remote node ${tenant}/${item.id} (${error}).`);
-                  return reject(new Error('Failed to updated database for remote node.'));
-                });
-              }).catch((error) => {
-                this.delRemoteNode(containerId).catch((error) => {
-                  logger.debug(`Failed to remove remote node
-                  ${tenant}/${item.id} (${error}). keep going ..`);
-                });
-                logger.error(`Failed to initiate docker container for
-                remote node ${tenant}/${item.id} (${error}).`);
-                return reject(new Error('Failed to initiate docker container.'));
-              });
-            }).catch((error) => {
-              logger.error(`Failed to create docker container for
-              remote node ${tenant}/${item.id} (${error}).`);
-              return reject(new Error('Failed to create docker container.'));
-            });
+
+          // re-create container
+          let containerId;
+          try {
+            containerId = await node.create();
+            await node.init();
+            // update map
+            this.nodes[tenant][item.id] = node;
+            //update database
+            await this.collection[tenant].updateOne({_id: item._id},
+              {$set: {containerId: containerId}});
+          }
+          catch (error) {
+            logger.error(`Failed to load remote node ${tenant}/${item.id} (${JSON.stringify(error)})`);
+            // rollback
+            if (containerId) {
+              try {
+                await this.delRemoteNode(containerId);
+              }
+              catch (error) {
+                logger.debug(`(Rollback) Failed to remove remote node ${tenant}/${item.id} (${error}). keep going ..`);
+              }
+            }
+            return reject(new Error(`Failed to load remote node ${tenant}/${item.id}.`));
           }
         });
         logger.debug(`...Loaded remote nodes for tenant ${tenant}.`);
