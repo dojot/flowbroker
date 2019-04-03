@@ -73,7 +73,7 @@
             field: {value:"payload", validate: RED.validators.typedInput("fieldType")},
             fieldType: {value:"msg"},
             syntax: {value:"handlebars"},
-            template: {value:RED._('dojot/template:template_value') + "{{payload}} !"},
+            template: {value:RED._('dojot/template:template_value') + " {{{stringify payload}}} !"},
             output: {value:"str"}
         },
         paletteLabel:  RED._('dojot/template:template'),
