@@ -13,6 +13,7 @@ var device_in = require('./nodes/device-in/device-in').Handler;
 var device_tpl = require('./nodes/template-in/template-in').Handler;
 var actuate = require('./nodes/actuate/actuate').Handler;
 var device_out = require('./nodes/device-out/device-out').Handler;
+var multi_device_out = require('./nodes/multi-device-out/multi-device-out').Handler;
 var notification = require('./nodes/notification/index').Handler;
 var get_context = require('./nodes/get-context/get-context').Handler;
 var dockerRemote = require('./nodes/dockerComposeRemoteNode/index').Handler;
@@ -116,6 +117,7 @@ class NodeManager {
         "device in": new device_in(),
         "device out": new device_out(
             new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
+        "multi device out": new multi_device_out(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData),
         "notification": new notification(
             kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
         "device template in": new device_tpl(),
