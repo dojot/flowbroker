@@ -31,55 +31,12 @@ class DataHandler extends dojot.DataHandlerBase {
     };
   }
 
-
-    /**
-     * Returns full path to locales
-     * @returns String
-     */
-    getLocalesPath() {
-        return path.resolve(__dirname, './locales');
-    }
-
-  _getDevicesIds(deviceSource, configuredDevices, dynamicDevices, originatorDeviceId, message) {
-    let devicesIds = [];
-    switch (deviceSource) {
-      case 'configured':
-        if ((configuredDevices === undefined) || (configuredDevices.length === 0) ) {
-          logger.debug("Empty configured devices");
-          return [];
-        }
-        devicesIds = configuredDevices;
-      break;
-      case 'self':
-        devicesIds.push(originatorDeviceId);
-      break;
-      case 'dynamic':
-        if ((dynamicDevices === undefined) || (dynamicDevices.length === 0)) {
-          logger.debug("Empty dynamic devices");
-          return [];
-        }
-        try {
-          let devices = this._get(dynamicDevices, message);
-          if (Array.isArray(devices)) {
-            devicesIds = devices;
-          } else {
-            if (devices === undefined) {
-              logger.debug('Dynamic devices is undefined');
-              return [];
-            }
-            devicesIds.push(devices);
-          }
-        } catch (error) {
-          logger.error(`Error while executing device out node: ${error}`);
-          return [];
-        }
-      break;
-      default:
-        logger.error(`Invalid device source ${deviceSource}`);
-        return [];
-    }
-
-    return devicesIds;
+  /**
+   * Returns full path to locales
+   * @returns String
+   */
+  getLocalesPath() {
+    return path.resolve(__dirname, './locales');
   }
 
   handleMessage(config, message, metadata) {
@@ -90,43 +47,48 @@ class DataHandler extends dojot.DataHandlerBase {
       return Promise.reject(new Error('Invalid data source: field is mandatory'));
     }
 
+    let deviceId;
+    switch (config.device_source) {
+      case 'configured':
+        if (config._device_id === undefined) {
+          logger.debug("... actuate node was not successfully executed.");
+          logger.error("There is not device configured to actuate");
+          return Promise.reject(new Error('Invalid Device id'));
+        }
+        deviceId = config._device_id;
+      break;
+      case 'self':
+        deviceId = metadata.originatorDeviceId;
+      break;
+      case 'dynamic':
+        if ((config.device_source_msg === undefined) || (config.device_source_msg.length === 0)) {
+          logger.debug("... actuate node was not successfully executed.");
+          logger.error("Missing device source msg.");
+          return Promise.reject(new Error('Invalid device source msg: field is mandatory'));
+        }
+        try {
+          deviceId = this._get(config.device_source_msg, message);
+        } catch (error) {
+          logger.debug("... actuate node was not successfully executed.");
+          logger.error(`Error while executing actuate node: ${error}`);
+          return Promise.reject(error);
+        }
+      break;
+      default:
+        return Promise.reject(new Error('Invalid device source'));
+    }
+
     try {
-      let output = { attrs: {}, metadata: {} };
-
-      try {
-        output.attrs = this._get(config.attrs, message);
-      } catch (e) {
-        logger.debug("... device-out node was not successfully executed.");
-        logger.error(`Error while executing device-out node: ${e}`);
-        return Promise.reject(e);
-      }
-
-      let devicesIds = this._getDevicesIds(config.device_source,
-        config.devices_source_configured,
-        config.devices_source_dynamic,
-        metadata.originatorDeviceId,
-        message);
-
-      if (devicesIds.length === 0) {
-        logger.debug("... device-out node was not successfully executed.");
-        return Promise.reject(new Error('Could not define target devices'));
-      }
-
-      output.metadata.timestamp = Date.now();
-      output.metadata.tenant = metadata.tenant;
-
-      logger.debug("Updating device... ");
+      let output = {
+        metadata: {
+          deviceid: deviceId,
+          tenant: metadata.tenant
+        },
+        attrs: this._get(config.attrs, message)
+      };
+      logger.debug(`Updating device... `);
       logger.debug(`Message is: ${util.inspect(output, { depth: null })}`);
-
-      // avoid send the same event to the same device, it can occurr due to
-      // an errouneus configuration
-      let devicesSet = new Set(devicesIds);
-
-      for (let deviceId of devicesSet) {
-        let event = JSON.parse(JSON.stringify(output));
-        event.metadata.deviceid = deviceId;
-        this.publisher.publish(event);
-      }
+      this.publisher.publish(output);
       logger.debug("... device was updated.");
       logger.debug("... device-out node was successfully executed.");
       return Promise.resolve();
