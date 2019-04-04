@@ -69,16 +69,17 @@ class DataHandler extends dojot.DataHandlerBase {
             let templateData = config.template;
             let data = '';
             switch(config.syntax) {
-                case 'handlebars':
+                case 'handlebars': {
                     let template = handlebars.compile(templateData);
                     data = template(message);
-                break;
+                    break;
+                }
                 case 'plain':
                     data = config.template;
-                break;
+                    break;
                 case 'mustache':
                     data = mustache.render(templateData, message);
-                break;
+                    break;
                 default:
                     logger.error(`Unsupported syntax on template node: ${config.syntax}`);
                     return Promise.reject('configuration error');
