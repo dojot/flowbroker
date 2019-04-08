@@ -120,7 +120,7 @@ class NodeManager {
         "device template in": new device_tpl(),
         "actuate": new actuate(
           new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
-        "multi actuate": new multi_actuate(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant),
+        "multi actuate": new multi_actuate(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices),
         "get context": new get_context(),
     };
   }
