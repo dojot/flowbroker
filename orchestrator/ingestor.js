@@ -139,11 +139,17 @@ module.exports = class DeviceIngestor {
       const node = flow.nodeMap[head];
 
       switch (node.type) {
+        case 'device in':
+        case 'device template in':
+          if (source === 'publish') {
+            this._publish(node, { payload: message.data.attrs }, flow, {tenant, deviceId});
+          }
+        break;
         case 'event device in':
           if ( (node.device_id === deviceId) && node['event_' + source] ) {
             this._publish(node, { payload: message }, flow, {tenant, deviceId});
           }
-        break;
+        break;        
         case 'event template in':
           if (templates.includes(node.template_id) && node['event_' + source]) {
             this._publish(node, { payload: message }, flow, {tenant, deviceId});
