@@ -62,14 +62,15 @@ class DataHandler extends dojot.DataHandlerBase {
      * @param  {[type]}       message  Message to be processed
      * @return {[undefined]}
      */
-    handleMessage(config, message) {
-        logger.debug("Executing template node...");
+    handleMessage(config, message, metadata) {
+        var fullMessage = JSON.parse(JSON.stringify(message));
+        fullMessage.payloadMetadata = JSON.parse(JSON.stringify(metadata));
         try {
             let templateData = config.template;
             let data = '';
             if (config.syntax === 'handlebars') {
                 let template = handlebars.compile(templateData);
-                data = template(message);
+                data = template(fullMessage);
             } else if (config.syntax === 'plain') {
                 data = config.template;
             }
