@@ -116,7 +116,8 @@ module.exports = class DeviceIngestor {
           flow: flow,
           metadata: {
             tenant: metadata.tenant,
-            originator: metadata.deviceid
+            originator: metadata.deviceid,
+            timestamp: metadata.timestamp,
           }
         }), 0);
       }
