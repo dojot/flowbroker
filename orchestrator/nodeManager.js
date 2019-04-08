@@ -13,6 +13,7 @@ const device_in = require('./nodes/device-in/device-in').Handler;
 const device_tpl = require('./nodes/template-in/template-in').Handler;
 const actuate = require('./nodes/actuate/actuate').Handler;
 const device_out = require('./nodes/device-out/device-out').Handler;
+const notification = require('./nodes/notification/index').Handler;
 const get_context = require('./nodes/get-context/get-context').Handler;
 const dockerRemote = require('./nodes/dockerComposeRemoteNode/index').Handler;
 const k8sRemote = require('./nodes/kubernetesRemoteNode/index').Handler;
@@ -172,6 +173,7 @@ class NodeManager {
             "device in": new device_in(),
             "device out": new device_out(
               new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
+            "notification": new notification(kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
             "device template in": new device_tpl(),
             "actuate": new actuate(
               new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
