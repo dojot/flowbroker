@@ -16,6 +16,7 @@
         "username": "Username",
         "password": "Password",
         "filecontent": "File content",
+        "fileencoding": "File encoding",
         "filename": "File name",
         "authentication": "Authentication"
     },

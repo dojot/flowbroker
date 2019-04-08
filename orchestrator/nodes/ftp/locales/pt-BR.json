@@ -16,6 +16,7 @@
         "username": "Usuário",
         "password": "Senha",
         "filecontent": "Conteúdo do arquivo",
+        "fileencoding": "Codificação do arquivo",
         "filename": "Nome do arquivo",
         "authentication": "Autenticação"
     },

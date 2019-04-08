@@ -88,6 +88,8 @@ class DataHandler extends dojot.DataHandlerBase {
         var host;
         var port = 21;
         var remaining;
+        var encoding = config.fileencoding;
+        logger.debug(`Encoding is: ${encoding}`);
         logger.debug(`URL parsing tokens: ${util.inspect(tokens)}`);
         if (tokens !== null) {
             transport = tokens[1];
@@ -111,7 +113,7 @@ class DataHandler extends dojot.DataHandlerBase {
         const filename = this._get(config.filename, message);
         var stream;
         try {
-            const buffer = Buffer.from(this._get(config.filecontent, message), 'base64');
+            const buffer = Buffer.from(this._get(config.filecontent, message), encoding);
             stream = new ReadStream(buffer);
         } catch (e) {
             logger.debug("... ftp node was not successfully executed.");
