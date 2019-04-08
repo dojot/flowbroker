@@ -1,4 +1,4 @@
-<script type="text/x-red" data-template-name="device template in">
+<script type="text/x-red" data-template-name="event template in">
   <div class="form-row">
     <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.name"></label>
     <input type="text" id="node-input-name">
@@ -36,12 +36,12 @@
   </div>
 </script>
 
-<script type="text/x-red" data-help-name="device template in">
+<script type="text/x-red" data-help-name="event template in">
   <p>Use data retrieved from a previously configured sensor as input to logic.</p>
 </script>
 
 <script type="text/javascript">
-   RED.nodes.registerType('device template in',{
+   RED.nodes.registerType('event template in',{
        category: 'input',      // the palette category
        defaults: {
            // defines the editable properties of the node
@@ -64,9 +64,9 @@
        color: "#679BF3",        // background-color
        label: function() {
            // sets the default label contents
-           return this.name || RED._('dojot/device-template-in:title');
+           return this.name || RED._('dojot/event-template-in:title');
        },
-       paletteLabel:  RED._('dojot/device-template-in:title'),
+       paletteLabel:  RED._('dojot/event-template-in:title'),
        labelStyle: function() {
            // sets the class to apply to the label
            return this.name ? "node_label_italic" : "";

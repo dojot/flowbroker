@@ -8,8 +8,8 @@ var geo = require('./nodes/geo/index').Handler;
 var http = require('./nodes/http/index').Handler;
 var select = require('./nodes/switch/index').Handler;
 var template = require('./nodes/template/index').Handler;
-var device_in = require('./nodes/device-in/device-in').Handler;
-var device_tpl = require('./nodes/template-in/template-in').Handler;
+var event_device_in = require('./nodes/event-device-in/event-device-in').Handler;
+var event_template_in = require('./nodes/event-template-in/event-template-in').Handler;
 var actuate = require('./nodes/actuate/actuate').Handler;
 var device_out = require('./nodes/device-out/device-out').Handler;
 var notification = require('./nodes/notification/index').Handler;
@@ -111,12 +111,12 @@ class NodeManager {
         "http": new http(),
         "switch": new select(),
         "template": new template(),
-        "device in": new device_in(),
+        "event device in": new event_device_in(),
         "device out": new device_out(
             new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
         "notification": new notification(
             kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
-        "device template in": new device_tpl(),
+        "event template in": new event_template_in(),
         "actuate": new actuate(
             new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
         "get context": new get_context(),

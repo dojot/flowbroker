@@ -12,7 +12,7 @@ class DataHandler extends dojot.DataHandlerBase {
        * @return {string} String with the path to the node representation file
        */
     getNodeRepresentationPath() {
-        return path.resolve(__dirname, 'template-in.html');
+        return path.resolve(__dirname, 'event-template-in.html');
     }
 
     /**
@@ -22,8 +22,8 @@ class DataHandler extends dojot.DataHandlerBase {
      */
     getMetadata() {
         return {
-            'id': 'dojot/device-template-in',
-            'name': 'device template in',
+            'id': 'dojot/event-template-in',
+            'name': 'event template in',
             'module': 'dojot',
             'version': '1.0.0',
         };
