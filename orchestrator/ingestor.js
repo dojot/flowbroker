@@ -42,7 +42,10 @@ module.exports = class DeviceIngestor {
     logger.debug("Registering callbacks for tenancy subject...");
     this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.tenancy,
       "new-tenant", (tenant, newtenant) => {
-        node.addTenant(newtenant, this.kafkaMessenger)});
+        node.addTenant(newtenant, this.kafkaMessenger).catch((error) => {
+          logger.error(`Failed to add tenant ${newtenant} to node handler (${error}). Bailing out...`);
+          process.kill(process.pid, "SIGTERM");
+        })});
     logger.debug("... callbacks for tenancy registered.");
 
     //device-manager subject
@@ -73,7 +76,10 @@ module.exports = class DeviceIngestor {
     logger.debug("Initializing flow nodes for current tenants ...");
     for (const tenant of this.kafkaMessenger.tenants) {
       logger.debug(`Initializing nodes for ${tenant} ...`)
-      node.addTenant(tenant, this.kafkaMessenger);
+      node.addTenant(tenant, this.kafkaMessenger).catch((error) => {
+        logger.error(`Failed to add tenant ${tenant} to node handler (${error}). Bailing out...`);
+        process.kill(process.pid, "SIGTERM");
+      });
       logger.debug(`... nodes initialized for ${tenant}.`)
     }
     logger.debug("... flow nodes initialized for current tenants.");
