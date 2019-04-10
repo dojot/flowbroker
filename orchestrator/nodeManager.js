@@ -148,6 +148,17 @@ class NodeManager {
     });
   }
 
+  getAll(tenant) {
+    return new Promise((resolve, reject) => {
+      try {
+        resolve(this.collection[tenant].find().toArray());
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+
   /**
    * Sets the manager to handle processing nodes for the given tenant
    * @param {*} tenant identifier of the tenant.
@@ -322,6 +333,17 @@ class NodeManager {
         return reject(new Error(`Tenant ${tenant} has not been initialized.`));
       }
     });
+  }
+
+  removeAll(tenant) {
+    if(this.collection[tenant] != undefined){
+      return this.collection[tenant].find().toArray()
+      .then((node) => { 
+        this.delRemote(node.id, tenant);
+      });
+    }else{
+      return new Promise((resolve, reject) => { resolve({ }) });
+    } 
   }
 
   /**
