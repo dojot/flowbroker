@@ -176,11 +176,17 @@ module.exports = class DeviceIngestor {
     }
 
     return Promise.all(flowsPromise).then(flowLists => {
-      // flows starting with a given template
+
+      let uniqueFlows = {};
+      // remove possible repeated flows
       for (let flows of flowLists) {
         for (let flow of flows) {
-          this._handleFlow(tenant, deviceId, templates, event, flow, source);      
+          uniqueFlows[flow.id] = flow;
         }
+      }
+
+      for (let flow of Object.values(uniqueFlows)) {
+        this._handleFlow(tenant, deviceId, templates, event, flow, source);
       }
     });
   }
