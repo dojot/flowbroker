@@ -251,7 +251,6 @@ module.exports = class DeviceIngestor {
             this._transformDeviceEvent(message);
             return this._handleEvent(message.metadata.tenant, message.data.id, message.data.templates, message.event, message);
           });
-          break;
         case 'remove':
           return this.deviceCache.getDeviceInfo(message.metadata.tenant, message.data.id).then((deviceData) => {
             return this.deviceCache.deleteDevice(message.metadata.tenant, message.data.id).catch(() => {
@@ -262,7 +261,6 @@ module.exports = class DeviceIngestor {
           }).catch( (error) => {
             logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);    
           });
-          break;
         case 'configure':
           return this.deviceCache.getDeviceInfo(message.metadata.tenant, message.data.id).then((deviceData) => {
             if (deviceData.staticAttrs) {
@@ -275,7 +273,6 @@ module.exports = class DeviceIngestor {
           }).catch( (error) => {
             logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);    
           });
-          break;
         default:
         logger.error(`[ingestor] unsupported device manager event ${message.event}`);
         return Promise.reject();
