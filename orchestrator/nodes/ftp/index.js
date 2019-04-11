@@ -89,6 +89,8 @@ class DataHandler extends dojot.DataHandlerBase {
         var port = 21;
         var remaining;
         var encoding = config.fileencoding;
+        const user = config.username;
+        const password = config.password; // THIS SHOULD NOT BE LIKE THIS!
         logger.debug(`Encoding is: ${encoding}`);
         logger.debug(`URL parsing tokens: ${util.inspect(tokens)}`);
         if (tokens !== null) {
@@ -132,9 +134,9 @@ class DataHandler extends dojot.DataHandlerBase {
         await client.access({
             host,
             port,
-            password: "dojot",
+            password,
             secure: (transport === "ftps"),
-            user: "dojot",
+            user,
         });
 
         var response;
