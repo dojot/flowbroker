@@ -335,17 +335,6 @@ class NodeManager {
     });
   }
 
-  removeAll(tenant) {
-    if(this.collection[tenant] != undefined){
-      return this.collection[tenant].find().toArray()
-      .then((node) => { 
-        this.delRemote(node.id, tenant);
-      });
-    }else{
-      return new Promise((resolve, reject) => { resolve({ }) });
-    } 
-  }
-
   /**
    * Gets remote nodes representation (JSON).
    * @param {*} tenant identifier of the tenant.
