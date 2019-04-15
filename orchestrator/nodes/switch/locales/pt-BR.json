@@ -42,8 +42,8 @@
       "cont": "contém",
       "regex": "corresponde a regex",
       "true": "é verdadeiro",
-      "false": "is false",
-      "null": "é falso",
+      "false": "é falso",
+      "null": "é nulo",
       "nnull": "não é nulo",
       "else": "caso contrário"
     },
