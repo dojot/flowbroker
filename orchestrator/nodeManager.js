@@ -148,6 +148,17 @@ class NodeManager {
     });
   }
 
+  getAll(tenant) {
+    return new Promise((resolve, reject) => {
+      try {
+        resolve(this.collection[tenant].find().toArray());
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+
   /**
    * Sets the manager to handle processing nodes for the given tenant
    * @param {*} tenant identifier of the tenant.

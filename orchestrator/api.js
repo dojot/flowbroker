@@ -47,6 +47,13 @@ function summarizeFlow(flow) {
   };
 }
 
+function summarizeNode(node) {
+  return {
+    'id': node.id,
+    'image': node.image
+  };
+}
+
 app.post('/v1/node', (req, res) => {
 
   const error = validateMandatoryFields(req.body, ['image', 'id']);
@@ -70,6 +77,40 @@ app.delete('/v1/node/:id', (req, res) => {
   }).catch((error) => {
     console.log(error)
     return res.status(500).send({message: 'Failed to remove node.', error: error.message});
+  });
+});
+
+app.delete('/v1/node', (req, res) => {
+  nodeManager.getAll(req.service).then((nodes) => {
+    var promises = [];
+    for (let node of nodes) {
+      promises.push(nodeManager.delRemoteNode(node.id, req.service));
+    }
+
+    Promise.all(promises).then(() => {
+      return res.status(200).send({message: 'ok'});
+    }).catch((error) => {
+      console.log(error)
+      return res.status(500).send({message: 'Failed to remove node.', error: error.message});
+    });
+
+  }).catch((error) => {
+    console.error(error);
+    return res.status(500).send({'message': 'Failed to list nodes'});
+  });
+
+});
+
+app.get('/v1/node', (req, res) => {
+  nodeManager.getAll(req.service).then((nodes) => {
+    let filtered = [];
+    for (let node of nodes) {
+      filtered.push(summarizeNode(node));
+    }
+    return res.status(200).send({'nodes': filtered});
+  }).catch((error) => {
+    console.error(error);
+    return res.status(500).send({'message': 'Failed to list nodes'});
   });
 });
 
