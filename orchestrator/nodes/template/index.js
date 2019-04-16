@@ -8,9 +8,6 @@ const logger = require("../../logger").logger;
 class DataHandler extends dojot.DataHandlerBase {
     constructor() {
         super();
-        handlebars.registerHelper('stringify', function(context) {
-            return JSON.stringify(context);
-        });
     }
 
     /**
