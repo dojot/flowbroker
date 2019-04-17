@@ -25,8 +25,6 @@
         <input type="hidden" id="node-input-sourceFieldType">
     </div>
 
-
-
 </script>
 
 <script type="text/x-red" data-help-name="notification">
@@ -53,7 +51,7 @@
             msgType: {value: 'static', required: true}
         },
         inputs: 1,
-        outputs: 1,
+        outputs: 0,
         icon: "alert.png",
         label: function () {
             return this.name || RED._('dojot/notification:title');
