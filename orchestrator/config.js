@@ -62,7 +62,7 @@ module.exports = {
                 "batch.num.messages": 1000000,
                 "dr_cb": true
             },
-        
+
             consumer: {
                 "group.id": process.env.KAFKA_GROUP_ID || "flowbroker",
                 "metadata.broker.list": process.env.KAFKA_HOSTS || "kafka:9092"
@@ -85,6 +85,15 @@ module.exports = {
                 deviceData: process.env.DOJOT_SUBJECT_DEVICE_DATA || "device-data",
                 notification: process.env.DOJOT_SUBJECT_DEVICE_DATA || "dojot.notifications"
             }
+        }
+    },
+    healthChecker: {
+        timeout: {
+            uptime: process.env.HC_UPTIME_TIMEOUT || 300000,
+            memory: process.env.HC_MEMORY_USAGE_TIMEOUT || 300000,
+            cpu: process.env.HC_CPU_USAGE_TIMEOUT || 300000,
+            mongodb: process.env.HC_MONGODB_TIMEOUT || 30000,
+            kafka: process.env.HC_KAFKA_TIMEOUT || 30000
         }
     },
     language: {

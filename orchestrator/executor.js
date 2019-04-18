@@ -44,7 +44,8 @@ module.exports = class Executor {
             let metadata = {
                 flowId: event.flow.id,
                 tenant: event.metadata.tenant,
-                originatorDeviceId: event.metadata.originator
+                originatorDeviceId: event.metadata.originator,
+                timestamp: event.metadata.timestamp,
             }
             handler.handleMessage(at, event.message, metadata, this.contextHandler)
                 .then((result) => {

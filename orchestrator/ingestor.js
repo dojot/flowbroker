@@ -31,7 +31,7 @@ module.exports = class DeviceIngestor {
     // using redis as cache
     this.redis = new redisManager();
     this.deviceCache = this.redis.getClient("deviceCache");
-    
+
     // flow builder
     this.fmBuiler = fmBuilder;
 
@@ -39,7 +39,7 @@ module.exports = class DeviceIngestor {
     this.preProcessEvent = this.preProcessEvent.bind(this);
     this.amqpTaskProducer = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
     this.amqpEventProducer = new amqp.AMQPProducer(config.amqp.event_queue, config.amqp.url, 1);
-    this.amqpEventConsumer = new amqp.AMQPConsumer(config.amqp.event_queue, this.preProcessEvent, 
+    this.amqpEventConsumer = new amqp.AMQPConsumer(config.amqp.event_queue, this.preProcessEvent,
       config.amqp.url, 1);
 
     // kafka messenger
@@ -57,16 +57,16 @@ module.exports = class DeviceIngestor {
       return this.deviceCache.populate(tenants).then(() => {
         //tenancy subject
         logger.debug("Registering callbacks for tenancy subject...");
-        this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.tenancy, 
+        this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.tenancy,
           "new-tenant", (tenant, newtenant) => {
             node.addTenant(newtenant, this.kafkaMessenger)
           }
         );
         logger.debug("... callbacks for tenancy registered.");
-    
+
         //device-manager subject
         logger.debug("Registering callbacks for device-manager device subject...");
-        this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.devices, 
+        this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.devices,
           "message", (tenant, message) => {
             message = hotfixTemplateIdFormat(message);
             this._enqueueEvent({
@@ -76,10 +76,10 @@ module.exports = class DeviceIngestor {
           }
         );
         logger.debug("... callbacks for device-manager registered.");
-    
+
         // device-data subject
         logger.debug("Registering callbacks for device-data device subject...");
-        this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.deviceData, 
+        this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.deviceData,
           "message", (tenant, message) => {
             this._enqueueEvent({
               source: "device",
@@ -88,7 +88,7 @@ module.exports = class DeviceIngestor {
           }
         );
         logger.debug("... callbacks for device-data registered.");
-    
+
         // Initializes flow nodes by tenant ...
         logger.debug("Initializing flow nodes for current tenants ...");
         for (const tenant of this.kafkaMessenger.tenants) {
@@ -97,9 +97,9 @@ module.exports = class DeviceIngestor {
           logger.debug(`... nodes initialized for ${tenant}.`)
         }
         logger.debug("... flow nodes initialized for current tenants.");
-    
+
         // Connects to RabbitMQ
-        return Promise.all([this.amqpTaskProducer.connect(), 
+        return Promise.all([this.amqpTaskProducer.connect(),
           this.amqpEventProducer.connect(), this.amqpEventConsumer.connect()]).then(() => {
             logger.debug('Connections established with RabbitMQ!');
           }).catch( errors => {
@@ -122,7 +122,8 @@ module.exports = class DeviceIngestor {
           flow: flow,
           metadata: {
             tenant: metadata.tenant,
-            originator: metadata.deviceId
+            originator: metadata.deviceid,
+            timestamp: metadata.timestamp,
           }
         }), 0);
       }
@@ -149,7 +150,7 @@ module.exports = class DeviceIngestor {
           if ( (node.device_id === deviceId) && node['event_' + source] ) {
             this._publish(node, { payload: message }, flow, {tenant, deviceId});
           }
-        break;        
+        break;
         case 'event template in':
           if (templates.includes(node.template_id) && node['event_' + source]) {
             this._publish(node, { payload: message }, flow, {tenant, deviceId});
@@ -169,7 +170,7 @@ module.exports = class DeviceIngestor {
     let flowsPromise = [];
     // flows starting with a given device
     flowsPromise.push(flowManager.getByDevice(deviceId));
-    
+
     // flows starting with a given template
     for (let template of templates) {
       flowsPromise.push(flowManager.getByTemplate(template));
@@ -229,7 +230,7 @@ module.exports = class DeviceIngestor {
 
 
   _preProcessDeviceManagerEvent(messageStringfied) {
-    
+
     try {
       let message = JSON.parse(messageStringfied);
 
@@ -259,7 +260,7 @@ module.exports = class DeviceIngestor {
               return this._handleEvent(message.metadata.tenant, message.data.id, deviceData.templates, message.event, message);
             });
           }).catch( (error) => {
-            logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);    
+            logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
           });
         case 'configure':
           return this.deviceCache.getDeviceInfo(message.metadata.tenant, message.data.id).then((deviceData) => {
@@ -271,7 +272,7 @@ module.exports = class DeviceIngestor {
             }
             return this._handleEvent(message.metadata.tenant, message.data.id, deviceData.templates, message.event, message);
           }).catch( (error) => {
-            logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);    
+            logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
           });
         default:
         logger.error(`[ingestor] unsupported device manager event ${message.event}`);
@@ -320,7 +321,7 @@ module.exports = class DeviceIngestor {
 
   /**
    * Transforms devices related events to become more friendly.
-   * @param {*} event 
+   * @param {*} event
    */
   _transformDeviceEvent(event) {
     let attrs = {};
