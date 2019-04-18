@@ -3,7 +3,7 @@
 const fs = require('fs');
 
 const change = require('./nodes/change/index').Handler;
-const email = require('./nodes/email/index').Handler;
+// const email = require('./nodes/email/index').Handler;
 const geo = require('./nodes/geo/index').Handler;
 const http = require('./nodes/http/index').Handler;
 const select = require('./nodes/switch/index').Handler;
