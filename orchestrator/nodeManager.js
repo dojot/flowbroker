@@ -16,6 +16,7 @@ const template_in = require('./nodes/template-in/template-in').Handler;
 const actuate = require('./nodes/actuate/actuate').Handler;
 const multi_actuate = require('./nodes/multi-actuate/multi_actuate').Handler;
 const device_out = require('./nodes/device-out/device-out').Handler;
+const multi_device_out = require('./nodes/multi-device-out/multi-device-out').Handler;
 const notification = require('./nodes/notification/index').Handler;
 const get_context = require('./nodes/get-context/get-context').Handler;
 const dockerRemote = require('./nodes/dockerComposeRemoteNode/index').Handler;
@@ -187,13 +188,13 @@ class NodeManager {
             "event device in": new event_device_in(),
             "device in": new device_in(),
             "device out": new device_out(
-                new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
-            "notification": new notification(
-                kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
+              new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
+            "multi device out": new multi_device_out(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData),
+            "notification": new notification(kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
             "event template in": new event_template_in(),
             "device template in": new template_in(),
             "actuate": new actuate(
-                new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
+              new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
             "multi actuate": new multi_actuate(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices),
             "get context": new get_context(),
           };
