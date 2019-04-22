@@ -9,6 +9,8 @@ RUN npm install
 
 
 FROM node:8.14.0-alpine
+RUN apk add --no-cache tini
+ENTRYPOINT ["/sbin/tini", "--"]
 
 COPY --from=basis /opt/flowbroker-node /opt/flowbroker-node
 WORKDIR /opt/flowbroker-node
