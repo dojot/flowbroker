@@ -10,7 +10,9 @@ const http = require('./nodes/http/index').Handler;
 const select = require('./nodes/switch/index').Handler;
 const template = require('./nodes/template/index').Handler;
 const device_in = require('./nodes/device-in/device-in').Handler;
-const device_tpl = require('./nodes/template-in/template-in').Handler;
+const event_device_in = require('./nodes/event-device-in/event-device-in').Handler;
+const event_template_in = require('./nodes/event-template-in/event-template-in').Handler;
+const template_in = require('./nodes/template-in/template-in').Handler;
 const actuate = require('./nodes/actuate/actuate').Handler;
 const device_out = require('./nodes/device-out/device-out').Handler;
 const notification = require('./nodes/notification/index').Handler;
@@ -181,13 +183,16 @@ class NodeManager {
             "http": new http(),
             "switch": new select(),
             "template": new template(),
+            "event device in": new event_device_in(),
             "device in": new device_in(),
             "device out": new device_out(
-              new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
-            "notification": new notification(kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
-            "device template in": new device_tpl(),
+                new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
+            "notification": new notification(
+                kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
+            "event template in": new event_template_in(),
+            "device template in": new template_in(),
             "actuate": new actuate(
-              new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
+                new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
             "get context": new get_context(),
           };
 
