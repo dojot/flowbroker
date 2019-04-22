@@ -4,8 +4,23 @@ var util = require('util');
 var node = require('./nodeManager').Manager;
 var redisManager = require('./redisManager').RedisManager;
 var logger = require("@dojot/dojot-module-logger").logger;
+var auth = require("@dojot/dojot-module").Auth;
 
 // class InitializationError extends Error {}
+
+function hotfixTemplateIdFormat(message) {
+  let msg = JSON.parse(message);
+  if ( (msg.event === "create") || (msg.event === "update") ) {
+    let templates = [];
+    for (let templateId of msg.data.templates) {
+      templates.push(templateId.toString());
+    }
+    msg.data.templates = templates;
+  }
+
+  message = JSON.stringify(msg);
+  return message;
+}
 
 module.exports = class DeviceIngestor {
   /**
@@ -15,7 +30,7 @@ module.exports = class DeviceIngestor {
   constructor(fmBuilder, kafkaMessenger) {
     // using redis as cache
     this.redis = new redisManager();
-    this.client = this.redis.getClient();
+    this.deviceCache = this.redis.getClient("deviceCache");
 
     // flow builder
     this.fmBuiler = fmBuilder;
@@ -35,70 +50,73 @@ module.exports = class DeviceIngestor {
    * Initializes device ingestor: Kafka, RabbitMQ ...
    */
   init() {
-      // Create a channel using a particular for notificarions
-      this.kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.notification, "rw");
+    // Create a channel using a particular for notificarions
+    this.kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.notification, "rw");
 
-    //tenancy subject
-    logger.debug("Registering callbacks for tenancy subject...");
-    this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.tenancy,
-      "new-tenant", (tenant, newtenant) => {
-        node.addTenant(newtenant, this.kafkaMessenger)});
-    logger.debug("... callbacks for tenancy registered.");
+    return auth.getTenants(config.kafkaMessenger.auth.host).then((tenants) => {
+      return this.deviceCache.populate(tenants).then(() => {
+        //tenancy subject
+        logger.debug("Registering callbacks for tenancy subject...");
+        this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.tenancy,
+          "new-tenant", (tenant, newtenant) => {
+            node.addTenant(newtenant, this.kafkaMessenger).catch((error) => {
+              logger.error(`Failed to add tenant ${newtenant} to node handler (${error}). Bailing out...`);
+              process.kill(process.pid, "SIGTERM");
+            });
+          }
+        );
+        logger.debug("... callbacks for tenancy registered.");
 
-    //device-manager subject
-    logger.debug("Registering callbacks for device-manager device subject...");
-    this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.devices,
-      "message", (tenant, msg) => {
-        try {
-          let parsed = JSON.parse(msg);
-        if (parsed.event === 'update' || parsed.event === 'remove'){
-          this.handleUpdate(parsed);
+        //device-manager subject
+        logger.debug("Registering callbacks for device-manager device subject...");
+        this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.devices,
+          "message", (tenant, message) => {
+            message = hotfixTemplateIdFormat(message);
+            this._enqueueEvent({
+              source: 'device-manager',
+              message: message
+            });
+          }
+        );
+        logger.debug("... callbacks for device-manager registered.");
+
+        // device-data subject
+        logger.debug("Registering callbacks for device-data device subject...");
+        this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.deviceData,
+          "message", (tenant, message) => {
+            this._enqueueEvent({
+              source: "device",
+              message: message
+            });
+          }
+        );
+        logger.debug("... callbacks for device-data registered.");
+
+        // Initializes flow nodes by tenant ...
+        logger.debug("Initializing flow nodes for current tenants ...");
+        for (const tenant of this.kafkaMessenger.tenants) {
+          logger.debug(`Initializing nodes for ${tenant} ...`)
+          node.addTenant(tenant, this.kafkaMessenger).catch((error) => {
+            logger.error(`Failed to add tenant ${tenant} to node handler (${error}). Bailing out...`);
+            process.kill(process.pid, "SIGTERM");
+          });
+          logger.debug(`... nodes initialized for ${tenant}.`)
         }
-      } catch (error) {
-        logger.error(`[ingestor] device-manager event ingestion failed: `, error.message);
-      }
+        logger.debug("... flow nodes initialized for current tenants.");
+
+        // Connects to RabbitMQ
+        return Promise.all([this.amqpTaskProducer.connect(),
+          this.amqpEventProducer.connect(), this.amqpEventConsumer.connect()]).then(() => {
+            logger.debug('Connections established with RabbitMQ!');
+          }).catch( errors => {
+            logger.error(`Failed to establish connections with RabbitMQ. Error = ${errors}`);
+            process.exit(1);
+          });
+      });
     });
-    logger.debug("... callbacks for device-manager registered.");
-
-    // device-data subject
-    logger.debug("Registering callbacks for device-data device subject...");
-    this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.deviceData,
-      "message", (tenant, msg) => {
-
-      this.enqueueEvent(msg);
-    });
-    logger.debug("... callbacks for device-data registered.");
-
-    // Initializes flow nodes by tenant ...
-    logger.debug("Initializing flow nodes for current tenants ...");
-    for (const tenant of this.kafkaMessenger.tenants) {
-      logger.debug(`Initializing nodes for ${tenant} ...`)
-      node.addTenant(tenant, this.kafkaMessenger);
-      logger.debug(`... nodes initialized for ${tenant}.`)
-    }
-    logger.debug("... flow nodes initialized for current tenants.");
-
-    // Connects to RabbitMQ
-    Promise.all(
-      [this.amqpTaskProducer.connect(),
-        this.amqpEventProducer.connect(),
-        this.amqpEventConsumer.connect()]).then(() => {
-          logger.debug('Connections established with RabbitMQ!');
-        }).catch( errors => {
-          logger.error(`Failed to establish connections with RabbitMQ. Error = ${errors}`);
-          process.exit(1);
-        });
   }
 
   _publish(node, message, flow, metadata) {
-    if (node.hasOwnProperty('status') &&
-      (node.status.toLowerCase() !== 'true') &&
-      metadata.hasOwnProperty('reason') &&
-      (metadata.reason === 'statusUpdate')) {
-      logger.debug(`[ingestor] ignoring device status update ${metadata.deviceid} ${flow.id}`);
-      return;
-    }
-
     // new events must have the lowest priority in the queue, in this way
     // events that are being processed can be finished first
     // This should work for single output nodes only!
@@ -110,14 +128,15 @@ module.exports = class DeviceIngestor {
           flow: flow,
           metadata: {
             tenant: metadata.tenant,
-            originator: metadata.deviceid
+            originator: metadata.deviceId,
+            timestamp: metadata.timestamp
           }
         }), 0);
       }
     }
   }
 
-  handleFlow(event, flow, isTemplate) {
+  _handleFlow(tenant, deviceId, timestamp, templates, message, flow, source) {
     flow.nodeMap = {};
     for (let node of flow.red) {
       flow.nodeMap[node.id] = node;
@@ -125,98 +144,204 @@ module.exports = class DeviceIngestor {
 
     for (let head of flow.heads) {
       const node = flow.nodeMap[head];
-      // handle input by device
-      if (node.hasOwnProperty('_device_id') &&
-        (node._device_id === event.metadata.deviceid) &&
-        (isTemplate === false)) {
-        this._publish(node, { payload: event.attrs }, flow, event.metadata);
-      }
 
-      // handle input by template
-      if (node.hasOwnProperty('device_template_id') &&
-        event.metadata.hasOwnProperty('templates') &&
-        (event.metadata.templates.includes(node.device_template_id)) &&
-        (isTemplate === true)) {
-        this._publish(node, { payload: event.attrs }, flow, event.metadata);
+      switch (node.type) {
+        case 'device in':
+        case 'device template in':
+          if (source === 'publish') {
+            this._publish(node, { payload: message.data.attrs }, flow, {tenant, deviceId, timestamp});
+          }
+        break;
+        case 'event device in':
+          if ( (node.device_id === deviceId) && node['event_' + source] ) {
+            this._publish(node, { payload: message }, flow, {tenant, deviceId, timestamp});
+          }
+        break;
+        case 'event template in':
+          if (templates.includes(node.template_id) && node['event_' + source]) {
+            this._publish(node, { payload: message }, flow, {tenant, deviceId, timestamp});
+          }
+        break;
+        default:
+          logger.error(`Unsupported node type ${node.type}`);
+          break;
       }
     }
   }
 
-  handleEvent(event) {
+  _handleEvent(tenant, deviceId, timestamp, templates, source, event) {
     logger.debug(`[ingestor] got new device event: ${util.inspect(event, { depth: null })}`);
-    let flowManager = this.fmBuiler.get(event.metadata.tenant);
+    let flowManager = this.fmBuiler.get(tenant);
 
-    return this.client.getDeviceInfo(event.metadata.tenant, event.metadata.deviceid,
-      this.redis.getState()).then((data) => {
+    let flowsPromise = [];
+    // flows starting with a given device
+    flowsPromise.push(flowManager.getByDevice(deviceId));
 
-        // update event with template and static attr info
-        event.metadata.templates = data.templates;
+    // flows starting with a given template
+    for (let template of templates) {
+      flowsPromise.push(flowManager.getByTemplate(template));
+    }
 
-        if (data.staticAttrs !== null) {
-          if (event.metadata.hasOwnProperty('reason')) {
-            if (event.metadata.reason === 'statusUpdate') {
-              event.attrs = {};
-            }
-          }
-          // Copy static attrs to event.attrs
-          for (var attr in data.staticAttrs) {
-            event.attrs[attr] = data.staticAttrs[attr];
-          }
-        }
+    return Promise.all(flowsPromise).then(flowLists => {
 
-        let flowsPromise = [];
-        // [0]: flows starting with a given device
-        flowsPromise.push(flowManager.getByDevice(event.metadata.deviceid));
-
-        // [1..N]: flows starting with a given template
-        for (let template of data.templates) {
-          flowsPromise.push(flowManager.getByTemplate(template));
-        }
-
-        return Promise.all(flowsPromise);
-      }).then(flowLists => {
-
-        // [0]: flows starting with a given device
-        let flows = flowLists.shift();
+      let uniqueFlows = {};
+      // remove possible repeated flows
+      for (let flows of flowLists) {
         for (let flow of flows) {
-          this.handleFlow(event, flow, false);
+          uniqueFlows[flow.id] = flow;
         }
+      }
 
-        // [1..N]: flows starting with a given template
-        for (let flows of flowLists) {
-          for (let flow of flows) {
-            this.handleFlow(event, flow, true);
-          }
-        }
-      });
+      for (let flow of Object.values(uniqueFlows)) {
+        this._handleFlow(tenant, deviceId, timestamp, templates, event, flow, source);
+      }
+    });
   }
 
-  handleUpdate(tenant, deviceid) {
-    this.client.deleteDevice(tenant, deviceid);
-  }
-
-  enqueueEvent(event) {
-    this.amqpEventProducer.sendMessage(event);
+  _enqueueEvent(event) {
+    this.amqpEventProducer.sendMessage(JSON.stringify(event));
     logger.debug(`Queued event ${event}`);
   }
 
-  preProcessEvent(event, ack) {
-    logger.debug(`Pre-processing event ${event}`);
+  preProcessEvent(eventStringfied, ack) {
+    logger.debug(`Pre-processing event ${eventStringfied}`);
 
-    let parsed = null;
     try {
-      parsed = JSON.parse(event);
-    } catch (e) {
-      logger.error("[ingestor] event is not valid json. Ignoring.");
+      let event = JSON.parse(eventStringfied);
+      let preProcessPromise;
+
+      switch(event.source){
+        case 'device-manager':
+          preProcessPromise = this._preProcessDeviceManagerEvent(event.message);
+          break;
+        case 'device':
+          preProcessPromise = this._preProcessDeviceEvent(event.message);
+          break;
+        default:
+          logger.error(`Unsupported event source ${event.source}`);
+          return ack();
+      }
+
+      preProcessPromise.then( () => {
+        return ack();
+      }).catch( error => {
+        logger.error(`Problem on pre process event. Reason: ${error}`);
+        return ack();
+      });
+    } catch (error) {
+      logger.error(`Problem on pre process event. Reason: ${error}`);
       return ack();
     }
-
-    this.handleEvent(parsed).then( () => {
-      return ack();
-    }).catch( error => {
-      logger.error(`Coudn't enqueue message. Reason: ${error}`);
-      return ack();
-    });
   }
+
+
+  _preProcessDeviceManagerEvent(messageStringfied) {
+
+    try {
+      let message = JSON.parse(messageStringfied);
+
+      // rename/move some attributes to uniformize with the device event
+      message.metadata = message.meta;
+      message.metadata.tenant = message.metadata.service;
+      delete message.meta;
+      delete message.metadata.service;
+
+      switch(message.event) {
+        case 'create':
+        case 'update':
+          // we really don't care if the data was saved successfully into the
+          // cache, it only affects performance not the behavior
+          return this.deviceCache.addDevice(message).catch((error) => {
+            logger.warn(`failed to write data on cache, system performance could be compromised. Error: ${error}`);
+
+          }).then(() => {
+            this._transformDeviceEvent(message);
+            return this._handleEvent(message.metadata.tenant, message.data.id, undefined, message.data.templates, message.event, message);
+          });
+        case 'remove':
+          return this.deviceCache.getDeviceInfo(message.metadata.tenant, message.data.id).then((deviceData) => {
+            return this.deviceCache.deleteDevice(message.metadata.tenant, message.data.id).catch(() => {
+              logger.warn('failed to delete data from cache');
+            }).then(() => {
+              return this._handleEvent(message.metadata.tenant, message.data.id, undefined, deviceData.templates, message.event, message);
+            });
+          }).catch( (error) => {
+            logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
+          });
+        case 'configure':
+          return this.deviceCache.getDeviceInfo(message.metadata.tenant, message.data.id).then((deviceData) => {
+            if (deviceData.staticAttrs) {
+              // Copy the static attrs to the event
+              for (let attr in deviceData.staticAttrs) {
+                message.data.attrs[attr] = deviceData.staticAttrs[attr].value;
+              }
+            }
+            return this._handleEvent(message.metadata.tenant, message.data.id, undefined, deviceData.templates, message.event, message);
+          }).catch( (error) => {
+            logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
+          });
+        default:
+        logger.error(`[ingestor] unsupported device manager event ${message.event}`);
+        return Promise.reject();
+      }
+    } catch (error) {
+      logger.warn(`[ingestor] device-manager event ingestion failed: `, error.message);
+      return Promise.reject();
+    }
+  }
+
+  _preProcessDeviceEvent(messageStringfied) {
+    let message;
+
+    try {
+      message = JSON.parse(messageStringfied);
+
+      // rename some attributes to uniformize with the device manager event
+      message.event = "publish";
+      message.data = {};
+      message.data.attrs = message.attrs;
+      message.data.id = message.metadata.deviceid;
+      delete message.attrs;
+      delete message.metadata.deviceid;
+    } catch (error) {
+      logger.error(`[ingestor] Fail to parse device event: ${error.message}`);
+      return Promise.reject();
+    }
+
+    return this.deviceCache.getDeviceInfo(message.metadata.tenant, message.data.id)
+    .then((deviceData) => {
+
+      if (deviceData.staticAttrs) {
+        // Copy static attrs to event.attrs
+        for (let attr in deviceData.staticAttrs) {
+          message.data.attrs[attr] = deviceData.staticAttrs[attr].value;
+        }
+      }
+      return this._handleEvent(message.metadata.tenant, message.data.id, message.metadata.timestamp, deviceData.templates, message.event, message);
+    }).catch((error) => {
+      logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
+      return Promise.reject();
+    });
+
+  }
+
+  /**
+   * Transforms devices related events to become more friendly.
+   * @param {*} event
+   */
+  _transformDeviceEvent(event) {
+    let attrs = {};
+    for (let template of Object.keys(event.data.attrs) ) {
+        let templateAttrs = event.data.attrs[template];
+        for (let attr of templateAttrs) {
+            let label = attr.label;
+            delete attr.label;
+            attrs[label] = attr;
+        }
+    }
+    delete event.data.attrs;
+    event.data.attrs = attrs;
+    return event;
+}
 
 };

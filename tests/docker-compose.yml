@@ -64,6 +64,7 @@ services:
       - auth
       - flowbroker-context-manager
       - flowbroker-redis
+      - device-manager
     environment:
       DOJOT_SERVICE_MANAGEMENT: "internal"
       DEPLOY_ENGINE: docker
@@ -147,6 +148,32 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+
+  device-manager-redis:
+    image: redis:alpine
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+
+  device-manager:
+    image: dojot/device-manager
+    restart: always
+    environment:
+      # TODO: Fill these env variables with suitable values
+      - DEV_MNGR_CRYPTO_PASS="kamehameHA"
+      - DEV_MNGR_CRYPTO_IV=1234567890123456
+      - DEV_MNGR_CRYPTO_SALT="shuriken"
+    depends_on:
+      - postgres
+      - kafka
+      - data-broker
+      - device-manager-redis
     logging:
       driver: json-file
       options:

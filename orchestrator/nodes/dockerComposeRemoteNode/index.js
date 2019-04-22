@@ -35,7 +35,7 @@ class DataHandler extends RemoteNode {
   getNetwork() {
     return new Promise((resolve, reject) => {
       if (this.client === undefined) {
-        reject("Docker drive not fully initialized.");
+        reject(new Error("Docker drive not fully initialized."));
         return;
       }
       if (this.targetNetwork) {
@@ -66,7 +66,7 @@ class DataHandler extends RemoteNode {
   create() {
     return new Promise((resolve, reject) => {
       if (this.client === undefined) {
-        reject("Docker drive not fully initialized.");
+        reject(new Error("Docker drive not fully initialized."));
         return;
       }
       let model = {
@@ -76,7 +76,11 @@ class DataHandler extends RemoteNode {
         AttachStderr: true,
         NetworkDisabled: false,
         HostConfig: {
-          AutoRemove: true
+          AutoRemove: false,
+          RestartPolicy: {
+            Name: 'on-failure',
+            MaximumRetryCount: 3
+          }
         },
         Tty: true
       };
@@ -98,7 +102,7 @@ class DataHandler extends RemoteNode {
             this.getNetwork().then((network) => {
               this.client.networks().connect(network, network_opt).then(() => {
                 console.log(`[nodes] container up: ${options.name}:${container.Id}`);
-                return resolve();
+                return resolve(container.Id);
               }).catch((error) => {
                 this.remove();
                 return reject(error);
@@ -123,7 +127,7 @@ class DataHandler extends RemoteNode {
   remove(target) {
     return new Promise((resolve, reject) => {
       if (this.client === undefined) {
-        reject("Docker drive not fully initialized.");
+        reject(new Error("Docker drive not fully initialized."));
         return;
       }
       if (target !== undefined) {
@@ -145,7 +149,7 @@ class DataHandler extends RemoteNode {
   stats(target) {
     return new Promise((resolve, reject) => {
       if (this.client === undefined) {
-        reject("Docker drive not fully initialized.");
+        reject(new Error("Docker drive not fully initialized."));
         return;
       }
       if (target !== undefined) {
@@ -163,6 +167,35 @@ class DataHandler extends RemoteNode {
       }
     });
   }
+
+  getStatus(containerId) {
+    return new Promise((resolve, reject) => {
+      if (this.client === undefined) {
+        return reject(new Error("Docker drive not fully initialized."));
+      }
+      let id = containerId || this.info.container;
+
+      this.client.containers().list({all: true}).then((containers) => {
+        // Filter is not working, so it is being done here!
+        let status;
+        for(let container of containers) {
+          if(id === container.Id) {
+            status = container.State;
+            break;
+          }
+        }
+        if(status) {
+          return resolve(status);
+        }
+        else {
+          return reject(new Error(`Not found container`));
+        }
+      }).catch((error) => {
+        return reject(error);
+      });
+    });
+  }
+
   update() {
     // TODO
   }

@@ -112,13 +112,21 @@ class FlowManager {
 
       // Properly add the head nodes.
       switch (node.type) {
+        case "event device in":
+          parsed.heads.push(node.id);
+          parsed.devices.push(node.device_id);
+          break;
+        case "event template in":
+          parsed.heads.push(node.id);
+          parsed.templates.push(node.template_id);
+          break;
         case "device in":
           parsed.heads.push(node.id);
           parsed.devices.push(node._device_id);
           break;
         case "device template in":
           parsed.heads.push(node.id);
-          parsed.templates.push(node.device_template_id);
+          parsed.templates.push(node.device_template_id.toString());
           break;
       }
     }

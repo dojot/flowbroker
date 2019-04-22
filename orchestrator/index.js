@@ -17,8 +17,10 @@ var ContextHandler = require('@dojot/flow-node').ContextHandler;
 
 var dojotModule = require("@dojot/dojot-module");
 
-function fail(error) {
-  logger.error('[flowbroker] Initialization failed.', error.message);
+var healthCheck = require('./healthcheck');
+
+function logAndKill(error) {
+  logger.error('[flowbroker] Initialization failed.', error);
   process.kill(process.pid, "SIGTERM");
 }
 
@@ -89,7 +91,7 @@ if (args.message && args.device) {
     message = JSON.parse(args.message);
   } catch (e) {
     if (e instanceof SyntaxError) {
-      fail(new Error("Given message is not in valid JSON format:" + e));
+      logAndKill(new Error("Given message is not in valid JSON format:" + e));
     }
   }
 
@@ -97,7 +99,7 @@ if (args.message && args.device) {
   try {
     producer = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
   } catch (error) {
-    fail(error);
+    logAndKill(error);
   }
 
   let triggeredFlows = [];
@@ -135,7 +137,7 @@ let loggerCallback = () => {
 };
 
 let errorCallback = (error) => {
-  fail(error);
+  logAndKill(error);
 };
 
 let contextManagerClient = new ContextManagerClient(
@@ -180,12 +182,12 @@ kafkaMessenger.init().then(() => {
 
   // chain other initialization steps
   return MongoManager.get();
-
-  }).then((client) => {
-    let FlowManager = new FlowManagerBuilder(client);
-    APIHandler.init(FlowManager);
-    let ingestor = new Ingestor(FlowManager, kafkaMessenger);
-    ingestor.init();
-  }).catch((error) => {
-    fail(error);
+}).then((client) => {
+  let FlowManager = new FlowManagerBuilder(client);
+  healthCheck.init(kafkaMessenger, FlowManager);
+  APIHandler.init(FlowManager, healthCheck.get());
+  let ingestor = new Ingestor(FlowManager, kafkaMessenger);
+  return ingestor.init();
+}).catch((error) => {
+  logAndKill(error);
 });

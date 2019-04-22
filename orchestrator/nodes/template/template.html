@@ -13,6 +13,7 @@
         <select id="node-input-syntax" style="width:180px;">
             <option value="handlebars" data-i18n="label.handlebars"></option>
             <option value="plain" data-i18n="label.plain"></option>
+            <option value="mustache" data-i18n="label.mustache"></option>
         </select>
     </div>
 
@@ -73,7 +74,7 @@
             field: {value:"payload", validate: RED.validators.typedInput("fieldType")},
             fieldType: {value:"msg"},
             syntax: {value:"handlebars"},
-            template: {value:RED._('dojot/template:template_value') + "{{payload}} !"},
+            template: {value:RED._('dojot/template:template_value') + " {{{stringify payload}}} !"},
             output: {value:"str"}
         },
         paletteLabel:  RED._('dojot/template:template'),

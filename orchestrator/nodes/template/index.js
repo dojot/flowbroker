@@ -3,11 +3,15 @@
 const path = require('path');
 const dojot = require('@dojot/flow-node');
 const handlebars = require('handlebars');
+const mustache = require('mustache');
 const logger = require("../../logger").logger;
 
 class DataHandler extends dojot.DataHandlerBase {
     constructor() {
         super();
+        handlebars.registerHelper('stringify', function(context) {
+            return JSON.stringify(context);
+        });
     }
 
     /**
@@ -62,16 +66,27 @@ class DataHandler extends dojot.DataHandlerBase {
      * @param  {[type]}       message  Message to be processed
      * @return {[undefined]}
      */
-    handleMessage(config, message) {
-        logger.debug("Executing template node...");
+    handleMessage(config, message, metadata) {
+        var fullMessage = JSON.parse(JSON.stringify(message));
+        fullMessage.payloadMetadata = JSON.parse(JSON.stringify(metadata));
         try {
             let templateData = config.template;
             let data = '';
-            if (config.syntax === 'handlebars') {
-                let template = handlebars.compile(templateData);
-                data = template(message);
-            } else if (config.syntax === 'plain') {
-                data = config.template;
+            switch(config.syntax) {
+                case 'handlebars': {
+                    let template = handlebars.compile(templateData);
+                    data = template(fullMessage);
+                    break;
+                }
+                case 'plain':
+                    data = config.template;
+                    break;
+                case 'mustache':
+                    data = mustache.render(templateData, fullMessage);
+                    break;
+                default:
+                    logger.error(`Unsupported syntax on template node: ${config.syntax}`);
+                    return Promise.reject('configuration error');
             }
 
             if (config.output === 'json') {
