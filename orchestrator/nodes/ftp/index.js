@@ -151,7 +151,7 @@ class DataHandler extends dojot.DataHandlerBase {
             }
         }
         client.close();
-        return [message];
+        return Promise.resolve([message]);
     }
 }
 
