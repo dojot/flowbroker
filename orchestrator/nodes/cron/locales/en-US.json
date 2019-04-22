@@ -1,0 +1,18 @@
+{
+  "label": {
+    "cron": "cron",
+    "name": "Name",
+    "operation": "Operation",
+    "cronTimeExpression": "CRON Time Expression",
+    "jobName": "JOB Name",
+    "jobDescription": "JOB Description",
+    "jobType": "JOB Type",
+    "inJobId": "JOB Identifier",
+    "outJobId": "JOB Identifier (output to)",
+    "jobAction": "JOB Action"
+  },
+  "timeExpressionExample": "eg. * * * * * *",
+  "jobActionKey": "job",
+  "inJobIdKey": "jobId",
+  "outJobIdKey": "jobId"
+}
