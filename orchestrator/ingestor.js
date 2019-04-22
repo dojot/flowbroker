@@ -59,7 +59,10 @@ module.exports = class DeviceIngestor {
         logger.debug("Registering callbacks for tenancy subject...");
         this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.tenancy,
           "new-tenant", (tenant, newtenant) => {
-            node.addTenant(newtenant, this.kafkaMessenger)
+            node.addTenant(newtenant, this.kafkaMessenger).catch((error) => {
+              logger.error(`Failed to add tenant ${newtenant} to node handler (${error}). Bailing out...`);
+              process.kill(process.pid, "SIGTERM");
+            });
           }
         );
         logger.debug("... callbacks for tenancy registered.");
@@ -93,7 +96,10 @@ module.exports = class DeviceIngestor {
         logger.debug("Initializing flow nodes for current tenants ...");
         for (const tenant of this.kafkaMessenger.tenants) {
           logger.debug(`Initializing nodes for ${tenant} ...`)
-          node.addTenant(tenant, this.kafkaMessenger);
+          node.addTenant(tenant, this.kafkaMessenger).catch((error) => {
+            logger.error(`Failed to add tenant ${tenant} to node handler (${error}). Bailing out...`);
+            process.kill(process.pid, "SIGTERM");
+          });
           logger.debug(`... nodes initialized for ${tenant}.`)
         }
         logger.debug("... flow nodes initialized for current tenants.");
@@ -122,15 +128,15 @@ module.exports = class DeviceIngestor {
           flow: flow,
           metadata: {
             tenant: metadata.tenant,
-            originator: metadata.deviceid,
-            timestamp: metadata.timestamp,
+            originator: metadata.deviceId,
+            timestamp: metadata.timestamp
           }
         }), 0);
       }
     }
   }
 
-  _handleFlow(tenant, deviceId, templates, message, flow, source) {
+  _handleFlow(tenant, deviceId, timestamp, templates, message, flow, source) {
     flow.nodeMap = {};
     for (let node of flow.red) {
       flow.nodeMap[node.id] = node;
@@ -143,17 +149,17 @@ module.exports = class DeviceIngestor {
         case 'device in':
         case 'device template in':
           if (source === 'publish') {
-            this._publish(node, { payload: message.data.attrs }, flow, {tenant, deviceId});
+            this._publish(node, { payload: message.data.attrs }, flow, {tenant, deviceId, timestamp});
           }
         break;
         case 'event device in':
           if ( (node.device_id === deviceId) && node['event_' + source] ) {
-            this._publish(node, { payload: message }, flow, {tenant, deviceId});
+            this._publish(node, { payload: message }, flow, {tenant, deviceId, timestamp});
           }
         break;
         case 'event template in':
           if (templates.includes(node.template_id) && node['event_' + source]) {
-            this._publish(node, { payload: message }, flow, {tenant, deviceId});
+            this._publish(node, { payload: message }, flow, {tenant, deviceId, timestamp});
           }
         break;
         default:
@@ -163,7 +169,7 @@ module.exports = class DeviceIngestor {
     }
   }
 
-  _handleEvent(tenant, deviceId, templates, source, event) {
+  _handleEvent(tenant, deviceId, timestamp, templates, source, event) {
     logger.debug(`[ingestor] got new device event: ${util.inspect(event, { depth: null })}`);
     let flowManager = this.fmBuiler.get(tenant);
 
@@ -187,7 +193,7 @@ module.exports = class DeviceIngestor {
       }
 
       for (let flow of Object.values(uniqueFlows)) {
-        this._handleFlow(tenant, deviceId, templates, event, flow, source);
+        this._handleFlow(tenant, deviceId, timestamp, templates, event, flow, source);
       }
     });
   }
@@ -250,14 +256,14 @@ module.exports = class DeviceIngestor {
 
           }).then(() => {
             this._transformDeviceEvent(message);
-            return this._handleEvent(message.metadata.tenant, message.data.id, message.data.templates, message.event, message);
+            return this._handleEvent(message.metadata.tenant, message.data.id, undefined, message.data.templates, message.event, message);
           });
         case 'remove':
           return this.deviceCache.getDeviceInfo(message.metadata.tenant, message.data.id).then((deviceData) => {
             return this.deviceCache.deleteDevice(message.metadata.tenant, message.data.id).catch(() => {
               logger.warn('failed to delete data from cache');
             }).then(() => {
-              return this._handleEvent(message.metadata.tenant, message.data.id, deviceData.templates, message.event, message);
+              return this._handleEvent(message.metadata.tenant, message.data.id, undefined, deviceData.templates, message.event, message);
             });
           }).catch( (error) => {
             logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
@@ -270,7 +276,7 @@ module.exports = class DeviceIngestor {
                 message.data.attrs[attr] = deviceData.staticAttrs[attr].value;
               }
             }
-            return this._handleEvent(message.metadata.tenant, message.data.id, deviceData.templates, message.event, message);
+            return this._handleEvent(message.metadata.tenant, message.data.id, undefined, deviceData.templates, message.event, message);
           }).catch( (error) => {
             logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
           });
@@ -311,7 +317,7 @@ module.exports = class DeviceIngestor {
           message.data.attrs[attr] = deviceData.staticAttrs[attr].value;
         }
       }
-      return this._handleEvent(message.metadata.tenant, message.data.id, deviceData.templates, message.event, message);
+      return this._handleEvent(message.metadata.tenant, message.data.id, message.metadata.timestamp, deviceData.templates, message.event, message);
     }).catch((error) => {
       logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
       return Promise.reject();

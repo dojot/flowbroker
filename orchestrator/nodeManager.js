@@ -3,13 +3,14 @@
 const fs = require('fs');
 
 const change = require('./nodes/change/index').Handler;
-// const email = require('./nodes/email/index').Handler;
+//disable email node for now
+//const email = require('./nodes/email/index').Handler;
 const geo = require('./nodes/geo/index').Handler;
 const http = require('./nodes/http/index').Handler;
 const select = require('./nodes/switch/index').Handler;
 const template = require('./nodes/template/index').Handler;
-const event_device_in = require('./nodes/event-device-in/event-device-in').Handler;
 const device_in = require('./nodes/device-in/device-in').Handler;
+const event_device_in = require('./nodes/event-device-in/event-device-in').Handler;
 const event_template_in = require('./nodes/event-template-in/event-template-in').Handler;
 const template_in = require('./nodes/template-in/template-in').Handler;
 const actuate = require('./nodes/actuate/actuate').Handler;
@@ -176,8 +177,8 @@ class NodeManager {
           // local nodes
           this.nodes[tenant] = {
             "change": new change(),
-            // Disable email node for now
-            // "email": new email(),
+            //disable email node for now
+            //"email": new email(),
             "geofence": new geo(),
             "http": new http(),
             "switch": new select(),

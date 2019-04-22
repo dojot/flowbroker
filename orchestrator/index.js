@@ -185,7 +185,7 @@ kafkaMessenger.init().then(() => {
 }).then((client) => {
   let FlowManager = new FlowManagerBuilder(client);
   healthCheck.init(kafkaMessenger, FlowManager);
-  APIHandler.init(FlowManager);
+  APIHandler.init(FlowManager, healthCheck.get());
   let ingestor = new Ingestor(FlowManager, kafkaMessenger);
   return ingestor.init();
 }).catch((error) => {
