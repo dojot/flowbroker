@@ -3,7 +3,7 @@
 
 var redisClient = require("ioredis");
 var config = require("./config");
-var { ClientWrapper } = require('./redisClientWrapper');
+var { DeviceCache } = require('./DeviceCache');
 
 class RedisManager {
   constructor() {
@@ -53,10 +53,16 @@ class RedisManager {
 
   /**
    * Build a new client wrapper based on the already created REDIS connection.
+   * @param {string} client which client is desired. Supported values: 'deviceCache'
    * @returns A new client wrapper.
    */
-  getClient() {
-    return new ClientWrapper(this.redis);
+  getClient(client) {
+    switch (client) {
+      case "deviceCache":
+        return new DeviceCache(this.redis);
+      default:
+        return null;
+    }
   }
 }
 

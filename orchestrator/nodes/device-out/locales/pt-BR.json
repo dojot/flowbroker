@@ -1,17 +1,18 @@
 {
-  "title": "dispositivo",
   "label": {
     "name": "Nome",
-    "action": "Açao",
+    "device_out": "device out",
+    "action": "Ação",
+    "self": "O dispositivo que desencadeou o fluxo",
+    "configured": "Um dispositivo específico",
+    "dynamic": "Um dispositivo definido durante o fluxo",
     "attribute": "Atributo",
-    "devices": "Dispositivo(s)",
+    "device": "Dispositivo",
     "source": "Fonte"
   },
   "text": {
-    "triggered": "O dispositivo que desencadeou o fluxo",
-    "specific": "Dispositivo(s) específico(s)",
-    "defined": "Dispositivo(s) definido(s) durante o fluxo",
-    "enter_attribute": "Digite um atributo",
-    "select_device": "Selecione um dispositivo"
+    "help": "Configure o valor de um dispositivo virtual com base nos resultados das operações anteriores no fluxo.",
+    "attr_placeholder": "Digite um atributo",
+    "select_dev_placeholder": "Selecione um dispositivo"
   }
 }
