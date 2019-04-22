@@ -1,6 +1,6 @@
 {
   "name": "arithmetic-mean-node",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "This is a sample of node that computes the arithmetic mean",
   "main": "src/index.js",
   "scripts": {
@@ -9,6 +9,6 @@
   "author": "Raul Negreiros",
   "license": "GPL-3.0",
   "dependencies": {
-    "@dojot/flow-node": "^3.0.0-alpha3"
+    "@dojot/flow-node": "^3.0.0-alpha4"
   }
 }
