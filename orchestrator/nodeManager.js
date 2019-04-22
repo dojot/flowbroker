@@ -14,6 +14,7 @@ const event_device_in = require('./nodes/event-device-in/event-device-in').Handl
 const event_template_in = require('./nodes/event-template-in/event-template-in').Handler;
 const template_in = require('./nodes/template-in/template-in').Handler;
 const actuate = require('./nodes/actuate/actuate').Handler;
+const multi_actuate = require('./nodes/multi-actuate/multi_actuate').Handler;
 const device_out = require('./nodes/device-out/device-out').Handler;
 const notification = require('./nodes/notification/index').Handler;
 const get_context = require('./nodes/get-context/get-context').Handler;
@@ -193,6 +194,7 @@ class NodeManager {
             "device template in": new template_in(),
             "actuate": new actuate(
                 new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
+            "multi actuate": new multi_actuate(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices),
             "get context": new get_context(),
           };
 
