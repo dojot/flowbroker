@@ -7,12 +7,17 @@ const change = require('./nodes/change/index').Handler;
 //const email = require('./nodes/email/index').Handler;
 const geo = require('./nodes/geo/index').Handler;
 const http = require('./nodes/http/index').Handler;
+const ftp = require('./nodes/ftp/index').Handler;
 const select = require('./nodes/switch/index').Handler;
 const template = require('./nodes/template/index').Handler;
 const device_in = require('./nodes/device-in/device-in').Handler;
-const device_tpl = require('./nodes/template-in/template-in').Handler;
+const event_device_in = require('./nodes/event-device-in/event-device-in').Handler;
+const event_template_in = require('./nodes/event-template-in/event-template-in').Handler;
+const template_in = require('./nodes/template-in/template-in').Handler;
 const actuate = require('./nodes/actuate/actuate').Handler;
+const multi_actuate = require('./nodes/multi-actuate/multi_actuate').Handler;
 const device_out = require('./nodes/device-out/device-out').Handler;
+const multi_device_out = require('./nodes/multi-device-out/multi-device-out').Handler;
 const notification = require('./nodes/notification/index').Handler;
 const get_context = require('./nodes/get-context/get-context').Handler;
 const cron = require('./nodes/cron/cron').Handler;
@@ -181,15 +186,20 @@ class NodeManager {
             //"email": new email(),
             "geofence": new geo(),
             "http": new http(),
+            "ftp": new ftp(),
             "switch": new select(),
             "template": new template(),
+            "event device in": new event_device_in(),
             "device in": new device_in(),
             "device out": new device_out(
               new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
+            "multi device out": new multi_device_out(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData),
             "notification": new notification(kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
-            "device template in": new device_tpl(),
+            "event template in": new event_template_in(),
+            "device template in": new template_in(),
             "actuate": new actuate(
               new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
+            "multi actuate": new multi_actuate(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices),
             "get context": new get_context(),
             "cron": new cron(),
             "cron-batch": new cron_batch(),

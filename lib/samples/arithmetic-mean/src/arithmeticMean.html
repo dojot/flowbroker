@@ -1,0 +1,65 @@
+<script type="text/x-red" data-template-name="arithmetic-mean">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="config.name"></label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-in"><i class="fa fa-edit"></i> <span data-i18n="config.target_attribute"></label>
+        <input type="text" id="node-input-in" data-i18n="[placeholder]config.payload" style="width:250px;">
+        <input type="hidden" id="node-input-inFieldType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-out"><i class="fa fa-edit"></i> <span data-i18n="config.mean"></label>
+        <input type="text" id="node-input-out" data-i18n="[placeholder]config.payload" style="width:250px;">
+        <input type="hidden" id="node-input-outFieldType">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="arithmetic-mean">
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('arithmetic-mean', {
+        category: RED._("sample/arithmetic-mean:category"),
+        color: "rgb(231, 231, 174)",
+        defaults: {
+            name: { value: "", required: false },
+            out:  { value: "payload", validate: RED.validators.typedInput("outFieldType") },
+            outFieldType: { value: "msg" },
+            in: { value: "payload", validate: RED.validators.typedInput("inFieldType") },
+            inFieldType: { value: "msg" },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "cog.png",
+        label: function () {
+            return this.name  || RED._('sample/arithmetic-mean:title');
+        },
+        paletteLabel: RED._('sample/arithmetic-mean:title'),
+        labelStyle: function () {
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function () {
+            if (!this.outFieldType) {
+                this.outFieldType = 'msg';
+            }
+
+            $("#node-input-out").typedInput({
+                default: 'msg',
+                types: ['msg'],
+                typeField: $("#node-input-outFieldType")
+            });
+
+            if (!this.inFieldType) {
+                this.inFieldType = 'msg';
+            }
+
+            $("#node-input-in").typedInput({
+                default: 'msg',
+                types: ['msg'],
+                typeField: $("#node-input-inFieldType")
+            });
+        },
+        oneditsave: function () { }
+    });
+</script>
