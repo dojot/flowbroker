@@ -28,6 +28,7 @@ class UnknownFlowError extends FlowError {
   constructor(id) {
     super("Unknown flow: " + id);
     this.flowid = id;
+    this.httpStatus = 404;
   }
 
   payload() {
