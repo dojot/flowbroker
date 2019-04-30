@@ -159,12 +159,8 @@ class FlowManager {
           throw new UnknownFlowError(flowid);
         }
 
+
         return flow;
-      })
-      .catch(error => {
-        if (error instanceof mongo.MongoError) {
-          throw error;
-        }
       });
   }
 
