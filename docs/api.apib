@@ -25,7 +25,7 @@ Returns all currently configured flows
               ]
             }
 
-+ Response 500
++ Response 500 (application/json; charset=utf-8)
 
         {
           "message": "Failed to list flows"
@@ -61,16 +61,16 @@ Adds a new flow.
           }
         }
 
-+ Response 400
++ Response 400 (application/json; charset=utf-8)
 
         {
-          "msg" : "missing flow data"
+          "message" : "Missing mandatory field"
         }
 
-+ Response 500
++ Response 500 (application/json; charset=utf-8)
 
         {
-          "msg" : "failed to insert data"
+          "message" : "failed to create flow"
         }
 
 ### Removes all flows [DELETE /v1/flow]
@@ -80,11 +80,18 @@ Removes all flows and their configurations.
 
             Authorization: Bearer JWT
 
-+ Response 200
++ Response 200 (application/json; charset=utf-8)
 
         {
           "message" : "All flows removed"
         }
+
++ Response 500 (application/json; charset=utf-8)
+
+        {
+          "message" : "failed to remove flows"
+        }
+
 
 
 ## Specific Flow [/v1/flow/{id}]
@@ -120,6 +127,12 @@ Returns the configuration of a particular flow
           "msg" : "failed to retrieve data"
         }
 
++ Response 404
+
+        {
+          "message": "Unknown flow: 777777",
+          "flow": "777777"
+        }
 
 ### Reconfigure a specific flow [PUT /v1/flow/{id}]
 Reconfigure a particular flow - the old config will be removed and the new one will be deployed.
@@ -154,26 +167,16 @@ Reconfigure a particular flow - the old config will be removed and the new one w
           }
         }
 
-+ Response 400
++ Response 404
 
         {
           "message": "Unknown flow: 777777",
           "flow": "777777"
         }
-+ Response 404
-
-        {
-          "msg" : "given flow is unknown"
-        }
 + Response 500
 
         {
           "msg" : "failed to remove flow"
-        }
-+ Response 500
-
-        {
-          "msg" : "failed to insert data"
         }
 
 ### Remove the flow [DELETE /v1/flow/{id}]
@@ -210,7 +213,8 @@ Removes the flow and its configuration.
 + Response 404
 
         {
-          "msg" : "given flow is unknown"
+          "message": "Unknown flow: 777777",
+          "flow": "777777"
         }
 
 ## Nodes [/v1/node]
@@ -236,11 +240,43 @@ Adds a remote node
           "message": "ok"
         }
 
++ Response 400
+
+        {
+          "message" : "Missing mandatory field"
+        }
+
 + Response 500
 
         {
           "message" : "Failed to add node"
         }
+
+### Retrieve all remote nodes [GET /v1/node]
+Retrieve all currently running remote nodes
+
++ Request (application/json; charset=utf-8)
+  + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json; charset=utf-8)
+
+            {
+              "nodes": [
+                {
+                  "id": "kelvin",
+                  "image": "raulnegreiros/kelvin:latest"
+                }
+              ]
+            }
+
++ Response 500 (application/json; charset=utf-8)
+
+        {
+          "message": "Failed list nodes",
+        }
+
 
 ### Remove a remote node [DELETE /v1/node/{id}]
 Removes a remote node
@@ -264,3 +300,56 @@ Removes a remote node
         {
           "message": "Failed to remove node.",
         }
+
+### Remove all remote nodes [DELETE /v1/node]
+Removes a remote node
+
++ Request (application/json; charset=utf-8)
+  + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json; charset=utf-8)
+
+        {
+          "message": "ok"
+        }
+
++ Response 500 (application/json; charset=utf-8)
+
+        {
+          "message": "Failed to remove node.",
+        }
+
+
+
+## NodeRED nodes [/nodes]
+
+### Retrieve all nodes [GET /nodes]
+
+
++ Request (application/json; charset=utf-8)
+  + Headers
+
+            Authorization: Bearer JWT
+            Accept: application/json;text/html
+
++ Response 200 (application/json; charset=utf-8)
+
+        [
+            {
+            "id": "dojot/change",
+            "name": "change",
+            "module": "dojot",
+            "version": "1.0.0",
+            "enabled": true,
+            "local": true,
+            "types": [
+                "change"
+            ]
+            }
+        ]
+
++ Response 200 (text/html; charset=utf-8)
+
+        <html>Node description in HTML</html>
