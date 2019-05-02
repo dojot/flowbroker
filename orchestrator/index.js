@@ -19,6 +19,16 @@ var dojotModule = require("@dojot/dojot-module");
 
 var healthCheck = require('./healthcheck');
 
+process.on('unhandledRejection', (reason) => {
+  logger.error(`Unhandled Rejection at: ${reason.stack || reason}. Bailing out!!`);
+  process.kill(process.pid, "SIGTERM");
+});
+
+process.on('uncaughtException', (ex) => {
+  logger.error(`Unhandled Exception at: ${ex.stack || ex}. Bailing out!!`);
+  process.kill(process.pid, "SIGTERM");
+});
+
 function logAndKill(error) {
   logger.error('[flowbroker] Initialization failed.', error);
   process.kill(process.pid, "SIGTERM");
