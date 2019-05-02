@@ -4,7 +4,6 @@
  * Manages flows configured by the application
  */
 
-var mongo = require('mongodb');
 var uuid = require('uuid/v4');
 var util = require('util');
 var logger = require('./logger').logger;
@@ -85,7 +84,7 @@ class FlowManager {
   /**
    * Given a flow representation (json, node-red schema), perform initial validation
    * and parsing.
-   * 
+   *
    * This function will ignore any 'tab' and undefined nodes.
    *
    * @param  {[type]} flow [description]
