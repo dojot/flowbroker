@@ -328,11 +328,11 @@ Removes a remote node
 ### Retrieve all nodes [GET /nodes]
 
 
-+ Request (application/json; charset=utf-8)
++ Request for node descriptions
   + Headers
 
             Authorization: Bearer JWT
-            Accept: application/json;text/html
+            Accept: application/json
 
 + Response 200 (application/json; charset=utf-8)
 
@@ -350,6 +350,35 @@ Removes a remote node
             }
         ]
 
++ Request for node HTML
+  + Headers
+
+            Authorization: Bearer JWT
+            Accept: text/html
+
 + Response 200 (text/html; charset=utf-8)
 
         <html>Node description in HTML</html>
+
+## NodeRED localization strings [/locales]
+
+### Retrieve localization strings for node-red nodes [GET /locales/node-red]
+
++ Request
+  + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json)
+
+            {
+                "common": {
+                    "label": {
+                    "payload": "Payload",
+                    "topic": "Topic",
+                    "name": "Name",
+                    "username": "Username"
+                    }
+                }
+            }
+
