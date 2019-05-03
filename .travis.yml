@@ -22,7 +22,7 @@ script:
   - sleep 10
   - docker-compose -f tests/docker-compose.yml up -d flowbroker flowbroker-context-manager flowbroker-redis
   - sleep 10
-  - docker-compose -f ./tests/docker-compose.yml run --rm tester
+  - docker-compose -f ./tests/docker-compose.yml run --rm tester * --level=debug
 
 after_success:
   - travis/publish.sh
