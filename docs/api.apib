@@ -327,8 +327,14 @@ Removes a remote node
 
 ### Retrieve all nodes [GET /nodes]
 
+The request can be sent with "Accept: application/json" header, which will
+generate a JSON object with a list of all nodes currently configured in
+Flowbroker. It can also be set with "Accept: text/html". In this case, a huge
+HTML file is returned with all nodes HTML description and associated scripts so
+that it can be rendered in a frontend application (it will be composed by all
+HTML files associated to each node).
 
-+ Request for node descriptions
++ Request for node JSON description
   + Headers
 
             Authorization: Bearer JWT
@@ -338,15 +344,15 @@ Removes a remote node
 
         [
             {
-            "id": "dojot/change",
-            "name": "change",
-            "module": "dojot",
-            "version": "1.0.0",
-            "enabled": true,
-            "local": true,
-            "types": [
-                "change"
-            ]
+                "id": "dojot/change",
+                "name": "change",
+                "module": "dojot",
+                "version": "1.0.0",
+                "enabled": true,
+                "local": true,
+                "types": [
+                    "change"
+                ]
             }
         ]
 
@@ -358,7 +364,55 @@ Removes a remote node
 
 + Response 200 (text/html; charset=utf-8)
 
-        <html>Node description in HTML</html>
+            <script type="text/x-red" data-template-name="change">
+                <div class="form-row">
+                    <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
+                    <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
+                </div>
+                <div class="form-row" style="margin-bottom:0;">
+                    <label><i class="fa fa-list"></i> <span data-i18n="change.label.rules"></span></label>
+                </div>
+                <div class="form-row node-input-rule-container-row">
+                    <ol id="node-input-rule-container"></ol>
+                </div>
+
+            </script>
+
+            <script type="text/x-red" data-help-name="change">
+                <p>Set, change, delete or move properties of a message, flow context or global context.</p>
+                <p>The node can specify multiple rules that will be applied in turn.</p>
+                <p>The available operations are:</p>
+                <ul>
+                    <li><b>Set</b> - set a property. The value can be a variety of different types, or
+                        can be taken from an existing message or context property.</li>
+                    <li><b>Change</b> - search &amp; replace parts of the property. If regular expressions
+                        are enabled, the <b>replace with</b> property can include capture groups, for
+                        example <code>$1</code>. Replace will only change the <b>type</b> if there
+                        is a complete match.</li>
+                    <li><b>Delete</b> - delete a property.</li>
+                    <li><b>Move</b> - move or rename a property.</li>
+                </ul>
+
+            </script>
+
+            <script type="text/javascript">
+                RED.nodes.registerType('change', {
+                    color: "#E2D96E",
+                    category: 'function',
+                    defaults: {
+                        name: {value: ""},
+                        rules: {value: [{t: "set", p: "payload", pt: "msg", to: "", tot: "str"}]},
+                        // legacy
+                        action: {value: ""},
+                        property: {value: ""},
+                        from: {value: ""},
+                        to: {value: ""},
+                        reg: {value: false}
+                    },
+                    ....
+                });
+            </script>
+
 
 ## NodeRED localization strings [/locales]
 
@@ -369,7 +423,7 @@ Removes a remote node
 
             Authorization: Bearer JWT
 
-+ Response 200 (application/json)
++ Response 200 (application/json; charset=utf-8)
 
             {
                 "common": {
