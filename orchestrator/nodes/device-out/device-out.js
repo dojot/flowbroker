@@ -82,7 +82,8 @@ class DataHandler extends dojot.DataHandlerBase {
       let output = {
         metadata: {
           deviceid: deviceId,
-          tenant: metadata.tenant
+          tenant: metadata.tenant,
+          timestamp: Date.now()
         },
         attrs: this._get(config.attrs, message)
       };
