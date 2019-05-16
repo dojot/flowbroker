@@ -105,5 +105,8 @@ module.exports = {
             "pt-pt": "pt-BR",
             default: "en-US"
         }
+    },
+    taskProcessing: {
+        taskTimeout: process.env.TASK_TIMEOUT || 30000 // time in ms
     }
 };

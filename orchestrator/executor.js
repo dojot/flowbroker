@@ -47,7 +47,15 @@ module.exports = class Executor {
                 originatorDeviceId: event.metadata.originator,
                 timestamp: event.metadata.timestamp,
             }
-            handler.handleMessage(at, event.message, metadata, this.contextHandler)
+            let handleMessagePromise = handler.handleMessage(at, event.message, metadata, this.contextHandler);
+
+            const handleMessageTimeoutPromise = new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    return reject(`timeout`);
+                }, config.taskProcessing.taskTimeout);
+            });            
+
+            Promise.race([handleMessagePromise, handleMessageTimeoutPromise])
                 .then((result) => {
                     console.log(`[executor] hop (${at.type}) result: ${JSON.stringify(result)}`);
                     for (let output = 0; output < at.wires.length; output++) {
@@ -69,7 +77,7 @@ module.exports = class Executor {
                     }
                     return ack();
                 }).catch( (error) => {
-                    console.error(`[executor] Node execution failed. ${error}. Aborting flow ${event.flow.id}.`);
+                    console.warn(`[executor] Node (${at.type}) execution failed. Error: ${error}. Aborting flow ${event.flow.id}.`);
                     // TODO notify alarmManager
                     return ack();
                 });
