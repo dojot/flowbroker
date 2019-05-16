@@ -98,7 +98,8 @@ class DataHandler extends dojot.DataHandlerBase {
           attrs: {},
         },
         meta: {
-          service: metadata.tenant
+          service: metadata.tenant,
+          timestamp: Date.now()
         }
       };
 

@@ -364,7 +364,6 @@ class NodeManager {
         result.push(metadata);
       }
     }
-    logger.debug(`asJson: ${result}.`);
     return result;
   }
 
@@ -380,7 +379,6 @@ class NodeManager {
         result = result + '\n' + data;
       }
     }
-    logger.debug(`asHtml: ${result}.`);
     return result;
   }
 
