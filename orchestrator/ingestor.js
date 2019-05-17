@@ -235,7 +235,7 @@ module.exports = class DeviceIngestor {
   }
 
 
-  _preProcessDeviceManagerEvent(messageStringfied) {
+  async _preProcessDeviceManagerEvent(messageStringfied) {
 
     try {
       let message = JSON.parse(messageStringfied);
@@ -267,6 +267,7 @@ module.exports = class DeviceIngestor {
             });
           }).catch( (error) => {
             logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
+            return Promise.reject('Failed to processe device manager delete message');
           });
         case 'configure':
           return this.deviceCache.getDeviceInfo(message.metadata.tenant, message.data.id).then((deviceData) => {
@@ -279,18 +280,19 @@ module.exports = class DeviceIngestor {
             return this._handleEvent(message.metadata.tenant, message.data.id, undefined, deviceData.templates, message.event, message);
           }).catch( (error) => {
             logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
+            return Promise.reject('Failed to processe device manager configure message');
           });
         default:
-        logger.error(`[ingestor] unsupported device manager event ${message.event}`);
-        return Promise.reject();
+        logger.warn(`[ingestor] unsupported device manager event ${message.event}`);
+        return Promise.reject('Unsupported device manager event');
       }
     } catch (error) {
       logger.warn(`[ingestor] device-manager event ingestion failed: `, error.message);
-      return Promise.reject();
+      return Promise.reject('Failed to processe device manager event');
     }
   }
 
-  _preProcessDeviceEvent(messageStringfied) {
+  async _preProcessDeviceEvent(messageStringfied) {
     let message;
 
     try {
@@ -320,7 +322,7 @@ module.exports = class DeviceIngestor {
       return this._handleEvent(message.metadata.tenant, message.data.id, message.metadata.timestamp, deviceData.templates, message.event, message);
     }).catch((error) => {
       logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
-      return Promise.reject();
+      return Promise.reject('Failed to process device event');
     });
 
   }
