@@ -1,0 +1,13 @@
+{
+  "label": {
+    "cron-batch": "cron batch",
+    "name": "Nome",
+    "operation": "Operação",
+    "jobs": "Requisições de trabalho",
+    "inJobIds": "Identificadores de trabalho",
+    "outJobIds": "Identificadores de trabalho"
+  },
+  "jobsKey": "array de requisições de trabalho",
+  "inJobIdsKey": "array de identificadores de trabalho",
+  "outJobIdsKey": "array de identificadores de trabalho"
+}
