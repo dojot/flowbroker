@@ -20,6 +20,8 @@ const device_out = require('./nodes/device-out/device-out').Handler;
 const multi_device_out = require('./nodes/multi-device-out/multi-device-out').Handler;
 const notification = require('./nodes/notification/index').Handler;
 const get_context = require('./nodes/get-context/get-context').Handler;
+const cron = require('./nodes/cron/cron').Handler;
+const cron_batch = require('./nodes/cron-batch/cron-batch').Handler;
 const dockerRemote = require('./nodes/dockerComposeRemoteNode/index').Handler;
 const k8sRemote = require('./nodes/kubernetesRemoteNode/index').Handler;
 const Publisher = require('./publisher');
@@ -199,6 +201,8 @@ class NodeManager {
               new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
             "multi actuate": new multi_actuate(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices),
             "get context": new get_context(),
+            "cron": new cron(),
+            "cron-batch": new cron_batch(),
           };
 
           logger.debug(`Succeeded to set manager to handle processing nodes for tenant ${tenant}`);
