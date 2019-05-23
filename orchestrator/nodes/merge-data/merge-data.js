@@ -41,7 +41,7 @@ class DataHandler extends dojot.DataHandlerBase {
   _isParametersValid(config) {
     try {
       let targetData = this._get(config.targetData, message);
-      if ( (!targetData) || (! targetData instanceof Object) ){
+      if ( (!targetData) || !(targetData instanceof Object) ) {
         logger.warn(`Invalid target data: ${targetData}`);
         return false;
       }
