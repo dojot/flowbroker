@@ -38,11 +38,15 @@ class DataHandler extends dojot.DataHandlerBase {
     return path.resolve(__dirname, './locales');
   }
 
-  _isParametersValid(config) {
+  _isParametersValid(config, message) {
     try {
       let targetData = this._get(config.targetData, message);
       if ( (!targetData) || !(targetData instanceof Object) ) {
         logger.warn(`Invalid target data: ${targetData}`);
+        return false;
+      }
+      if (!config.mergedData) {
+        logger.warn('Undefined output');
         return false;
       }
     } catch (error) {
@@ -54,14 +58,14 @@ class DataHandler extends dojot.DataHandlerBase {
 
   handleMessage(config, message, metadata, contextHandler) {
     logger.debug("Executing merge data node...");
-    if (this._isParametersValid(config)) {
+    if (!this._isParametersValid(config, message)) {
       logger.warn("Invalid parameters.");
       return Promise.reject(new Error('Invalid parameters.'));
     }
 
     let targetData = this._get(config.targetData, message);
 
-    return contextHandler.wlockAndGetNodeInstanceContext(metadata.tenant, metadata.flowId, 
+    return contextHandler.wlockAndGetNodeInstanceContext(metadata.tenant, metadata.flowId,
       config.type, config.id, 'data').then((values) => {
         let [contextId, contextContent] = values;
         if (!contextContent) {

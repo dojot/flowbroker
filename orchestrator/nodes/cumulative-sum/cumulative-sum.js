@@ -37,12 +37,10 @@ class DataHandler extends dojot.DataHandlerBase {
     return path.resolve(__dirname, './locales');
   }
 
-  _isParametersValid(config) {
+  _isParametersValid(config, message) {
     try {
       let eventValue = this._get(config.targetAttribute, message);
       let eventTimestamp = this._get(config.timestamp, message);
-      let timePeriod = this._get(config.timePeriod, message);
-      let output = this._get(config.output, message);
       if ( (!eventValue) || isNaN(eventValue) ) {
         logger.warn(`Invalid target attribute ${eventValue}`);
         return false;
@@ -51,11 +49,11 @@ class DataHandler extends dojot.DataHandlerBase {
         logger.warn(`Invalid timestamp ${eventValue}`);
         return false;
       }
-      if ( (!timePeriod) || isNaN(value) || (timePeriod <= 0) ){
+      if ( (!config.timePeriod) || isNaN(config.timePeriod) || (config.timePeriod <= 0) ){
         logger.warn(`Invalid time period ${timePeriod}`);
         return false;
       }
-      if (!output) {
+      if (!config.output) {
         logger.warn('Undefined output');
         return false;
       }
@@ -68,7 +66,7 @@ class DataHandler extends dojot.DataHandlerBase {
 
   handleMessage(config, message, metadata, contextHandler) {
     logger.debug("Executing cumulative sum node...");
-    if (this._isParametersValid(config)) {
+    if (!this._isParametersValid(config, message)) {
       logger.warn("Invalid parameters.");
       return Promise.reject(new Error('Invalid parameters.'));
     }
@@ -77,7 +75,7 @@ class DataHandler extends dojot.DataHandlerBase {
     let eventTimestamp = this._get(config.timestamp, message);
     let period = config.timePeriod * 60000; // transform from minutes to miliseconds
 
-    return contextHandler.wlockAndGetNodeInstanceContext(metadata.tenant, metadata.flowId, 
+    return contextHandler.wlockAndGetNodeInstanceContext(metadata.tenant, metadata.flowId,
       config.type, config.id, 'data').then((values) => {
         let [contextId, contextContent] = values;
         if (!contextContent.sum) {
