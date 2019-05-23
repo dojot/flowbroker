@@ -25,6 +25,7 @@ const cron_batch = require('./nodes/cron-batch/cron-batch').Handler;
 const dockerRemote = require('./nodes/dockerComposeRemoteNode/index').Handler;
 const k8sRemote = require('./nodes/kubernetesRemoteNode/index').Handler;
 const cumulative_sum = require('./nodes/cumulative-sum/cumulative-sum').Handler;
+const merge_data = require('./nodes/merge-data/merge-data').Handler;
 const Publisher = require('./publisher');
 const logger = require('./logger').logger;
 
@@ -205,6 +206,7 @@ class NodeManager {
             "cron": new cron(),
             "cron-batch": new cron_batch(),
             "cumulative sum": new cumulative_sum(),
+            "merge data": new merge_data(),
           };
 
           logger.debug(`Succeeded to set manager to handle processing nodes for tenant ${tenant}`);
