@@ -1,6 +1,6 @@
 var path = require('path');
 var dojot = require('@dojot/flow-node');
-var logger = require("../../logger").logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 var util = require("util");
 
 class DataHandler extends dojot.DataHandlerBase {
@@ -41,10 +41,10 @@ class DataHandler extends dojot.DataHandlerBase {
 
   handleMessage(config, message, metadata) {
 
-    logger.debug("Executing actuate node...");
+    logger.debug("Executing actuate node...", { filename: 'actuate' });
     if ((config.attrs === undefined) || (config.attrs.length === 0)) {
-      logger.debug("... actuate node was not successfully executed.");
-      logger.error("Missing data source.");
+      logger.debug("... actuate node was not successfully executed.", { filename: 'actuate' });
+      logger.error("Missing data source.", { filename: 'actuate' });
       return Promise.reject(new Error('Invalid data source: field is mandatory'));
     }
 
@@ -52,8 +52,8 @@ class DataHandler extends dojot.DataHandlerBase {
     switch (config.device_source) {
       case 'configured':
         if (config._device_id === undefined) {
-          logger.debug("... actuate node was not successfully executed.");
-          logger.error("There is not device configured to actuate");
+          logger.debug("... actuate node was not successfully executed.", { filename: 'actuate' });
+          logger.error("There is not device configured to actuate", { filename: 'actuate' });
           return Promise.reject(new Error('Invalid Device id'));
         }
         deviceId = config._device_id;
@@ -63,15 +63,15 @@ class DataHandler extends dojot.DataHandlerBase {
       break;
       case 'dynamic':
         if ((config.device_source_msg === undefined) || (config.device_source_msg.length === 0)) {
-          logger.debug("... actuate node was not successfully executed.");
-          logger.error("Missing device source msg.");
+          logger.debug("... actuate node was not successfully executed.", { filename: 'actuate' });
+          logger.error("Missing device source msg.", { filename: 'actuate' });
           return Promise.reject(new Error('Invalid device source msg: field is mandatory'));
         }
         try {
           deviceId = this._get(config.device_source_msg, message);
         } catch (error) {
-          logger.debug("... actuate node was not successfully executed.");
-          logger.error(`Error while executing actuate node: ${error}`);
+          logger.debug("... actuate node was not successfully executed.", { filename: 'actuate' });
+          logger.error(`Error while executing actuate node: ${error}`, { filename: 'actuate' });
           return Promise.reject(error);
         }
       break;
@@ -95,15 +95,15 @@ class DataHandler extends dojot.DataHandlerBase {
           id: deviceId
         }
       };
-      logger.debug(`Sending message... `);
-      logger.debug(`Message is: ${util.inspect(output, { depth: null })}`);
+      logger.debug(`Sending message... `, { filename: 'actuate' });
+      logger.debug(`Message is: ${util.inspect(output, { depth: null })}`, { filename: 'actuate' });
       this.publisher.publish(output);
-      logger.debug(`... message was sent.`);
-      logger.debug("... actuate node was successfully executed.");
+      logger.debug(`... message was sent.`, { filename: 'actuate' });
+      logger.debug("... actuate node was successfully executed.", { filename: 'actuate' });
       return Promise.resolve();
     } catch (error) {
-      logger.debug("... actuate node was not successfully executed.");
-      logger.error(`Error while executing actuate node: ${error}`);
+      logger.debug("... actuate node was not successfully executed.", { filename: 'actuate' });
+      logger.error(`Error while executing actuate node: ${error}`, { filename: 'actuate' });
       return Promise.reject(error);
     }
   }

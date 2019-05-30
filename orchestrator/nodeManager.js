@@ -27,7 +27,7 @@ const k8sRemote = require('./nodes/kubernetesRemoteNode/index').Handler;
 const cumulative_sum = require('./nodes/cumulative-sum/cumulative-sum').Handler;
 const merge_data = require('./nodes/merge-data/merge-data').Handler;
 const Publisher = require('./publisher');
-const logger = require('./logger').logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 
 const config = require("./config");
 const MongoManager = require('./mongodb');
@@ -50,7 +50,7 @@ class NodeManager {
     switch (engine) {
       case "docker":
         if (!options.socketPath) {
-          logger.error(`Missing docker socket path configuration.`);
+          logger.error(`Missing docker socket path configuration.`, { filename: 'nodeMngr' });
           throw new Error('Missing socketPath configuration');
         }
         this.socketPath = options.socketPath;
@@ -67,7 +67,7 @@ class NodeManager {
         throw new Error('invalid engine: ' + engine);
     }
 
-    logger.debug('Node manager is using the ' + engine + ' engine');
+    logger.debug(`Node manager is using the ${engine} engine`, { filename: 'nodeMngr' });
   }
 
   /**
@@ -91,11 +91,11 @@ class NodeManager {
    */
   _loadRemoteNodes(tenant) {
     return new Promise((resolve, reject) => {
-      logger.debug(`Loading remote nodes for tenant ${tenant} ...`);
+      logger.debug(`Loading remote nodes for tenant ${tenant} ...`, { filename: 'nodeMngr' });
       this.collection[tenant].find().toArray()
       .then((values) => {
         values.forEach(async (item) => {
-          logger.debug(`Loading remote node ${JSON.stringify(item)}.`);
+          logger.debug(`Loading remote node ${JSON.stringify(item)}.`, { filename: 'nodeMngr' });
           let node;
           if (config.deploy.engine === "docker") {
             node = new dockerRemote(item.image, tenant + item.id,
@@ -115,12 +115,12 @@ class NodeManager {
           //      in the docker-compose and kubernetes libraries.
           node.deinit();
           try {
-            logger.debug(`Trying to remove docker container ${item.containerId}`);
+            logger.debug(`Trying to remove docker container ${item.containerId}`, { filename: 'nodeMngr' });
             await node.remove(item.containerId);
-            logger.debug(`Succeeded to remove container.`);
+            logger.debug(`Succeeded to remove container.`, { filename: 'nodeMngr' });
           }
           catch (error) {
-            logger.warn(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`);
+            logger.warn(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`, { filename: 'nodeMngr' });
           }
 
           // re-create container
@@ -135,23 +135,23 @@ class NodeManager {
               {$set: {containerId: containerId}});
           }
           catch (error) {
-            logger.error(`Failed to load remote node ${tenant}/${item.id} (${JSON.stringify(error)})`);
+            logger.error(`Failed to load remote node ${tenant}/${item.id} (${JSON.stringify(error)})`, { filename: 'nodeMngr' });
             // rollback
             if (containerId) {
               try {
                 await this.delRemoteNode(containerId);
               }
               catch (error) {
-                logger.debug(`(Rollback) Failed to remove remote node ${tenant}/${item.id} (${error}). keep going ..`);
+                logger.debug(`(Rollback) Failed to remove remote node ${tenant}/${item.id} (${error}). keep going ..`, { filename: 'nodeMngr' });
               }
             }
             return reject(new Error(`Failed to load remote node ${tenant}/${item.id}.`));
           }
         });
-        logger.debug(`...Loaded remote nodes for tenant ${tenant}.`);
+        logger.debug(`...Loaded remote nodes for tenant ${tenant}.`, { filename: 'nodeMngr' });
         return resolve();
       }).catch((error) => {
-        logger.error(`Failed to get remote nodes from database ${error}`);
+        logger.error(`Failed to get remote nodes from database ${error}`, { filename: 'nodeMngr' });
         return reject(new Error('Failed to get remote nodes from database.'));
       });
     });
@@ -209,14 +209,14 @@ class NodeManager {
             "merge data": new merge_data(),
           };
 
-          logger.debug(`Succeeded to set manager to handle processing nodes for tenant ${tenant}`);
+          logger.debug(`Succeeded to set manager to handle processing nodes for tenant ${tenant}`, { filename: 'nodeMngr' });
           return resolve();
         }).catch ((error) => {
-          logger.error(`Failed to load remote nodes (${error})`);
+          logger.error(`Failed to load remote nodes (${error})`, { filename: 'nodeMngr' });
           return reject(new Error('Failed to load remote nodes.'));
         });
       }).catch (error => {
-        logger.error(`Failed to create mongodb collection (${error}).`);
+        logger.error(`Failed to create mongodb collection (${error}).`, { filename: 'nodeMngr' });
         return reject(new Error('Failed to create mongodb collection.'));
       });
     });
@@ -259,7 +259,7 @@ class NodeManager {
             if(id !== metadata.name) {
               this.delRemoteNode(containerId).catch((error) => {
                 logger.debug(`Failed to remove remote node
-                ${tenant}/${id} (${error}). keep going ..`);
+                ${tenant}/${id} (${error}). keep going ..`, { filename: 'nodeMngr' });
               });
               return reject(new Error(`The remote node id (${id}) differs from its name (${name}).`));
             }
@@ -274,29 +274,29 @@ class NodeManager {
               metadata: metadata
             }
             this.collection[tenant].insertOne(nodeDbEntry).then(() => {
-              logger.debug(`Succeeded to add remote node with id ${id}`);
+              logger.debug(`Succeeded to add remote node with id ${id}`, { filename: 'nodeMngr' });
               resolve();
             }).catch((error) => {
               this.delRemoteNode(containerId).catch((error) => {
                 logger.debug(`Failed to remove remote node
-                ${tenant}/${id} (${error}). keep going ..`);
+                ${tenant}/${id} (${error}). keep going ..`, { filename: 'nodeMngr' });
               });
               logger.error(`Failed to persist configuration for
-              remote node ${tenant}/${id} (${error}).`)
+              remote node ${tenant}/${id} (${error}).`, { filename: 'nodeMngr' });
               return reject(new Error(`Failed to persist remote node configuration.`));
             });
           }).catch((error) => {
             this.delRemoteNode(containerId).catch((error) => {
               logger.debug(`Failed to remove remote node
-              ${tenant}/${id} (${error}). keep going ..`);
+              ${tenant}/${id} (${error}). keep going ..`, { filename: 'nodeMngr' });
             });
             logger.error(`Failed to initiate docker container for
-            remote node ${tenant}/${id} (${error}).`);
+            remote node ${tenant}/${id} (${error}).`, { filename: 'nodeMngr' });
             return reject(new Error('Failed to initiate docker container.'));
           });
         }).catch((error) => {
           logger.error(`Failed to create docker container for
-          remote node ${tenant}/${id} (${JSON.stringify(error)}).`);
+          remote node ${tenant}/${id} (${JSON.stringify(error)}).`, { filename: 'nodeMngr' });
           return reject(new Error('Failed to create docker container.'));
         });
       }
@@ -323,22 +323,22 @@ class NodeManager {
           let node = this.nodes[tenant][id];
           node.deinit();
           try {
-            logger.debug(`Trying to remove docker container ${node.containerId}`);
+            logger.debug(`Trying to remove docker container ${node.containerId}`, { filename: 'nodeMngr' });
             await node.remove(node.containerId);
-            logger.debug(`Succeeded to remove container.`);
+            logger.debug(`Succeeded to remove container.`, { filename: 'nodeMngr' });
           }
           catch(error) {
-            logger.warn(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`);
+            logger.warn(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`, { filename: 'nodeMngr' });
           }
           finally {
             delete this.nodes[tenant][id];
             // Step 3: Remove remote node configuration from database
             this.collection[tenant].findOneAndDelete({ id: id }).then(() => {
-              logger.debug(`Succeeded to delete remote node with id ${id} for tenant ${tenant}.`);
+              logger.debug(`Succeeded to delete remote node with id ${id} for tenant ${tenant}.`, { filename: 'nodeMngr' });
               return resolve();
             }).catch ((error) => {
               logger.error(`Failed to remove configuration from database
-              for remote node ${temant}/${id} (${error}).`);
+              for remote node ${temant}/${id} (${error}).`, { filename: 'nodeMngr' });
               return reject(new Error('Failed to remove remote node configuration from database.'));
             });
           }

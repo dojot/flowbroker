@@ -3,6 +3,7 @@
 var axios = require("axios");
 var config = require('./config');
 var auth = require('./auth');
+const logger = require("@dojot/dojot-module-logger").logger;
 
 /**
  * Client for REDIS database that implements a cache to the devices
@@ -48,13 +49,13 @@ class DeviceCache {
    * @param {*} tenant 
    */
   deleteDevice(tenant, deviceid) {
-    console.log(`[redis] Will delete ${tenant + ":" + deviceid} from cache`);
+    logger.debug(`Will delete ${tenant + ":" + deviceid} from cache`, { filename: 'dev cache' });
     const key = tenant + ":" + deviceid;
 
     return this.client.del(key).then(() => {
-        console.log(`[redis]${tenant + ":" + deviceid} deleted from cache`);
+        logger.debug(`${tenant + ":" + deviceid} deleted from cache`, { filename: 'dev cache' });
       }).catch((error) => {
-        console.log(error);
+        logger.error(error, { filename: 'dev cache' });
       });
   }
 
@@ -70,14 +71,14 @@ class DeviceCache {
       return this.client.get(tenant + ":" + deviceid).then((data) => {
 
         if (data) {
-          console.log(`retriving data related to ${tenant}:${deviceid} from cache`);
+          logger.debug(`retriving data related to ${tenant}:${deviceid} from cache`, { filename: 'dev cache' });
           return Promise.resolve(JSON.parse(data));
         }
 
-        console.log(`failingback to retrieve data related to ${tenant}:${deviceid} from device-manager`);
+        logger.debug(`failingback to retrieve data related to ${tenant}:${deviceid} from device-manager`, { filename: 'dev cache' });
         return this._requestDeviceInfo(tenant, deviceid);
       }).catch(() => {
-        console.log(`[redis] Could not get from redis, will request to device manager`);
+        logger.debug(`[redis] Could not get from redis, will request to device manager`, { filename: 'dev cache' });
         return this._requestDeviceInfo(tenant, deviceid);
       });
     } else {
@@ -126,24 +127,24 @@ class DeviceCache {
    * @param  templateList 
    */
   _writeDeviceInfo(tenant, deviceid, deviceInfo) {
-    console.log(`[redis] storing device info on cache . . .`);
+    logger.debug(`storing device info on cache . . .`, { filename: 'dev cache' });
     const key = tenant + ":" + deviceid;
     return this.client.set(key, JSON.stringify(deviceInfo)).then(() => {
-        console.log(`[redis] . . . device info stored successfully`);
+        logger.debug(`. . . device info stored successfully`, { filename: 'dev cache' });
         return Promise.resolve();
       }).catch((error) => {
-        console.log(error);
+        logger.error(`Failed to write device info into cache: ${error}`, { filename: 'dev cache' });
         return Promise.reject(error);
       });
   }
 
   _writeDevicesInfo(devices) {
-    console.log(`[redis] storing devices info on cache . . .`);
+    logger.debug(`storing devices info on cache . . .`, { filename: 'dev cache' });
     return this.client.mset(devices).then(() => {
-      console.log(`[redis] . . . devices info stored successfully`);
+      logger.debug(`. . . devices info stored successfully`, { filename: 'dev cache' });
       return Promise.resolve();
     }).catch((error) => {
-      console.log(error);
+      logger.error(`Failed to write devices indo into cache ${error} `, { filename: 'dev cache' });
       return Promise.reject(error);
     });
   }
@@ -201,7 +202,7 @@ class DeviceCache {
           return resolve();
         }
       }).catch((error) => {
-        console.error('Failed to retrieve the list of available devices: ', error);
+        logger.error(`Failed to retrieve the list of available devices: ${error}`, { filename: 'dev cache' });
         return reject(error);
       });
     });

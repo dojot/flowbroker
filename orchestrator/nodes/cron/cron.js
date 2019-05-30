@@ -2,7 +2,7 @@
 
 const axios = require('axios');
 const path = require('path');
-const logger = require('../../logger').logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 const dojot = require('@dojot/flow-node');
 
 class DataHandler extends dojot.DataHandlerBase {
@@ -48,11 +48,11 @@ class DataHandler extends dojot.DataHandlerBase {
                 url: `http://cron:5000/cron/v1/jobs/${jobId}`,
                 timeout: 1000
             }).then(response => {
-                logger.debug(`Succeeded to remove cron job ${jobId}`);
+                logger.debug(`Succeeded to remove cron job ${jobId}`, { filename: 'cron' });
                 return resolve();
 
             }).catch(error => {
-                logger.debug(`Failed to remove cron job ${jobId} (${error}).`);
+                logger.debug(`Failed to remove cron job ${jobId} (${error}).`, { filename: 'cron' });
                 return reject(error);
             });
         });
@@ -71,24 +71,24 @@ class DataHandler extends dojot.DataHandlerBase {
                 timeout: 1000
             }).then(response => {
                 let jobId = response.data.jobId;
-                logger.debug(`Succeeded to create cron job ${jobId}`);
+                logger.debug(`Succeeded to create cron job ${jobId}`, { filename: 'cron' });
                 return resolve(jobId);
 
             }).catch(error => {
-                logger.debug(`Failed to create cron job (${JSON.stringify(error.response.data)}).`);
+                logger.debug(`Failed to create cron job (${JSON.stringify(error.response.data)}).`, { filename: 'cron' });
                 return reject(error);
             });
         });
     }
 
     handleMessage(config, message, metadata) {
-        logger.debug("Executing cron node...");
+        logger.debug("Executing cron node...", { filename: 'cron' });
         return new Promise(async (resolve, reject) => {
             try {
                 switch(config.operation) {
                     case "CREATE":
                     {
-                        logger.debug("Executing create operation ...");
+                        logger.debug("Executing create operation ...", { filename: 'cron' });
                         let jobRequest = {
                             time: config.cronTimeExpression,
                             name: config.jobName,
@@ -104,7 +104,7 @@ class DataHandler extends dojot.DataHandlerBase {
                             case "object":
                                 break;
                             default:
-                                logger.debug(`Invalid job action. It must be a JSON.`);
+                                logger.debug(`Invalid job action. It must be a JSON.`, { filename: 'cron' });
                                 return reject(new Error(`Invalid job action: ${config.jobAction}`));
                         }
                         // Broker
@@ -121,20 +121,20 @@ class DataHandler extends dojot.DataHandlerBase {
                     }
                     case "REMOVE":
                     {
-                        logger.debug("Executing remove operation ...");
+                        logger.debug("Executing remove operation ...", { filename: 'cron' });
                         let jobId = this._get(config.inJobId, message);
                         await this._removeJob(metadata.tenant, jobId);
                         break;
                     }
                     default:
                     {
-                        logger.debug(`Invalid operation: ${config.operation}`);
+                        logger.debug(`Invalid operation: ${config.operation}`, { filename: 'cron' });
                         return reject(new Error(`Invalid Operation: ${config.operation}`));
                     }
                 }
             }
             catch(error) {
-                logger.debug(`Failed to execute cron job request (${error}).`);
+                logger.debug(`Failed to execute cron job request (${error}).`, { filename: 'cron' });
                 return reject(error);
             }
             return resolve([message]);

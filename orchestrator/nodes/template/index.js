@@ -4,7 +4,7 @@ const path = require('path');
 const dojot = require('@dojot/flow-node');
 const handlebars = require('handlebars');
 const mustache = require('mustache');
-const logger = require("../../logger").logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 
 class DataHandler extends dojot.DataHandlerBase {
     constructor() {
@@ -85,7 +85,7 @@ class DataHandler extends dojot.DataHandlerBase {
                     data = mustache.render(templateData, fullMessage);
                     break;
                 default:
-                    logger.error(`Unsupported syntax on template node: ${config.syntax}`);
+                    logger.error(`Unsupported syntax on template node: ${config.syntax}`, { filename: 'template' });
                     return Promise.reject('configuration error');
             }
 
@@ -93,11 +93,11 @@ class DataHandler extends dojot.DataHandlerBase {
                 data = JSON.parse(data);
             }
             this._set(config.field, data, message);
-            logger.debug("... template node was successfully executed.");
+            logger.debug("... template node was successfully executed.", { filename: 'template' });
             return Promise.resolve([message]);
         } catch (error) {
-            logger.debug("... template node was not successfully executed.");
-            logger.error(`Error while executing template node: ${error}`);
+            logger.debug("... template node was not successfully executed.", { filename: 'template' });
+            logger.error(`Error while executing template node: ${error}`, { filename: 'template' });
             return Promise.reject(error);
         }
     }

@@ -1,7 +1,7 @@
 "use strict";
 
 var path = require('path');
-var logger = require('../../logger').logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 
 var util = require("util");
 
@@ -80,8 +80,8 @@ class DataHandler extends dojot.DataHandlerBase {
      * @return {[undefined]}
      */
     async handleMessage(config, message) {
-        logger.debug("Executing ftp node...");
-        logger.debug(`Config is: ${util.inspect(config)}`);
+        logger.debug("Executing ftp node...", { filename: 'ftp' });
+        logger.debug(`Config is: ${util.inspect(config)}`, { filename: 'ftp' });
         var url = config.url;
         var tokens = config.url.match(/(ftp|ftps):\/\/(.*)/);
         var transport = "ftp";
@@ -91,8 +91,8 @@ class DataHandler extends dojot.DataHandlerBase {
         var encoding = config.fileencoding;
         const user = config.username;
         const password = config.password; // THIS SHOULD NOT BE LIKE THIS!
-        logger.debug(`Encoding is: ${encoding}`);
-        logger.debug(`URL parsing tokens: ${util.inspect(tokens)}`);
+        logger.debug(`Encoding is: ${encoding}`, { filename: 'ftp' });
+        logger.debug(`URL parsing tokens: ${util.inspect(tokens)}`, { filename: 'ftp' });
         if (tokens !== null) {
             transport = tokens[1];
             remaining = tokens[2];
@@ -100,7 +100,7 @@ class DataHandler extends dojot.DataHandlerBase {
             remaining = config.url;
         }
         tokens = remaining.match(/(.*):(.*)/);
-        logger.debug(`Port parsing tokens: ${util.inspect(tokens)}`);
+        logger.debug(`Port parsing tokens: ${util.inspect(tokens)}`, { filename: 'ftp' });
         if (tokens !== null) {
             host = tokens[1];
             port = tokens[2];
@@ -108,8 +108,8 @@ class DataHandler extends dojot.DataHandlerBase {
             host = remaining;
         }
 
-        logger.debug(`Connecting to host ${host}:${port}, using ${transport}`);
-        logger.debug(`Original config was ${config.url}`);
+        logger.debug(`Connecting to host ${host}:${port}, using ${transport}`, { filename: 'ftp' });
+        logger.debug(`Original config was ${config.url}`, { filename: 'ftp' });
 
         var method = config.method.toUpperCase() || "PUT";
         const filename = this._get(config.filename, message);
@@ -118,14 +118,14 @@ class DataHandler extends dojot.DataHandlerBase {
             const buffer = Buffer.from(this._get(config.filecontent, message), encoding);
             stream = new ReadStream(buffer);
         } catch (e) {
-            logger.debug("... ftp node was not successfully executed.");
-            logger.error(`Error while retrieving ftp payload: ${e}`);
+            logger.debug("... ftp node was not successfully executed.", { filename: 'ftp' });
+            logger.error(`Error while retrieving ftp payload: ${e}`, { filename: 'ftp' });
             return Promise.reject("ftpin.errors.no-body");
         }
 
         if (!url) {
-            logger.debug("... ftp node was not successfully executed.");
-            logger.error("Node has no URL set.");
+            logger.debug("... ftp node was not successfully executed.", { filename: 'ftp' });
+            logger.error("Node has no URL set.", { filename: 'ftp' });
             return Promise.reject("ftpin.errors.no-url");
         }
 

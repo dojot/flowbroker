@@ -2,6 +2,7 @@
 
 var zmq = require('zeromq');
 var uuidv4 = require('uuid/v4');
+const logger = require("@dojot/dojot-module-logger").logger;
 
 /**
  * Implements interface with 3rd party provided nodes
@@ -20,11 +21,11 @@ module.exports = class Dispatcher {
     this.sock = zmq.socket('dealer');
 
     this.sock.on("message", (responsePacket) => {
-      console.log("Received reply [%s]", responsePacket.toString());
+      logger.debug(`Received reply: ${responsePacket.toString()}`, { filename: 'dispatcher' });
       let response = JSON.parse(responsePacket);
 
       if (!this.requestMap.hasOwnProperty(response.requestId)) {
-        console.log('request %s was expired', response.requestId);
+        logger.warn(`request ${response.requestId} was expired`, { filename: 'dispatcher' });
         return;
       }
 
@@ -36,7 +37,7 @@ module.exports = class Dispatcher {
     });
 
     this.sock.connect('tcp://' + this.address + ':' + this.port);
-    console.log('Dispatcher connected to %s on port %d', this.address, this.port);
+    logger.info(`Dispatcher connected to ${this.address} on port ${this.port}`, { filename: 'dispatcher' });
   }
 
   deinit() {
@@ -55,7 +56,7 @@ module.exports = class Dispatcher {
       let timer;
       if (this.requestTimeout) {
         timer = setTimeout((id, map) => {
-          console.log("time out %s", id);
+          logger.warn(`time out ${id}`, { filename: 'dispatcher' });
           let entry = map[id];
           delete map[id];
           entry.reject('timeout');

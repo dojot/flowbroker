@@ -1,7 +1,7 @@
 var path = require('path');
 var util = require('util');
 var uuid4 = require('uuid4');
-var logger = require("../../logger").logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 var dojot = require('@dojot/flow-node');
 
 class DataHandler extends dojot.DataHandlerBase {
@@ -85,15 +85,15 @@ class DataHandler extends dojot.DataHandlerBase {
                 subject: "user_notification"
             };
 
-            logger.debug(`output is: ${util.inspect(output, {depth: null})}`);
+            logger.debug(`output is: ${util.inspect(output, {depth: null})}`, { filename: 'notification' });
 
             this.kafkaMessenger.publish(this.subject, metadata.tenant, JSON.stringify(output));
 
-            logger.debug("...notification node was successfully executed.");
+            logger.debug("...notification node was successfully executed.", { filename: 'notification' });
 
             return Promise.resolve([])
         } catch (error) {
-            logger.error(`Error while executing notification node: ${error}`);
+            logger.error(`Error while executing notification node: ${error}`, { filename: 'notification' });
             return Promise.reject(error);
         }
     }
