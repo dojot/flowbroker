@@ -2,7 +2,7 @@
 
 var ZooKeeper = require ("zookeeper");
 var ZooKeeperHelper = require ("./ZookeeperHelper.js");
-
+const logger = require("@dojot/dojot-module-logger").logger;
 
 const READ = 0;
 const WRITE = 1;
@@ -98,7 +98,7 @@ module.exports = class ZookeeperRWLock {
         return new Promise ((resolve, reject) => {
 
             if (appPathPrefix.startsWith('/')) {
-                console.error('appPathPrefix can not start with /');
+                logger.warn('appPathPrefix can not start with /');
                 return reject();
             }
             this.appPathPrefix = appPathPrefix;
@@ -150,11 +150,11 @@ module.exports = class ZookeeperRWLock {
                         ZooKeeper.ZOO_SEQUENCE | ZooKeeper.ZOO_EPHEMERAL,
                         (rc, error, path) => {
                             if (rc !== 0) {
-                                console.log("lock znode create failed. Result: %d, error: '%s', path=%s", rc, error, path);
+                                logger.warn(`lock znode create failed. Result: ${rc}, error: ${error}, path=${path}`);
                                 reject('internal error');
                                 return;
                             } else {
-                                console.log("created lock znode '%s' it can wait for the lock by %d ms", path, waitLockTimeout);
+                                logger.debug(`created lock znode '${path}' it can wait for the lock by ${waitLockTimeout} ms`);
                                 let lastBackslashIndex = path.lastIndexOf('/');
                                 let lockNode = path.substr(lastBackslashIndex + 1);
                                 let dataPath = path.substr(0, lastBackslashIndex);
@@ -171,7 +171,7 @@ module.exports = class ZookeeperRWLock {
                     );
                 }
             ).catch(() => {
-                console.log('Fail to create %s/%s', this.pathPrefix, dataName);
+                logger.warn(`Failed to create ${this.pathPrefix}/${dataName}`);
                 reject('internal error');
             });
         });
@@ -179,12 +179,12 @@ module.exports = class ZookeeperRWLock {
 
     _try_lock(dataPath, lockMode, lockNode, lockInstance, timer) {
         return new Promise ((resolve, reject) => {
-            console.log('trying acquire lock for ' + lockNode);
+            logger.debug(`trying acquire lock for ${lockNode}`);
             this.zkClient.a_get_children(dataPath,
                 false,
                 (rc, error, children) => {
                 if (rc !== 0) {
-                    console.log("Unexpected error on get children. Result: %d. Error: '%s'", rc, error);
+                    logger.warn(`Unexpected error on get children. Result: ${rc}. Error: ${error}`);
                     reject();
                     return;
                 }
@@ -197,22 +197,22 @@ module.exports = class ZookeeperRWLock {
                 if (!nodeToBeWatched) {
                     //lock acquired!
                     clearTimeout(timer);
-                    console.log('%s/%s acquired the lock', dataPath, lockNode);
+                    logger.debug(`${dataPath}/${lockNode} acquired the lock`);
                     resolve(lockInstance);
                     return;
                 }
 
-                console.log('znode %s is watching %s/%s ', lockNode, dataPath, nodeToBeWatched);
+                logger.debug(`znode ${lockNode} is watching ${dataPath}/${nodeToBeWatched}`);
                 this.zkClient.aw_exists(dataPath + '/' + nodeToBeWatched,
                     (type, state, path) => {
                         if (state === ZooKeeper.ZOO_CONNECTED_STATE) {
-                            console.log('event %d on %s', type, path);
+                            logger.debug(`event ${type} on ${path}`);
                             this._try_lock(dataPath, lockMode, lockNode, lockInstance, timer).
                                 then((lock) => {resolve(lock);},
                                      () => {reject();} );
                             return;
                         }
-                        console.log('Unexpected state %d', state);
+                        logger.warn(`Unexpected state ${state}`);
                         reject('internal error');
                         return;
                     },
@@ -220,7 +220,7 @@ module.exports = class ZookeeperRWLock {
                         if (rc === ZooKeeper.ZNONODE) {
                             // selected lock znode does not exists any more,
                             // let's try again
-                            console.log('Selected lock znode does not ' +
+                            logger.debug('Selected lock znode does not ' +
                                         'exist any more, trying again');
                             this._try_lock(dataPath, lockMode, lockNode, lockInstance, timer).
                                 then((lock) => {resolve(lock);},
@@ -229,7 +229,7 @@ module.exports = class ZookeeperRWLock {
                         } else if (rc === 0) {
                             return;
                         }
-                        console.log("Unexpected behavior. Exists result: %d. Error:  '%s'", rc, error);
+                        logger.warn(`Unexpected behavior. Exists result: ${rc}. Error: ${error}`);
                         reject('internal error');
                         return;
                     }
@@ -245,12 +245,12 @@ module.exports = class ZookeeperRWLock {
      * @param {function} reject
      */
     _lockWaitTimeout(lockInstance, reject) {
-        console.log("%s can not wait anymore. Timed out", lockInstance.getLockPath());
+        logger.warn(`${lockInstance.getLockPath()} can not wait anymore. Timed out`);
         lockInstance.unlock().then(() => {
-            console.log("forced unlock on '%s'", lockInstance.getLockPath());
+            logger.debug(`forced unlock on '${lockInstance.getLockPath()}'`);
             reject('time out');
         }).catch(() => {
-            console.log("forced unlock failed on '%s'", lockInstance.getLockPath());
+            logger.warn(`forced unlock failed on '${lockInstance.getLockPath()}'`);
             reject('internal error');
         });
     }
@@ -279,15 +279,15 @@ class LockInstance {
         return new Promise ((resolve, reject) => {
             this.zkClient.a_delete_(this.lockPath, -1, (rc, error) => {
                 if (rc === 0) {
-                    console.log('Unlocking %s', this.lockPath);
+                    logger.debug(`Unlocking ${this.lockPath}`);
                     resolve();
                 } else if (rc !== ZooKeeper.ZNONODE) {
-                    console.log("Unexpected behavior. Delete result: %d. Error: '%s'", rc, error);
+                    logger.warn(`Unexpected behavior. Delete result: ${rc}. Error: ${error}`);
                     reject('internal error');
                 } else {
                     // if rc is ZNONODE, it means that someone else called the
                     // unlock function before, could it be direct or indirectly (timeout)
-                    console.log("lock already unlocked: %s", this.lockPath);
+                    logger.debug(`lock already unlocked: ${this.lockPath}`);
                     reject('already unlocked');
                 }
             });
