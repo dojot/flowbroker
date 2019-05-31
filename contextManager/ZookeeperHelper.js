@@ -19,7 +19,7 @@ function _createNodes(basePath, pathArray, pathIndex, zkClient) {
 
         zkClient.a_create (basePath, "", 0, (rc, error, path) => {
             if ( (rc !== 0) && (rc !== ZooKeeper.ZNODEEXISTS) ) {
-                logger.warn(`could not create znode: ${rc}, error: ${error}, path=${path}`, { filename: 'zkHelper' });
+                logger.error(`could not create znode: ${rc}, error: ${error}, path=${path}`, { filename: 'zkHelper' });
                 return reject();
             }
             _createNodes(basePath, pathArray, pathIndex, zkClient).then(

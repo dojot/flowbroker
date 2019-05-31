@@ -264,7 +264,7 @@ class ContextHandler {
                 return;
             }
           } catch (error) {
-            logger.warn(`Exception: ${error}`);
+            logger.error(`Exception: ${error}`);
             return;
           }
         }); // on message
@@ -338,7 +338,7 @@ class ContextHandler {
         }); // a_get
       });
     }).catch( (error) => {
-      logger.warn(`lock failed. Error: ${error}`);
+      logger.error(`lock failed. Error: ${error}`);
       let response = {
         request_id: data.request_id,
         result: "error",
@@ -354,7 +354,7 @@ class ContextHandler {
       checkField(data, 'context_content', "Request is missing context_content field");
 
       if (!this.controlMap.hasOwnProperty(identity + '.' + data.request_id)) {
-        logger.warn('entry does not exists');
+        logger.error('entry does not exists');
         let response = {
           request_id: data.request_id,
           result: "error",
@@ -365,7 +365,7 @@ class ContextHandler {
 
       let controlEntry = this.controlMap[identity + '.' + data.request_id];
       if (controlEntry.lockMode === READ) {
-        logger.warn('invalid operation');
+        logger.error('invalid operation');
         let response = {
           request_id: data.request_id,
           result: "error",
@@ -384,7 +384,7 @@ class ContextHandler {
       // -1 make it matches with any node's version
       this.zkClient.a_set(controlEntry.lock.getDataPath(), buf, -1, (rc, error) => {
         if (rc !== 0) {
-          logger.warn(`failed to write context data. Error ${error}`);
+          logger.error(`failed to write context data. Error ${error}`);
           let response = {
             request_id: data.request_id,
             result: "error",
@@ -415,7 +415,7 @@ class ContextHandler {
     checkField(data, 'request_id', "Request is missing request_id field");
 
     if (!this.controlMap.hasOwnProperty(identity + '.' + data.request_id)) {
-      logger.warn('entry does not exists');
+      logger.error('entry does not exists');
       let response = {
         request_id: data.request_id,
         result: "error",
@@ -456,7 +456,7 @@ class ContextHandler {
         logger.warn(`${lock.getLockPath()} was unlock because it exceeded the time to hold a lock`);
       },
       (error) => {
-        logger.warn(`Failed to unlock ${lock.getLockPath()} (hold lock timeout case). Error: ${error}`);
+        logger.error(`Failed to unlock ${lock.getLockPath()} (hold lock timeout case). Error: ${error}`);
       }
 	  );
   } // _timeout

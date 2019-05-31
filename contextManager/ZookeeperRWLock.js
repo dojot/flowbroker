@@ -150,7 +150,7 @@ module.exports = class ZookeeperRWLock {
                         ZooKeeper.ZOO_SEQUENCE | ZooKeeper.ZOO_EPHEMERAL,
                         (rc, error, path) => {
                             if (rc !== 0) {
-                                logger.warn(`lock znode create failed. Result: ${rc}, error: ${error}, path=${path}`);
+                                logger.error(`lock znode create failed. Result: ${rc}, error: ${error}, path=${path}`);
                                 reject('internal error');
                                 return;
                             } else {
@@ -171,7 +171,7 @@ module.exports = class ZookeeperRWLock {
                     );
                 }
             ).catch(() => {
-                logger.warn(`Failed to create ${this.pathPrefix}/${dataName}`);
+                logger.error(`Failed to create ${this.pathPrefix}/${dataName}`);
                 reject('internal error');
             });
         });
@@ -184,7 +184,7 @@ module.exports = class ZookeeperRWLock {
                 false,
                 (rc, error, children) => {
                 if (rc !== 0) {
-                    logger.warn(`Unexpected error on get children. Result: ${rc}. Error: ${error}`);
+                    logger.error(`Unexpected error on get children. Result: ${rc}. Error: ${error}`);
                     reject();
                     return;
                 }
@@ -212,7 +212,7 @@ module.exports = class ZookeeperRWLock {
                                      () => {reject();} );
                             return;
                         }
-                        logger.warn(`Unexpected state ${state}`);
+                        logger.error(`Unexpected state ${state}`);
                         reject('internal error');
                         return;
                     },
@@ -229,7 +229,7 @@ module.exports = class ZookeeperRWLock {
                         } else if (rc === 0) {
                             return;
                         }
-                        logger.warn(`Unexpected behavior. Exists result: ${rc}. Error: ${error}`);
+                        logger.error(`Unexpected behavior. Exists result: ${rc}. Error: ${error}`);
                         reject('internal error');
                         return;
                     }
@@ -250,7 +250,7 @@ module.exports = class ZookeeperRWLock {
             logger.debug(`forced unlock on '${lockInstance.getLockPath()}'`);
             reject('time out');
         }).catch(() => {
-            logger.warn(`forced unlock failed on '${lockInstance.getLockPath()}'`);
+            logger.error(`forced unlock failed on '${lockInstance.getLockPath()}'`);
             reject('internal error');
         });
     }
@@ -282,7 +282,7 @@ class LockInstance {
                     logger.debug(`Unlocking ${this.lockPath}`);
                     resolve();
                 } else if (rc !== ZooKeeper.ZNONODE) {
-                    logger.warn(`Unexpected behavior. Delete result: ${rc}. Error: ${error}`);
+                    logger.error(`Unexpected behavior. Delete result: ${rc}. Error: ${error}`);
                     reject('internal error');
                 } else {
                     // if rc is ZNONODE, it means that someone else called the
