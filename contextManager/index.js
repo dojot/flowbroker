@@ -3,6 +3,11 @@
 var zmq = require('zeromq');
 var ZooKeeper = require ('zookeeper');
 var ZookeeperRWLock = require ('./ZookeeperRWLock.js');
+var bodyParser = require("body-parser");
+var express = require("express");
+var app = express();
+const DojotLogger = require("@dojot/dojot-module-logger");
+const logger = DojotLogger.logger;
 
 function checkField(target, field, message) {
   if (!target.hasOwnProperty(field)) {
@@ -184,7 +189,7 @@ class ContextHandler {
   	this.zkClient.connect( (err) => {
 
       if (err) {
-        console.log("Failed to connect on zookeeper. " + err);
+        logger.error(`Failed to connect on zookeeper. Error: ${err}`);
         return;
       }
 
@@ -196,10 +201,10 @@ class ContextHandler {
 
           //parse the payload
           try {
-              payload = JSON.parse(request.toString());
+            payload = JSON.parse(request.toString());
           } catch (error) {
-              console.log("Invalid JSON format. Discarding request: %s", request.toString());
-              return;
+            logger.warn(`Invalid JSON format. Discarding request: ${request.toString()}`);
+            return;
           }
 
           try {
@@ -255,21 +260,21 @@ class ContextHandler {
                 this._dump();
                 break;
               default:
-                console.log("Unknown command: %s", payload.command);
+                logger.warn(`Unknown command: ${payload.command}`);
                 return;
             }
           } catch (error) {
-              console.log("Exception: " + error);
-              return;
+            logger.error(`Exception: ${error}`);
+            return;
           }
         }); // on message
 
         this.zmqSock.bind('tcp://*:' + this.zmqPort.toString(), (err) => {
           if (err) {
-            console.err('Failed on bind the zmq port. Error: ' + err);
+            logger.error(`Failed on bind the zmq port. Error: ${err}`);
             process.exit(1);
           } else {
-            console.log('zmq listening on %d', this.zmqPort);
+            logger.info(`zmq listening on ${this.zmqPort}`);
           }
         });
 
@@ -277,7 +282,7 @@ class ContextHandler {
           this.zmqSock.close();
         });
       }).catch( () => {
-        console.log("Fail to init zookeeper lock");
+        logger.error("Fail to init zookeeper lock");
         process.exit(1);
       });
     });
@@ -296,14 +301,13 @@ class ContextHandler {
 
     return targetLockMode(data.context_name, this.waitLockTimeout).then( (lock) => {
       return new Promise( (resolve, reject) => {
-        console.log('ZMQ connection %s, requestId: %s acquired the lock %s',
-          identity.toString('hex'), data.request_id, lock.getDataPath());
+        logger.debug(`ZMQ connection ${identity.toString('hex')}, requestId: ${data.request_id} acquired the lock ${lock.getDataPath()}`);
 
         // now that we have the lock, it is safe to retrieve the context content
         this.zkClient.a_get(lock.getDataPath(), false,
           (rc, error, stat, protectedData) => {
             if (rc !== 0) {
-                console.log("Failed to get data from context. Error: %s", error);
+                logger.warn(`Failed to get data from context. Error: ${error}`);
 
                 let response = {
                   request_id: data.request_id,
@@ -334,7 +338,7 @@ class ContextHandler {
         }); // a_get
       });
     }).catch( (error) => {
-      console.log ('lock failed. Error: %s', error);
+      logger.error(`lock failed. Error: ${error}`);
       let response = {
         request_id: data.request_id,
         result: "error",
@@ -350,7 +354,7 @@ class ContextHandler {
       checkField(data, 'context_content', "Request is missing context_content field");
 
       if (!this.controlMap.hasOwnProperty(identity + '.' + data.request_id)) {
-        console.log('entry does not exists');
+        logger.error('entry does not exists');
         let response = {
           request_id: data.request_id,
           result: "error",
@@ -361,7 +365,7 @@ class ContextHandler {
 
       let controlEntry = this.controlMap[identity + '.' + data.request_id];
       if (controlEntry.lockMode === READ) {
-        console.log('invalid operation');
+        logger.error('invalid operation');
         let response = {
           request_id: data.request_id,
           result: "error",
@@ -376,17 +380,17 @@ class ContextHandler {
 
       let buf = Buffer.from(data.context_content, 'utf8');
 
+      logger.debug(`writing on ${controlEntry.lock.getDataPath()} data: ${buf}`);
       // -1 make it matches with any node's version
-      console.log("writing on %s data: %s", controlEntry.lock.getDataPath(), buf);
       this.zkClient.a_set(controlEntry.lock.getDataPath(), buf, -1, (rc, error) => {
         if (rc !== 0) {
-            console.log("failed to write context data. Error %s", error);
-            let response = {
-              request_id: data.request_id,
-              result: "error",
-              reason: "fail to write context"
-            };
-            return reject(response);
+          logger.error(`failed to write context data. Error ${error}`);
+          let response = {
+            request_id: data.request_id,
+            result: "error",
+            reason: "fail to write context"
+          };
+          return reject(response);
         }
 
         controlEntry.lock.unlock().then(() => {
@@ -411,7 +415,7 @@ class ContextHandler {
     checkField(data, 'request_id', "Request is missing request_id field");
 
     if (!this.controlMap.hasOwnProperty(identity + '.' + data.request_id)) {
-      console.log('entry does not exists');
+      logger.error('entry does not exists');
       let response = {
         request_id: data.request_id,
         result: "error",
@@ -445,17 +449,14 @@ class ContextHandler {
   _timeout(lock, identity, data, contextManager) {
     delete contextManager.controlMap[identity + '.' + data.request_id];
 
-    console.log("lock hold time timed out. identity: %s request: %s path: %s",
-      identity.toString(), data.request_id, lock.getLockPath());
+    logger.warn(`lock hold time timed out. identity: ${identity.toString()} request: ${data.request_id} path: ${lock.getLockPath()}`);
 
 	  lock.unlock().then(
       () => {
-        console.log('%s was unlock because it exceeded the time to hold a lock',
-          lock.getLockPath());
+        logger.warn(`${lock.getLockPath()} was unlock because it exceeded the time to hold a lock`);
       },
       (error) => {
-        console.log('Failed to unlock %s (hold lock timeout case). Error: %s',
-          lock.getLockPath(), error);
+        logger.error(`Failed to unlock ${lock.getLockPath()} (hold lock timeout case). Error: ${error}`);
       }
 	  );
   } // _timeout
@@ -478,6 +479,18 @@ let zkPort = process.env.ZOOKEEPER_PORT || 2181;
 let zmqPort = process.env.ZEROMQ_PORT || 5556;
 let holdLockTimeout = process.env.HOLD_LOCK_TIMEOUT || 10000;
 let waitLockTimeout = process.env.WAIT_LOCK_TIMEOUT || 30000;
+let logLevel = process.env.LOG_LEVEL || 'info';
+
+if (logger.setLevel(logLevel) !== 0) {
+  logger.error(`Invalid logger level: ${logLevel}`);
+  process.exit(1);
+}
+
+app.use(bodyParser.json());
+app.use(DojotLogger.getHTTPRouter());
+app.listen(80, () => {
+  logger.info(`Listening on port 80.`);
+});
 
 let handler = new ContextHandler(zkHost,
                                  zkPort,
