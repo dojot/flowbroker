@@ -195,7 +195,7 @@ class FlowManager {
         parsed = this.parse(flow);
         delete parsed.nodes; // mongo doesn't like dots on keys
       } catch (e) {
-        logger.info("... new flow has errors - it was not created.", { filename: 'flowMngr' });
+        logger.error("... new flow has errors - it was not created.", { filename: 'flowMngr' });
         return reject(new InvalidFlowError());
       }
 
@@ -210,7 +210,7 @@ class FlowManager {
         logger.debug("... new flow was successfully inserted into the database.", { filename: 'flowMngr' });
         return resolve(parsed);
       }).catch((error) => {
-        logger.debug(`... new flow was not inserted into the database. Error is ${error}`, { filename: 'flowMngr' });
+        logger.error(`... new flow was not inserted into the database. Error is ${error}`, { filename: 'flowMngr' });
         return reject(error);
       });
     });

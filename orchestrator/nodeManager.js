@@ -142,7 +142,7 @@ class NodeManager {
                 await this.delRemoteNode(containerId);
               }
               catch (error) {
-                logger.debug(`(Rollback) Failed to remove remote node ${tenant}/${item.id} (${error}). keep going ..`, { filename: 'nodeMngr' });
+                logger.error(`(Rollback) Failed to remove remote node ${tenant}/${item.id} (${error}). keep going ..`, { filename: 'nodeMngr' });
               }
             }
             return reject(new Error(`Failed to load remote node ${tenant}/${item.id}.`));
@@ -258,7 +258,7 @@ class NodeManager {
             let metadata = node.getMetadata();
             if(id !== metadata.name) {
               this.delRemoteNode(containerId).catch((error) => {
-                logger.debug(`Failed to remove remote node
+                logger.error(`Failed to remove remote node
                 ${tenant}/${id} (${error}). keep going ..`, { filename: 'nodeMngr' });
               });
               return reject(new Error(`The remote node id (${id}) differs from its name (${name}).`));
@@ -278,7 +278,7 @@ class NodeManager {
               resolve();
             }).catch((error) => {
               this.delRemoteNode(containerId).catch((error) => {
-                logger.debug(`Failed to remove remote node
+                logger.error(`Failed to remove remote node
                 ${tenant}/${id} (${error}). keep going ..`, { filename: 'nodeMngr' });
               });
               logger.error(`Failed to persist configuration for
@@ -287,7 +287,7 @@ class NodeManager {
             });
           }).catch((error) => {
             this.delRemoteNode(containerId).catch((error) => {
-              logger.debug(`Failed to remove remote node
+              logger.error(`Failed to remove remote node
               ${tenant}/${id} (${error}). keep going ..`, { filename: 'nodeMngr' });
             });
             logger.error(`Failed to initiate docker container for

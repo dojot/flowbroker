@@ -53,7 +53,7 @@ class DataHandler extends dojot.DataHandlerBase {
                 return resolve();
 
             }).catch(error => {
-                logger.debug(`Failed to remove cron job ${jobId} (${error}).`, { filename: 'cron-batch' });
+                logger.error(`Failed to remove cron job ${jobId} (${error}).`, { filename: 'cron-batch' });
                 return reject(error);
             });
         });
@@ -84,7 +84,7 @@ class DataHandler extends dojot.DataHandlerBase {
                 return resolve(jobId);
 
             }).catch(error => {
-                logger.debug(`Failed to create cron job (${JSON.stringify(error.response.data)}).`, { filename: 'cron-batch' });
+                logger.error(`Failed to create cron job (${JSON.stringify(error.response.data)}).`, { filename: 'cron-batch' });
                 return reject(error);
             });
         });
@@ -132,7 +132,7 @@ class DataHandler extends dojot.DataHandlerBase {
                 }
             }
             catch(error) {
-                logger.debug(`Failed to execute cron job requests (${error}).`, { filename: 'cron-batch' });
+                logger.error(`Failed to execute cron job requests (${error}).`, { filename: 'cron-batch' });
                 return reject(error);
             }
 
