@@ -78,7 +78,7 @@ app.delete('/v1/node/:id', (req, res) => {
   nodeManager.delRemoteNode(req.params.id, req.service).then(() => {
     return res.status(200).send({message: 'ok'});
   }).catch((error) => {
-    logger.warn(error, { filename: 'api' });
+    logger.error(error, { filename: 'api' });
     return res.status(500).send({message: 'Failed to remove node.', error: error.message});
   });
 });
@@ -93,12 +93,12 @@ app.delete('/v1/node', (req, res) => {
     Promise.all(promises).then(() => {
       return res.status(200).send({message: 'ok'});
     }).catch((error) => {
-      logger.warn(error, { filename: 'api' });
+      logger.error(error, { filename: 'api' });
       return res.status(500).send({message: 'Failed to remove node.', error: error.message});
     });
 
   }).catch((error) => {
-    logger.warn(error, { filename: 'api' });
+    logger.error(error, { filename: 'api' });
     return res.status(500).send({'message': 'Failed to list nodes'});
   });
 
@@ -112,7 +112,7 @@ app.get('/v1/node', (req, res) => {
     }
     return res.status(200).send({'nodes': filtered});
   }).catch((error) => {
-    logger.warn(error, { filename: 'api' });
+    logger.error(error, { filename: 'api' });
     return res.status(500).send({'message': 'Failed to list nodes'});
   });
 });
@@ -126,7 +126,7 @@ app.get('/v1/flow', (req, res) => {
       return res.status(e.httpStatus).send(e.payload());
     }
 
-    logger.warn(e, { filename: 'api' });
+    logger.error(e, { filename: 'api' });
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
@@ -137,7 +137,7 @@ app.get('/v1/flow', (req, res) => {
     }
     return res.status(200).send({'flows': filtered});
   }).catch((error) => {
-    logger.warn(error, { filename: 'api' });
+    logger.error(error, { filename: 'api' });
     return res.status(500).send({'message': 'Failed to list flows'});
   });
 });
@@ -151,7 +151,7 @@ app.post('/v1/flow', (req, res) => {
       return res.status(e.httpStatus).send(e.payload());
     }
 
-    logger.warn(e, { filename: 'api' });
+    logger.error(e, { filename: 'api' });
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
@@ -166,7 +166,7 @@ app.post('/v1/flow', (req, res) => {
       'flow': summarizeFlow(parsed)
     });
   }).catch((error) => {
-    logger.warn(error, { filename: 'api' });
+    logger.error(error, { filename: 'api' });
     if (error instanceof FlowError) {      
       return res.status(error.httpStatus).send(error.payload());
     } else {
@@ -184,14 +184,14 @@ app.delete('/v1/flow', (req, res) => {
       return res.status(e.httpStatus).send(e.payload());
     }
 
-    logger.warn(e, { filename: 'api' });
+    logger.error(e, { filename: 'api' });
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
   fm.removeAll().then(() => {
     return res.status(200).send({'message': 'All flows removed'});
   }).catch((error) => {
-    logger.warn(error, { filename: 'api' });
+    logger.error(error, { filename: 'api' });
     return res.status(500).send({'message': 'failed to remove flows'});
   });
 });
@@ -205,7 +205,7 @@ app.get('/v1/flow/:id', (req, res) => {
       return res.status(e.httpStatus).send(e.payload());
     }
 
-    logger.warn(e, { filename: 'api' });
+    logger.error(e, { filename: 'api' });
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
@@ -218,7 +218,7 @@ app.get('/v1/flow/:id', (req, res) => {
     if (error instanceof FlowError) {
       return res.status(error.httpStatus).send(error.payload());
     } else {
-      logger.warn(error, { filename: 'api' });
+      logger.error(error, { filename: 'api' });
       return res.status(500).send({'message': 'Failed to get flow'});
     }
   });
@@ -233,7 +233,7 @@ app.put('/v1/flow/:id', (req, res) => {
       return res.status(e.httpStatus).send(e.payload());
     }
 
-    logger.warn(e, { filename: 'api' });
+    logger.error(e, { filename: 'api' });
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
@@ -246,7 +246,7 @@ app.put('/v1/flow/:id', (req, res) => {
     if (error instanceof FlowError) {
       return res.status(error.httpStatus).send(error.payload());
     } else {
-      logger.warn(error, { filename: 'api' });
+      logger.error(error, { filename: 'api' });
       return res.status(500).send({'message': 'Failed to update flows'});
     }
   });
@@ -261,7 +261,7 @@ app.delete('/v1/flow/:id', (req, res) => {
       return res.status(e.httpStatus).send(e.payload());
     }
 
-    logger.warn(e, { filename: 'api' });
+    logger.error(e, { filename: 'api' });
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
@@ -274,7 +274,7 @@ app.delete('/v1/flow/:id', (req, res) => {
     if (error instanceof FlowError) {
       return res.status(error.httpStatus).send(error.payload());
     } else {
-      logger.warn(error, { filename: 'api' });
+      logger.error(error, { filename: 'api' });
       return res.status(500).send({'message': 'Failed to remove flow'});
     }
   });

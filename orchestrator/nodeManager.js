@@ -120,7 +120,7 @@ class NodeManager {
             logger.debug(`Succeeded to remove container.`, { filename: 'nodeMngr' });
           }
           catch (error) {
-            logger.warn(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`, { filename: 'nodeMngr' });
+            logger.error(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`, { filename: 'nodeMngr' });
           }
 
           // re-create container
@@ -328,7 +328,7 @@ class NodeManager {
             logger.debug(`Succeeded to remove container.`, { filename: 'nodeMngr' });
           }
           catch(error) {
-            logger.warn(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`, { filename: 'nodeMngr' });
+            logger.error(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`, { filename: 'nodeMngr' });
           }
           finally {
             delete this.nodes[tenant][id];

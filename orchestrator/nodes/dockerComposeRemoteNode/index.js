@@ -57,7 +57,7 @@ class DataHandler extends RemoteNode {
         logger.error(errorMessage, { filename: 'dockerRemoteNode' });
         return reject(new Error(errorMessage));
       }).catch((error) => {
-        logger.warn(`failed to acquire target network. Error ${error}`, { filename: 'dockerRemoteNode' });
+        logger.error(`failed to acquire target network. Error ${error}`, { filename: 'dockerRemoteNode' });
         return reject(error);
       });
     });

@@ -42,15 +42,15 @@ class DataHandler extends dojot.DataHandlerBase {
     try {
       let targetData = this._get(config.targetData, message);
       if ( (!targetData) || !(targetData instanceof Object) ) {
-        logger.warn(`Invalid target data: ${targetData}`);
+        logger.error(`Invalid target data: ${targetData}`);
         return false;
       }
       if (!config.mergedData) {
-        logger.warn('Undefined output');
+        logger.error('Undefined output');
         return false;
       }
     } catch (error) {
-      logger.warn(`Failed to validate parameters. Error: ${error}`, { filename: 'merge data' });
+      logger.error(`Failed to validate parameters. Error: ${error}`, { filename: 'merge data' });
       return false;
     }
     return true;
@@ -59,7 +59,7 @@ class DataHandler extends dojot.DataHandlerBase {
   handleMessage(config, message, metadata, contextHandler) {
     logger.debug("Executing merge data node...", { filename: 'merge data' });
     if (!this._isParametersValid(config, message)) {
-      logger.warn("Invalid parameters.", { filename: 'merge data' });
+      logger.error("Invalid parameters.", { filename: 'merge data' });
       return Promise.reject(new Error('Invalid parameters.'));
     }
 
