@@ -5,6 +5,7 @@
  */
 var amqp = require('amqplib/callback_api');
 var config = require('./config');
+const logger = require("@dojot/dojot-module-logger").logger;
 
 class AMQPBase {
   constructor(target) {
@@ -69,7 +70,7 @@ class AMQPProducer extends AMQPBase {
 
     this.on('channel', (channel) => {
       channel.assertQueue(this.queue, { durable: true, maxPriority: maxPriority});
-      console.log('[amqp] producer ready ... ');
+      logger.info('producer ready ... ', { filename: 'amqp' });
 
       let event = this.backtrack.pop();
       while (event) {
@@ -82,11 +83,10 @@ class AMQPProducer extends AMQPBase {
   sendMessage(data, priority = 0) {
     if (this.channel) {
       let buffer = new Buffer(data);
-      // console.log('Will send message [%s] %s', this.queue, data);
       this.channel.sendToQueue(this.queue, buffer, { persistent: true, priority: priority });
       return;
     } else {
-      // console.log('channel was not ready yet', this);
+      logger.debug('channel was not ready yet', { filename: 'amqp' });
       this.backtrack.push({data, priority});
     }
   }
@@ -101,11 +101,10 @@ class AMQPConsumer extends AMQPBase {
     super(target);
     this.queue = queue;
     this.on('channel', (channel) => {
-      console.log('[amqp] consumer ready ... ');
+      logger.info('consumer ready ... ', { filename: 'amqp' });
       channel.assertQueue(this.queue, { durable: true, maxPriority: maxPriority });
       channel.consume(this.queue, (amqpCtx) => {
         onMessage(amqpCtx.content.toString(), () => {
-          // console.log('will ack message', new Error().stack);
           channel.ack(amqpCtx);
         });
       });

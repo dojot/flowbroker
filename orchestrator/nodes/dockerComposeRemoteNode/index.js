@@ -4,7 +4,7 @@ var RemoteNode = require("../remoteNode/index").Handler;
 
 // This should be external - but since it's bugged....
 var docker = require('../../docker/harbor-master');
-var logger = require("../../logger").logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 
 function makeId(length) {
   var text = "";
@@ -54,10 +54,10 @@ class DataHandler extends RemoteNode {
         } else {
           errorMessage = "failed to acquire target network. network name is blank";
         }
-        logger.error(errorMessage);
+        logger.error(errorMessage, { filename: 'dockerRemoteNode' });
         return reject(new Error(errorMessage));
       }).catch((error) => {
-        console.error("failed to acquire target network", error);
+        logger.error(`failed to acquire target network. Error ${error}`, { filename: 'dockerRemoteNode' });
         return reject(error);
       });
     });
@@ -88,9 +88,9 @@ class DataHandler extends RemoteNode {
       const options = { name: 'flowbroker.' + this.info.userid + '.' + makeId(7) };
       const imageOptions = { fromImage: this.info.image };
       this.client.images().create(imageOptions).then(() => {
-        console.log(`[nodes] image ${this.info.image} created`);
+        logger.debug(`[nodes] image ${this.info.image} created`, { filename: 'dockerRemoteNode' });
         this.client.containers().create(model, options).then((container) => {
-          console.log(`[nodes] container ${options.name} was created`);
+          logger.debug(`[nodes] container ${options.name} was created`, { filename: 'dockerRemoteNode' });
           this.client.containers().start(container.Id).then(() => {
             // TODO alias config is not working
             const network_opt = {
@@ -98,10 +98,10 @@ class DataHandler extends RemoteNode {
             };
             this.info.container = container.Id;
             this.serverAddress = container.Id.substr(0,12);
-            console.log(`Target: ${this.serverAddress}`);
+            logger.debug(`Target: ${this.serverAddress}`, { filename: 'dockerRemoteNode' });
             this.getNetwork().then((network) => {
               this.client.networks().connect(network, network_opt).then(() => {
-                console.log(`[nodes] container up: ${options.name}:${container.Id}`);
+                logger.debug(`[nodes] container up: ${options.name}:${container.Id}`, { filename: 'dockerRemoteNode' });
                 return resolve(container.Id);
               }).catch((error) => {
                 this.remove();

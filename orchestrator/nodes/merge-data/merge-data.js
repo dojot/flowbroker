@@ -1,5 +1,5 @@
 var path = require('path');
-var logger = require("../../logger").logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 var dojot = require('@dojot/flow-node');
 var lodash = require('lodash');
 
@@ -42,24 +42,24 @@ class DataHandler extends dojot.DataHandlerBase {
     try {
       let targetData = this._get(config.targetData, message);
       if ( (!targetData) || !(targetData instanceof Object) ) {
-        logger.warn(`Invalid target data: ${targetData}`);
+        logger.error(`Invalid target data: ${targetData}`);
         return false;
       }
       if (!config.mergedData) {
-        logger.warn('Undefined output');
+        logger.error('Undefined output');
         return false;
       }
     } catch (error) {
-      logger.warn(`Failed to validate parameters. Error: ${error}`);
+      logger.error(`Failed to validate parameters. Error: ${error}`, { filename: 'merge data' });
       return false;
     }
     return true;
   }
 
   handleMessage(config, message, metadata, contextHandler) {
-    logger.debug("Executing merge data node...");
+    logger.debug("Executing merge data node...", { filename: 'merge data' });
     if (!this._isParametersValid(config, message)) {
-      logger.warn("Invalid parameters.");
+      logger.error("Invalid parameters.", { filename: 'merge data' });
       return Promise.reject(new Error('Invalid parameters.'));
     }
 
@@ -78,11 +78,11 @@ class DataHandler extends dojot.DataHandlerBase {
           this._set(config.mergedData, mergedData, message);
           return Promise.resolve([message]);
         }).catch((error)=> {
-          logger.error(`Failed to unlock context. Error: ${error}`);
+          logger.error(`Failed to unlock context. Error: ${error}`, { filename: 'merge data' });
           return Promise.resolve('Failed to unlock context.');
         });
       }).catch((error) => {
-        logger.error(`Failed to retrieve context. Error: ${error}`);
+        logger.error(`Failed to retrieve context. Error: ${error}`, { filename: 'merge data' });
         return Promise.resolve('Failed to retrieve context.');
       });
   }

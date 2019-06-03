@@ -1,6 +1,6 @@
 var path = require('path');
 var util = require('util');
-var logger = require("../../logger").logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 var dojot = require('@dojot/flow-node');
 
 class DataHandler extends dojot.DataHandlerBase {
@@ -46,7 +46,7 @@ class DataHandler extends dojot.DataHandlerBase {
     switch (deviceSource) {
       case 'configured':
         if ((configuredDevices === undefined) || (configuredDevices.length === 0) ) {
-          logger.debug("Empty configured devices");
+          logger.debug("Empty configured devices", { filename: 'multi actuate' });
           return [];
         }
         devicesIds = configuredDevices;
@@ -56,7 +56,7 @@ class DataHandler extends dojot.DataHandlerBase {
       break;
       case 'dynamic':
         if ((dynamicDevices === undefined) || (dynamicDevices.length === 0)) {
-          logger.debug("Empty dynamic devices");
+          logger.debug("Empty dynamic devices", { filename: 'multi actuate' });
           return [];
         }
         try {
@@ -65,18 +65,18 @@ class DataHandler extends dojot.DataHandlerBase {
             devicesIds = devices;
           } else {
             if (devices === undefined) {
-              logger.debug('Dynamic devices is undefined');
+              logger.debug('Dynamic devices is undefined', { filename: 'multi actuate' });
               return [];
             }
             devicesIds.push(devices);
           }
         } catch (error) {
-          logger.error(`Error while executing device out node: ${error}`);
+          logger.error(`Error while executing device out node: ${error}`, { filename: 'multi actuate' });
           return [];
         }
       break;
       default:
-        logger.error(`Invalid device source ${deviceSource}`);
+        logger.error(`Invalid device source ${deviceSource}`, { filename: 'multi actuate' });
         return [];
     }
 
@@ -84,10 +84,10 @@ class DataHandler extends dojot.DataHandlerBase {
   }
 
   handleMessage(config, message, metadata) {
-    logger.debug("Executing multi actuate node...");
+    logger.debug("Executing multi actuate node...", { filename: 'multi actuate' });
     if ((config.attrs === undefined) || (config.attrs.length === 0)) {
-      logger.debug("... actuate node was not successfully executed.");
-      logger.error("Node has no output field set.");
+      logger.debug("... actuate node was not successfully executed.", { filename: 'multi actuate' });
+      logger.error("Node has no output field set.", { filename: 'multi actuate' });
       return Promise.reject(new Error('Invalid data source: field is mandatory'));
     }
 
@@ -106,8 +106,8 @@ class DataHandler extends dojot.DataHandlerBase {
       try {
         output.data.attrs = this._get(config.attrs, message);
       } catch (e) {
-        logger.debug("... multi actuate node was not successfully executed.");
-        logger.error(`Error while executing multi actuate node: ${e}`);
+        logger.debug("... multi actuate node was not successfully executed.", { filename: 'multi actuate' });
+        logger.error(`Error while executing multi actuate node: ${e}`, { filename: 'multi actuate' });
         return Promise.reject(e);
       }
 
@@ -118,12 +118,12 @@ class DataHandler extends dojot.DataHandlerBase {
         message);
 
       if (devicesIds.length === 0) {
-        logger.debug("... multi actuate node was not successfully executed.");
+        logger.debug("... multi actuate node was not successfully executed.", { filename: 'multi actuate' });
         return Promise.reject(new Error('Could not define target devices'));
       }
 
-      logger.debug("Sending message to device(s)... ");
-      logger.debug(`Message is: ${util.inspect(output, { depth: null })}`);
+      logger.debug("Sending message to device(s)... ", { filename: 'multi actuate' });
+      logger.debug(`Message is: ${util.inspect(output, { depth: null })}`, { filename: 'multi actuate' });
 
       // avoid send the same event to the same device, it can occurr due to
       // an errouneus configuration
@@ -135,12 +135,12 @@ class DataHandler extends dojot.DataHandlerBase {
 
         this.kafkaMessenger.publish(this.subject, metadata.tenant, JSON.stringify(event));
       }
-      logger.debug("... message sent.");
-      logger.debug("... multi actuate node was successfully executed.");
+      logger.debug("... message sent.", { filename: 'multi actuate' });
+      logger.debug("... multi actuate node was successfully executed.", { filename: 'multi actuate' });
       return Promise.resolve();
     } catch (error) {
-      logger.debug("... multi actuate node was not successfully executed.");
-      logger.error(`Error while executing multi actuate node: ${error}`);
+      logger.debug("... multi actuate node was not successfully executed.", { filename: 'multi actuate' });
+      logger.error(`Error while executing multi actuate node: ${error}`, { filename: 'multi actuate' });
       return Promise.reject(error);
     }
   }
