@@ -25,7 +25,7 @@ Returns all currently configured flows
               ]
             }
 
-+ Response 500
++ Response 500 (application/json; charset=utf-8)
 
         {
           "message": "Failed to list flows"
@@ -61,16 +61,16 @@ Adds a new flow.
           }
         }
 
-+ Response 400
++ Response 400 (application/json; charset=utf-8)
 
         {
-          "msg" : "missing flow data"
+          "message" : "Missing mandatory field"
         }
 
-+ Response 500
++ Response 500 (application/json; charset=utf-8)
 
         {
-          "msg" : "failed to insert data"
+          "message" : "failed to create flow"
         }
 
 ### Removes all flows [DELETE /v1/flow]
@@ -80,11 +80,18 @@ Removes all flows and their configurations.
 
             Authorization: Bearer JWT
 
-+ Response 200
++ Response 200 (application/json; charset=utf-8)
 
         {
           "message" : "All flows removed"
         }
+
++ Response 500 (application/json; charset=utf-8)
+
+        {
+          "message" : "failed to remove flows"
+        }
+
 
 
 ## Specific Flow [/v1/flow/{id}]
@@ -120,6 +127,12 @@ Returns the configuration of a particular flow
           "msg" : "failed to retrieve data"
         }
 
++ Response 404
+
+        {
+          "message": "Unknown flow: 777777",
+          "flow": "777777"
+        }
 
 ### Reconfigure a specific flow [PUT /v1/flow/{id}]
 Reconfigure a particular flow - the old config will be removed and the new one will be deployed.
@@ -154,26 +167,16 @@ Reconfigure a particular flow - the old config will be removed and the new one w
           }
         }
 
-+ Response 400
++ Response 404
 
         {
           "message": "Unknown flow: 777777",
           "flow": "777777"
         }
-+ Response 404
-
-        {
-          "msg" : "given flow is unknown"
-        }
 + Response 500
 
         {
           "msg" : "failed to remove flow"
-        }
-+ Response 500
-
-        {
-          "msg" : "failed to insert data"
         }
 
 ### Remove the flow [DELETE /v1/flow/{id}]
@@ -210,7 +213,8 @@ Removes the flow and its configuration.
 + Response 404
 
         {
-          "msg" : "given flow is unknown"
+          "message": "Unknown flow: 777777",
+          "flow": "777777"
         }
 
 ## Nodes [/v1/node]
@@ -226,7 +230,7 @@ Adds a remote node
   + Body
 
             {
-                "image": "raulnegreiros/kelvin:latest",
+                "image": "dojot/kelvin-example:3.0.0-alpha2",
                 "id": "kelvin"
             }
 
@@ -236,11 +240,43 @@ Adds a remote node
           "message": "ok"
         }
 
++ Response 400
+
+        {
+          "message" : "Missing mandatory field"
+        }
+
 + Response 500
 
         {
           "message" : "Failed to add node"
         }
+
+### Retrieve all remote nodes [GET /v1/node]
+Retrieve all currently running remote nodes
+
++ Request (application/json; charset=utf-8)
+  + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json; charset=utf-8)
+
+            {
+              "nodes": [
+                {
+                  "id": "kelvin",
+                  "image": "raulnegreiros/kelvin:latest"
+                }
+              ]
+            }
+
++ Response 500 (application/json; charset=utf-8)
+
+        {
+          "message": "Failed list nodes",
+        }
+
 
 ### Remove a remote node [DELETE /v1/node/{id}]
 Removes a remote node
@@ -264,3 +300,139 @@ Removes a remote node
         {
           "message": "Failed to remove node.",
         }
+
+### Remove all remote nodes [DELETE /v1/node]
+Removes a remote node
+
++ Request (application/json; charset=utf-8)
+  + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json; charset=utf-8)
+
+        {
+          "message": "ok"
+        }
+
++ Response 500 (application/json; charset=utf-8)
+
+        {
+          "message": "Failed to remove node.",
+        }
+
+
+
+## NodeRED nodes [/nodes]
+
+### Retrieve all nodes [GET /nodes]
+
+The request can be sent with "Accept: application/json" header, which will
+generate a JSON object with a list of all nodes currently configured in
+Flowbroker. It can also be set with "Accept: text/html". In this case, a huge
+HTML file is returned with all nodes HTML description and associated scripts so
+that it can be rendered in a frontend application (it will be composed by all
+HTML files associated to each node).
+
++ Request for node JSON description
+  + Headers
+
+            Authorization: Bearer JWT
+            Accept: application/json
+
++ Response 200 (application/json; charset=utf-8)
+
+        [
+            {
+                "id": "dojot/change",
+                "name": "change",
+                "module": "dojot",
+                "version": "1.0.0",
+                "enabled": true,
+                "local": true,
+                "types": [
+                    "change"
+                ]
+            }
+        ]
+
++ Request for node HTML
+  + Headers
+
+            Authorization: Bearer JWT
+            Accept: text/html
+
++ Response 200 (text/html; charset=utf-8)
+
+            <script type="text/x-red" data-template-name="change">
+                <div class="form-row">
+                    <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
+                    <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
+                </div>
+                <div class="form-row" style="margin-bottom:0;">
+                    <label><i class="fa fa-list"></i> <span data-i18n="change.label.rules"></span></label>
+                </div>
+                <div class="form-row node-input-rule-container-row">
+                    <ol id="node-input-rule-container"></ol>
+                </div>
+
+            </script>
+
+            <script type="text/x-red" data-help-name="change">
+                <p>Set, change, delete or move properties of a message, flow context or global context.</p>
+                <p>The node can specify multiple rules that will be applied in turn.</p>
+                <p>The available operations are:</p>
+                <ul>
+                    <li><b>Set</b> - set a property. The value can be a variety of different types, or
+                        can be taken from an existing message or context property.</li>
+                    <li><b>Change</b> - search &amp; replace parts of the property. If regular expressions
+                        are enabled, the <b>replace with</b> property can include capture groups, for
+                        example <code>$1</code>. Replace will only change the <b>type</b> if there
+                        is a complete match.</li>
+                    <li><b>Delete</b> - delete a property.</li>
+                    <li><b>Move</b> - move or rename a property.</li>
+                </ul>
+
+            </script>
+
+            <script type="text/javascript">
+                RED.nodes.registerType('change', {
+                    color: "#E2D96E",
+                    category: 'function',
+                    defaults: {
+                        name: {value: ""},
+                        rules: {value: [{t: "set", p: "payload", pt: "msg", to: "", tot: "str"}]},
+                        // legacy
+                        action: {value: ""},
+                        property: {value: ""},
+                        from: {value: ""},
+                        to: {value: ""},
+                        reg: {value: false}
+                    },
+                    ....
+                });
+            </script>
+
+
+## NodeRED localization strings [/locales]
+
+### Retrieve localization strings for node-red nodes [GET /locales/node-red]
+
++ Request
+  + Headers
+
+            Authorization: Bearer JWT
+
++ Response 200 (application/json; charset=utf-8)
+
+            {
+                "common": {
+                    "label": {
+                    "payload": "Payload",
+                    "topic": "Topic",
+                    "name": "Name",
+                    "username": "Username"
+                    }
+                }
+            }
+
