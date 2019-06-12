@@ -1,6 +1,6 @@
 "use strict";
 
-var logger = require("../../logger").logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 let path = require('path');
 var dojot = require('@dojot/flow-node');
 
@@ -136,7 +136,7 @@ class DataHandler extends dojot.DataHandlerBase {
    * @return {[undefined]}
    */
   handleMessage(config, message) {
-    logger.debug("Executing change node...");
+    logger.debug("Executing change node...", { filename: 'change' });
     try {
       for (let rule of config.rules) {
         if (rule.t === "set") {
@@ -159,23 +159,23 @@ class DataHandler extends dojot.DataHandlerBase {
                 v2 = this._get(rule.to, message);
                 this._set(rule.p, v2, message);
               } catch (e) {
-                logger.error("... change node was not successfully executed.");
-                logger.error(`Error while executing change node: ${e}`);
+                logger.error("... change node was not successfully executed.", { filename: 'change' });
+                logger.error(`Error while executing change node: ${e}`, { filename: 'change' });
                 return Promise.reject(e);
               }
               break;
             default:
-              logger.debug("... change node was not successfully executed.");
-              logger.error(`Change node has invalid value type: ${rule.tot}`);
+              logger.debug("... change node was not successfully executed.", { filename: 'change' });
+              logger.error(`Change node has invalid value type: ${rule.tot}`, { filename: 'change' });
               return Promise.reject(new Error('Invalid value type: ' + rule.tot));
           }
         }
       }
-      logger.debug("... change node was successfully executed.");
+      logger.debug("... change node was successfully executed.", { filename: 'change' });
       return Promise.resolve([message]);
     } catch (error) {
-      logger.debug("... change node was not successfully executed.");
-      logger.error(`Error while executing change node: ${error}`);
+      logger.debug("... change node was not successfully executed.", { filename: 'change' });
+      logger.error(`Error while executing change node: ${error}`, { filename: 'change' });
       return Promise.reject(error);
     }
   }

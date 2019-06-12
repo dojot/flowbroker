@@ -2,7 +2,7 @@
 
 const path = require('path');
 const nodemailer = require("nodemailer");
-const logger = require("../../logger").logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 const util = require('util');
 const dojot = require('@dojot/flow-node');
 
@@ -82,17 +82,17 @@ class DataHandler extends dojot.DataHandlerBase {
      * @return {[undefined]}
      */
     handleMessage(config, message) {
-        logger.debug("Executing e-mail node...");
+        logger.debug("Executing e-mail node...", { filename: 'email' });
 
         // Sanity checks
         if (!message.hasOwnProperty("payload")) {
-            logger.debug("... e-mail node was not successfully executed.");
-            logger.error("E-mail node has no payload.");
+            logger.debug("... e-mail node was not successfully executed.", { filename: 'email' });
+            logger.error("E-mail node has no payload.", { filename: 'email' });
             return Promise.reject(new Error("email.errors.nopayload"));
         }
         // End of sanity checks
 
-        logger.debug("Preparing e-mail options...");
+        logger.debug("Preparing e-mail options...", { filename: 'email' });
         let sendopts = {
             subject: config.subject,
             to: (config.to || message.to),
@@ -107,8 +107,8 @@ class DataHandler extends dojot.DataHandlerBase {
         try {
             body = this._get(config.body, message);
         } catch (e) {
-            logger.debug("... e-mail node was not successfully executed.");
-            logger.error(`Error while retrieving e-mail body: ${e}`);
+            logger.debug("... e-mail node was not successfully executed.", { filename: 'email' });
+            logger.error(`Error while retrieving e-mail body: ${e}`, { filename: 'email' });
             return Promise.reject(new Error("email.errors.nobody"));
         }
 
@@ -119,19 +119,19 @@ class DataHandler extends dojot.DataHandlerBase {
             sendopts.html = sendopts.text;
         }
 
-        logger.debug("... e-mail options were successfully build");
-        logger.debug("E-mail will be sent as: ");
-        logger.debug(`${util.inspect(sendopts, {depth: null})}`);
+        logger.debug("... e-mail options were successfully build", { filename: 'email' });
+        logger.debug("E-mail will be sent as: ", { filename: 'email' });
+        logger.debug(`${util.inspect(sendopts, {depth: null})}`, { filename: 'email' });
 
 
-        logger.debug("Preparing SMTP transport handler...");
+        logger.debug("Preparing SMTP transport handler...", { filename: 'email' });
         let smtpOptions = {
             host: config.server,
             port: config.port,
             secure: config.secure
         };
 
-        logger.debug(`Using e-mail config: ${util.inspect(smtpOptions, {depth: null})}`);
+        logger.debug(`Using e-mail config: ${util.inspect(smtpOptions, {depth: null})}`, { filename: 'email' });
 
         if (config.hasOwnProperty('credentials')) {
             if (config.credentials.userid && config.credentials.password) {
@@ -139,33 +139,33 @@ class DataHandler extends dojot.DataHandlerBase {
                     user: config.credentials.userid,
                     pass: config.credentials.password
                 };
-                logger.debug(`Sending e-mail on behalf of ${smtpOptions.auth.user}`);
+                logger.debug(`Sending e-mail on behalf of ${smtpOptions.auth.user}`, { filename: 'email' });
             } else {
-                logger.debug("No user and no password were set.");
+                logger.debug("No user and no password were set.", { filename: 'email' });
             }
         }
 
         let smtpTransport = nodemailer.createTransport(smtpOptions);
 
         if (!smtpTransport) {
-            logger.debug("... e-mail transport was not successfully created.");
-            logger.debug("... e-mail node was not successfully executed.");
-            logger.error("Could not create SMTP transport.");
+            logger.debug("... e-mail transport was not successfully created.", { filename: 'email' });
+            logger.debug("... e-mail node was not successfully executed.", { filename: 'email' });
+            logger.error("Could not create SMTP transport.", { filename: 'email' });
             return Promise.reject(new Error("email.errors.nosmtptransport"));
         } else {
-            logger.debug("... e-mail transport was successfully created.");
+            logger.debug("... e-mail transport was successfully created.", { filename: 'email' });
         }
 
         return new Promise( (resolve, reject) => {
-            logger.debug("Sending e-mail...");
+            logger.debug("Sending e-mail...", { filename: 'email' });
             smtpTransport.sendMail(sendopts, function (error) {
                 if (error) {
-                    logger.debug("... e-mail node was not successfully executed.");
-                    logger.error(`Error while executing e-mail node: ${error}`);
+                    logger.debug("... e-mail node was not successfully executed.", { filename: 'email' });
+                    logger.error(`Error while executing e-mail node: ${error}`, { filename: 'email' });
                     return reject(error);
                 } else {
-                    logger.debug("... e-mail was successfully sent.");
-                    logger.debug("... e-mail node was successfully executed.");
+                    logger.debug("... e-mail was successfully sent.", { filename: 'email' });
+                    logger.debug("... e-mail node was successfully executed.", { filename: 'email' });
                     return resolve([]);
                 }
             });

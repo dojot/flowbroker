@@ -1,6 +1,6 @@
 var path = require('path');
 var util = require('util');
-var logger = require("../../logger").logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 var dojot = require('@dojot/flow-node');
 
 class DataHandler extends dojot.DataHandlerBase {
@@ -45,7 +45,7 @@ class DataHandler extends dojot.DataHandlerBase {
     switch (deviceSource) {
       case 'configured':
         if ((configuredDevices === undefined) || (configuredDevices.length === 0) ) {
-          logger.debug("Empty configured devices");
+          logger.debug("Empty configured devices", { filename: 'multi device out' });
           return [];
         }
         devicesIds = configuredDevices;
@@ -55,7 +55,7 @@ class DataHandler extends dojot.DataHandlerBase {
       break;
       case 'dynamic':
         if ((dynamicDevices === undefined) || (dynamicDevices.length === 0)) {
-          logger.debug("Empty dynamic devices");
+          logger.debug("Empty dynamic devices", { filename: 'multi device out' });
           return [];
         }
         try {
@@ -64,18 +64,18 @@ class DataHandler extends dojot.DataHandlerBase {
             devicesIds = devices;
           } else {
             if (devices === undefined) {
-              logger.debug('Dynamic devices is undefined');
+              logger.debug('Dynamic devices is undefined', { filename: 'multi device out' });
               return [];
             }
             devicesIds.push(devices);
           }
         } catch (error) {
-          logger.error(`Error while executing multi device out node: ${error}`);
+          logger.error(`Error while executing multi device out node: ${error}`, { filename: 'multi device out' });
           return [];
         }
       break;
       default:
-        logger.error(`Invalid device source ${deviceSource}`);
+        logger.error(`Invalid device source ${deviceSource}`, { filename: 'multi device out' });
         return [];
     }
 
@@ -83,9 +83,9 @@ class DataHandler extends dojot.DataHandlerBase {
   }
 
   handleMessage(config, message, metadata) {
-    logger.debug("Executing multi-device-out node...");
+    logger.debug("Executing multi-device-out node...", { filename: 'multi device out' });
     if ((config.attrs === undefined) || (config.attrs.length === 0)) {
-      logger.debug("... multi-device-out node was not successfully executed.");
+      logger.debug("... multi-device-out node was not successfully executed.", { filename: 'multi device out' });
       logger.error("Node has no output field set.");
       return Promise.reject(new Error('Invalid data source: field is mandatory'));
     }
@@ -96,8 +96,8 @@ class DataHandler extends dojot.DataHandlerBase {
       try {
         output.attrs = this._get(config.attrs, message);
       } catch (e) {
-        logger.debug("... multi-device-out node was not successfully executed.");
-        logger.error(`Error while executing multi-device-out node: ${e}`);
+        logger.debug("... multi-device-out node was not successfully executed.", { filename: 'multi device out' });
+        logger.error(`Error while executing multi-device-out node: ${e}`, { filename: 'multi device out' });
         return Promise.reject(e);
       }
 
@@ -108,15 +108,15 @@ class DataHandler extends dojot.DataHandlerBase {
         message);
 
       if (devicesIds.length === 0) {
-        logger.debug("... multi-device-out node was not successfully executed.");
+        logger.debug("... multi-device-out node was not successfully executed.", { filename: 'multi device out' });
         return Promise.reject(new Error('Could not define target devices'));
       }
 
       output.metadata.timestamp = Date.now();
       output.metadata.tenant = metadata.tenant;
 
-      logger.debug("Updating device... ");
-      logger.debug(`Message is: ${util.inspect(output, { depth: null })}`);
+      logger.debug("Updating device... ", { filename: 'multi device out' });
+      logger.debug(`Message is: ${util.inspect(output, { depth: null })}`, { filename: 'multi device out' });
 
       // avoid send the same event to the same device, it can occurr due to
       // an errouneus configuration
@@ -128,12 +128,12 @@ class DataHandler extends dojot.DataHandlerBase {
 
         this.kafkaMessenger.publish(this.subject, metadata.tenant, JSON.stringify(event));
       }
-      logger.debug("... device was updated.");
-      logger.debug("... multi-device-out node was successfully executed.");
+      logger.debug("... device was updated.", { filename: 'multi device out' });
+      logger.debug("... multi-device-out node was successfully executed.", { filename: 'multi device out' });
       return Promise.resolve();
     } catch (error) {
-      logger.debug("... multi-device-out node was not successfully executed.");
-      logger.error(`Error while executing multi-device-out node: ${error}`);
+      logger.debug("... multi-device-out node was not successfully executed.", { filename: 'multi device out' });
+      logger.error(`Error while executing multi-device-out node: ${error}`, { filename: 'multi device out' });
       return Promise.reject(error);
     }
   }

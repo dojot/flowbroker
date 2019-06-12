@@ -2,6 +2,8 @@
 /* jshint esversion: 6 */
 "use strict";
 
+const logger = require("@dojot/dojot-module-logger").logger;
+
 function getToken(tenant) {
   const payload = { 'service': tenant, 'username': 'flowbroker' };
   return (new Buffer('jwt schema').toString('base64')) + '.' +
@@ -37,7 +39,7 @@ function authParse(req, res, next) {
 
   const token = rawToken.split('.');
   if (token.length !== 3) {
-    console.error("Got invalid request: token is malformed", rawToken);
+    logger.error(`Got invalid request: token is malformed ${rawToken}`, { filename: 'auth' });
     return res.status(401).send(new InvalidTokenError());
   }
 
@@ -51,13 +53,13 @@ function authParse(req, res, next) {
 
 function authEnforce(req, res, next) {
   if (req.path.match(/(\.png|svg$)|(keymap\.json$)/)){
-    console.log('will ignore ', req.path);
+    logger.debug(`will ignore ${req.path}`, { filename: 'auth' });
     return next();
   }
 
   if (req.user === undefined || req.user.trim() === "" ) {
     // valid token must be supplied
-    console.error("Got invalid request: user is not defined in token: ", req.get('authorization'));
+    logger.error(`Got invalid request: user is not defined in token: ${req.get('authorization')}`, { filename: 'auth' });
     return res.status(401).send(new UnauthorizedError());
   }
 

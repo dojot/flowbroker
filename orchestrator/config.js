@@ -108,5 +108,8 @@ module.exports = {
     },
     taskProcessing: {
         taskTimeout: process.env.TASK_TIMEOUT || 30000 // time in ms
+    },
+    logging: {
+        level: process.env.LOG_LEVEL || 'info' // it could be error, warn, info or debug
     }
 };

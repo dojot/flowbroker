@@ -1,6 +1,7 @@
 "use strict";
 
 var ZooKeeper = require ('zookeeper');
+const logger = require("@dojot/dojot-module-logger").logger;
 
 
 function _createNodes(basePath, pathArray, pathIndex, zkClient) {
@@ -18,7 +19,7 @@ function _createNodes(basePath, pathArray, pathIndex, zkClient) {
 
         zkClient.a_create (basePath, "", 0, (rc, error, path) => {
             if ( (rc !== 0) && (rc !== ZooKeeper.ZNODEEXISTS) ) {
-                console.log("could not create znode: %d, error: '%s', path=%s", rc, error, path);
+                logger.error(`could not create znode: ${rc}, error: ${error}, path=${path}`, { filename: 'zkHelper' });
                 return reject();
             }
             _createNodes(basePath, pathArray, pathIndex, zkClient).then(
@@ -68,7 +69,7 @@ function createPathIfNotExists (basePath, path, zkClient) {
             } else if (rc === 0) {
                 return resolve();
             }
-            console.log("Unexpected behavior. Exists result: %d. Error:  '%s'", rc, error);
+            logger.error(`Unexpected behavior. Exists result: ${rc}. Error: ${error}`, { filename: 'zkHelper' });
             reject();
             return;
         });

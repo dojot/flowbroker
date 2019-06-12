@@ -10,6 +10,8 @@
   "license": "GPL-3.0",
   "dependencies": {
     "zeromq": "^4.6.0",
-    "zookeeper": "^3.4.9-3"
+    "zookeeper": "3.4.9-3",
+    "express": "^4.16.2",
+    "@dojot/dojot-module-logger": "^0.0.1-alpha.5"
   }
 }

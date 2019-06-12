@@ -1,7 +1,7 @@
 "use strict";
 
 var path = require('path');
-var logger = require('../../logger').logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 
 var http = require("follow-redirects").http;
 var https = require("follow-redirects").https;
@@ -71,7 +71,7 @@ class DataHandler extends dojot.DataHandlerBase {
      * @return {[undefined]}
      */
     handleMessage(config, message) {
-        logger.debug("Executing http node...");
+        logger.debug("Executing http node...", { filename: 'http' });
         var nodeUrl = config.url;
         var isTemplatedUrl = (nodeUrl || "").indexOf("{{") !== -1;
         var nodeMethod = config.method || "GET";
@@ -83,8 +83,8 @@ class DataHandler extends dojot.DataHandlerBase {
         try {
             httpRequest = JSON.parse(this._get(config.body, message));
         } catch (e) {
-            logger.debug("... http node was not successfully executed.");
-            logger.error(`Error while retrieving http payload: ${e}`);
+            logger.debug("... http node was not successfully executed.", { filename: 'http' });
+            logger.error(`Error while retrieving http payload: ${e}`, { filename: 'http' });
             return Promise.reject("httpin.errors.no-body");
         }
 
@@ -97,8 +97,8 @@ class DataHandler extends dojot.DataHandlerBase {
         }
 
         if (!url) {
-            logger.debug("... http node was not successfully executed.");
-            logger.error("Node has no URL set.");
+            logger.debug("... http node was not successfully executed.", { filename: 'http' });
+            logger.error("Node has no URL set.", { filename: 'http' });
             return Promise.reject("httpin.errors.no-url");
         }
 
@@ -109,8 +109,8 @@ class DataHandler extends dojot.DataHandlerBase {
 
         // Then, check whether it is correctly set - starts with http:// or https://
         if (!/^(http|https):\/\//.test(url)) {
-            logger.debug("... http node was not successfully executed.");
-            logger.error("Node has an invalid transport protocol (no http nor https).");
+            logger.debug("... http node was not successfully executed.", { filename: 'http' });
+            logger.error("Node has an invalid transport protocol (no http nor https).", { filename: 'http' });
             return Promise.reject("httpin.errors.invalid-transport");
         }
 
@@ -177,7 +177,7 @@ class DataHandler extends dojot.DataHandlerBase {
             var urltotest = url;
 
             return new Promise((resolve, reject) => {
-                logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`);
+                logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`, { filename: 'http' });
                 var req = ((/^https/.test(urltotest)) ? https : http).request(opts, (res) => {
                     // Force NodeJs to return a Buffer (instead of a string)
                     // See https://github.com/nodejs/node/issues/6038
@@ -197,8 +197,8 @@ class DataHandler extends dojot.DataHandlerBase {
                             // if the 'setEncoding(null)' fix above stops working in
                             // a new Node.js release, throw a noisy error so we know
                             // about it.
-                            logger.debug("... http node was not successfully executed.");
-                            logger.error("Returned HTTP Request data is not a buffer.");
+                            logger.debug("... http node was not successfully executed.", { filename: 'http' });
+                            logger.error("Returned HTTP Request data is not a buffer.", { filename: 'http' });
                             return reject(new Error("HTTP Request data chunk not a Buffer"));
                         }
                         httpResponse.payload.push(chunk);
@@ -223,7 +223,7 @@ class DataHandler extends dojot.DataHandlerBase {
                                     }
                                 }
                             }
-                            logger.debug("... http node was successfully executed.");
+                            logger.debug("... http node was successfully executed.", { filename: 'http' });
                             return resolve([message]);
                         }
                     });
@@ -231,16 +231,16 @@ class DataHandler extends dojot.DataHandlerBase {
 
                 req.setTimeout(reqTimeout, function () {
                     setTimeout(function () {
-                        logger.debug("... http node was not successfully executed.");
-                        logger.error("No response was received within timeout period.");
+                        logger.debug("... http node was not successfully executed.", { filename: 'http' });
+                        logger.error("No response was received within timeout period.", { filename: 'http' });
                         return reject(new Error("common.notification.errors.no-response"));
                     }, 10);
                     req.abort();
                 });
 
                 req.on('error', function (err) {
-                    logger.debug("... http node was not successfully executed.");
-                    logger.error(`Error was: ${err}`);
+                    logger.debug("... http node was not successfully executed.", { filename: 'http' });
+                    logger.error(`Error was: ${err}`, { filename: 'http' });
                     return reject(err);
                 });
                 if (payload) {
@@ -250,8 +250,8 @@ class DataHandler extends dojot.DataHandlerBase {
                 req.end();
             });
         } catch (error) {
-            logger.debug("... http node was not successfully executed.");
-            logger.error(`An exception was thrown: ${error}`);
+            logger.debug("... http node was not successfully executed.", { filename: 'http' });
+            logger.error(`An exception was thrown: ${error}`, { filename: 'http' });
             return Promise.reject(error);
         }
     }

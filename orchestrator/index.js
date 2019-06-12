@@ -1,11 +1,15 @@
 'use strict';
 
-var fs = require("fs");
-var logger = require('./logger').logger;
+var config = require('./config');
+const logger = require("@dojot/dojot-module-logger").logger;
+if (logger.setLevel(config.logging.level) !== 0) {
+  logger.error(`Invalid logger level: ${config.logging.level}`);
+  process.exit(1);
+}
 
+var fs = require("fs");
 var ArgumentParser = require('argparse').ArgumentParser;
 
-var config = require('./config');
 var FlowManagerBuilder = require('./flowManager').FlowManagerBuilder;
 var amqp = require('./amqp');
 var MongoManager = require('./mongodb');
@@ -30,7 +34,7 @@ process.on('uncaughtException', (ex) => {
 });
 
 function logAndKill(error) {
-  logger.error('[flowbroker] Initialization failed.', error);
+  logger.error(`[flowbroker] Initialization failed. Error: ${error}`);
   process.kill(process.pid, "SIGTERM");
 }
 
@@ -78,6 +82,11 @@ parser.addArgument(['-w', '--workers'],
                    });
 parser.addArgument(['-v', '--verbose'], {action: 'storeTrue'});
 var args = parser.parseArgs();
+
+if (logger.setLevel(config.logging.level) !== 0) {
+  logger.error(`Invalid logger level: ${config.logging.level}`);
+  process.exit(1);
+}
 
 if (args.flow) {
   var flows = FlowManagerBuilder.get("admin");

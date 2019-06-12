@@ -1,7 +1,7 @@
 "use strict";
 
 const path = require('path');
-const logger = require("../../logger").logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 const geolib = require('geolib');
 const dojot = require('@dojot/flow-node');
 
@@ -64,12 +64,12 @@ class DataHandler extends dojot.DataHandlerBase {
      * @return {[undefined]}
      */
     handleMessage(config, message) {
-        logger.debug("Executing geo node...");
+        logger.debug("Executing geo node...", { filename: 'geo' });
         let geolocation = getLatLng(message.payload);
 
         if (!geolocation) {
-            logger.debug("... geo node was not successfully executed.");
-            logger.error("Message has no geographic position attached.");
+            logger.debug("... geo node was not successfully executed.", { filename: 'geo' });
+            logger.error("Message has no geographic position attached.", { filename: 'geo' });
             return Promise.reject(new Error("Message has no geographic position attached"));
         }
 
@@ -83,20 +83,20 @@ class DataHandler extends dojot.DataHandlerBase {
                 message.location.isat = message.location.isat || [];
                 message.location.isat.push(config.name);
             }
-            logger.debug("... geo node was successfully executed.");
-            logger.debug("Its test had a hit.");
+            logger.debug("... geo node was successfully executed.", { filename: 'geo' });
+            logger.debug("Its test had a hit.", { filename: 'geo' });
             return Promise.resolve([message]);
         }
 
         if (!inout && (config.filter === "outside")) {
-            logger.debug("... geo node was successfully executed.");
-            logger.debug("Its test had a hit.");
+            logger.debug("... geo node was successfully executed.", { filename: 'geo' });
+            logger.debug("Its test had a hit.", { filename: 'geo' });
             return Promise.resolve([message]);
         }
 
 
-        logger.debug("... geo node was successfully executed.");
-        logger.debug("Its test didn't have a hit.");
+        logger.debug("... geo node was successfully executed.", { filename: 'geo' });
+        logger.debug("Its test didn't have a hit.", { filename: 'geo' });
         return Promise.resolve([]);
 
         /**

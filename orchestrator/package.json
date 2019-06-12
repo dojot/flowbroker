@@ -2,16 +2,17 @@
   "name": "orchestrator",
   "version": "1.0.0",
   "description": "Flow orchestrator module",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "test": ""
   },
   "author": "Matheus Magalhaes",
   "license": "GPL-3.0",
   "dependencies": {
-    "@dojot/dojot-module": "^0.0.1-beta",
-    "@dojot/flow-node": "^3.0.0-alpha3",
+    "@dojot/dojot-module": "^0.0.1-beta.5",
+    "@dojot/flow-node": "^3.0.0-alpha.5",
     "@dojot/healthcheck": "^0.0.1-alpha",
+    "@dojot/dojot-module-logger": "0.0.1-alpha.5",
     "amqplib": "^0.5.2",
     "argparse": "^1.0.9",
     "axios": "^0.18.0",
@@ -32,7 +33,6 @@
     "uuid": "^3.2.1",
     "uuid4": "^1.1.4",
     "when": "~3.7.8",
-    "winston": "3.0.0-rc5",
     "zeromq": "^4.6.0",
     "basic-ftp": "^3.4.4"
   }
