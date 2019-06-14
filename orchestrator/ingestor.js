@@ -72,9 +72,14 @@ module.exports = class DeviceIngestor {
         this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.devices,
           "message", (tenant, message) => {
             message = hotfixTemplateIdFormat(message);
-            this._enqueueEvent({
+            let event = {
               source: 'device-manager',
               message: message
+            };
+            this._enqueueEvent(event).then(() => {
+              logger.debug(`Queued event ${event}`);
+            }).catch((error) => {
+              logger.warn(`Failed to enqueue event ${event}. Error: ${error}`);
             });
           }
         );
@@ -84,9 +89,14 @@ module.exports = class DeviceIngestor {
         logger.debug("Registering callbacks for device-data device subject...");
         this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.deviceData,
           "message", (tenant, message) => {
-            this._enqueueEvent({
+            let event = {
               source: "device",
               message: message
+            };
+            this._enqueueEvent(event).then(() => {
+              logger.debug(`Queued event ${event}`);
+            }).catch((error) => {
+              logger.warn(`Failed to enqueue event ${event}. Error: ${error}`);
             });
           }
         );
@@ -116,13 +126,23 @@ module.exports = class DeviceIngestor {
     });
   }
 
-  _publish(node, message, flow, metadata) {
+  /**
+   * @brief This method publishes the next tasks given the current node.
+   * @warning If an error occurs, there is no rollback from the messages sent,
+   * so be aware
+   * @param {*} node the current node (processed task)
+   * @param {*} message the message to be send to the next tasks
+   * @param {*} flow the flow which the node belongs
+   * @param {*} metadata an object with the metadatas ('tenant', 'deviceId' and 'timestamp')
+   */
+  async _publish(node, message, flow, metadata) {
+    let sendMsgPromises = [];
     // new events must have the lowest priority in the queue, in this way
     // events that are being processed can be finished first
     // This should work for single output nodes only!
     for (let output of node.wires) {
       for (let hop of output) {
-        this.amqpTaskProducer.sendMessage(JSON.stringify({
+        let sendMsgPromise = this.amqpTaskProducer.sendMessage(JSON.stringify({
           hop: hop,
           message: message,
           flow: flow,
@@ -132,41 +152,76 @@ module.exports = class DeviceIngestor {
             timestamp: metadata.timestamp
           }
         }), 0);
+        let reflectPromise = sendMsgPromise.then(r => ({isFulfilled: true, data: r})).catch(r => ({isFulfilled: false, data: r}));
+        sendMsgPromises.push(reflectPromise);
       }
     }
+
+    return Promise.all(sendMsgPromises).then((promises) => {
+      for (let i = 0; i < promises.length; i++) {
+          let promise = promises[i];
+          if (!promise.isFulfilled) {
+            this.logger.warn(`Failed to publish some data. Error: ${promise.data}`);
+          }
+      }
+      return Promise.resolve();
+    }).catch((error) => {
+      this.logger.Error(`Unexpect error on publish message. Error: ${error}`);
+      return Promise.reject('Internal error');
+    });
   }
 
-  _handleFlow(tenant, deviceId, timestamp, templates, message, flow, source) {
+  async _handleFlow(tenant, deviceId, timestamp, templates, message, flow, source) {
     flow.nodeMap = {};
     for (let node of flow.red) {
       flow.nodeMap[node.id] = node;
     }
 
+    let publishPromises = [];
+
     for (let head of flow.heads) {
       const node = flow.nodeMap[head];
-
+      let publishPromise = null;
       switch (node.type) {
         case 'device in':
         case 'device template in':
           if (source === 'publish') {
-            this._publish(node, { payload: message.data.attrs }, flow, {tenant, deviceId, timestamp});
+            publishPromise = this._publish(node, { payload: message.data.attrs }, flow, {tenant, deviceId, timestamp});
           }
         break;
         case 'event device in':
           if ( (node.device_id === deviceId) && node['event_' + source] ) {
-            this._publish(node, { payload: message }, flow, {tenant, deviceId, timestamp});
+            publishPromise = this._publish(node, { payload: message }, flow, {tenant, deviceId, timestamp});
           }
         break;
         case 'event template in':
           if (templates.includes(node.template_id) && node['event_' + source]) {
-            this._publish(node, { payload: message }, flow, {tenant, deviceId, timestamp});
+            publishPromise = this._publish(node, { payload: message }, flow, {tenant, deviceId, timestamp});
           }
         break;
         default:
           logger.error(`Unsupported node type ${node.type}`);
           break;
       }
+
+      if (publishPromise !== null) {
+        let reflectPromise = publishPromise.then(r => ({isFulfilled: true, data: r})).catch(r => ({isFulfilled: false, data: r}));
+        publishPromises.push(reflectPromise);
+      }
     }
+
+    return Promise.all(publishPromises).then((promises) => {
+      for (let i = 0; i < promises.length; i++) {
+          let promise = promises[i];
+          if (!promise.isFulfilled) {
+            this.logger.warn(`Failed to handle some flow. Error: ${promise.data}`);
+          }
+      }
+      return Promise.resolve();
+    }).catch((error) => {
+      this.logger.Error(`Unexpected error on handle some flow. Error: ${error}`);
+      return Promise.reject('Internal error');
+    });
   }
 
   _handleEvent(tenant, deviceId, timestamp, templates, source, event) {
@@ -192,15 +247,31 @@ module.exports = class DeviceIngestor {
         }
       }
 
+      let handleFlowPromises = [];
       for (let flow of Object.values(uniqueFlows)) {
-        this._handleFlow(tenant, deviceId, timestamp, templates, event, flow, source);
+        let promise = this._handleFlow(tenant, deviceId, timestamp, templates, event, flow, source);
+
+        let reflectPromise = promise.then(r => ({isFulfilled: true, data: r})).catch(r => ({isFulfilled: false, data: r}));
+        handleFlowPromises.push(reflectPromise);
       }
+      
+      return Promise.all(handleFlowPromises).then((promises) => {
+        for (let i = 0; i < promises.length; i++) {
+            let promise = promises[i];
+            if (!promise.isFulfilled) {
+              this.logger.warn(`Failed to handle some flow. Error: ${promise.data}`);
+            }
+        }
+        return Promise.resolve();
+      }).catch((error) => {
+        this.logger.Error(`Unexpected error on handle some flow. Error: ${error}`);
+        return Promise.reject('Internal error');
+      });
     });
   }
 
   _enqueueEvent(event) {
-    this.amqpEventProducer.sendMessage(JSON.stringify(event));
-    logger.debug(`Queued event ${event}`);
+    return this.amqpEventProducer.sendMessage(JSON.stringify(event));
   }
 
   preProcessEvent(eventStringfied, ack) {
