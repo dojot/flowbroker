@@ -65,8 +65,11 @@ class DataHandler extends dojot.DataHandlerBase {
      */
     handleMessage(config, message) {
         logger.debug("Executing geo node...", { filename: 'geo' });
-        let geolocation = getLatLng(message.payload);
 
+        const {payload: {data:{attrs}}} = message;
+        let geolocation = getLatLng(attrs);
+
+        console.log('geolocation', geolocation);
         if (!geolocation) {
             logger.debug("... geo node was not successfully executed.", { filename: 'geo' });
             logger.error("Message has no geographic position attached.", { filename: 'geo' });
