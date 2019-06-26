@@ -3,11 +3,12 @@
   "label": {
     "filter": "Filter",
     "name": "Name",
-    "geofence_name": "Geofence name"
+    "geofence_name": "Geofence name",
+    "geopoint": "Geo Coordinate"
   },
   "text": {
-    "inside": "only points inside",
-    "outside": "only points outside"
+    "inside": "only points inside of the map below",
+    "outside": "only points outside of the map below"
   },
   "category": "location"
 }
