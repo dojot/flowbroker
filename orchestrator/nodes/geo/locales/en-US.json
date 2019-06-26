@@ -7,8 +7,8 @@
     "geopoint": "Geo Coordinate"
   },
   "text": {
-    "inside": "only points inside",
-    "outside": "only points outside"
+    "inside": "only points inside (map below)",
+    "outside": "only points outside (map below)"
   },
   "category": "location"
 }
