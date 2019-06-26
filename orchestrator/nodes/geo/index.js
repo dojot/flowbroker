@@ -69,7 +69,7 @@ class DataHandler extends dojot.DataHandlerBase {
         let geoLocationString = '';
         try {
             geoLocationString = this._get(config.geopoint, message);
-        }catch (e) {
+        } catch (e) {
             logger.debug("... geo node was not successfully executed.", {filename: 'geo'});
             logger.error("It was not possible find attribute associated with geo coordinate.", {filename: 'geo'});
             return Promise.reject(new Error("It was not possible find attribute associated with geo coordinate"));
@@ -117,7 +117,7 @@ class DataHandler extends dojot.DataHandlerBase {
          */
         function getLatLng(geoLocation) {
             let regLatLong = /([+-]?\d+(.\d+)?)[ ]*,[ ]*([+-]?\d+(.\d+)?)/;
-            if (geoLocation) {
+            if (geoLocation && typeof geoLocation === 'string') {
                 let parsed = geoLocation.match(regLatLong);
 
                 if (parsed) {
