@@ -3,7 +3,8 @@
   "label": {
     "filter": "Filtro",
     "name": "Nome",
-    "geofence_name": "Geo referência nome"
+    "geofence_name": "Geo referência nome",
+    "geopoint": "Geo Coordenada"
   },
   "text": {
     "inside": "apenas pontos dentro",

@@ -64,14 +64,21 @@ class DataHandler extends dojot.DataHandlerBase {
      * @return {[undefined]}
      */
     handleMessage(config, message) {
-        logger.debug("Executing geo node...", { filename: 'geo' });
+        logger.debug("Executing geo node...", {filename: 'geo'});
 
-        const {payload: {data:{attrs}}} = message;
-        let geolocation = getLatLng(attrs);
-        
+        let geoLocationString = '';
+        try {
+            geoLocationString = this._get(config.geopoint, message);
+        }catch (e) {
+            logger.debug("... geo node was not successfully executed.", {filename: 'geo'});
+            logger.error("It was not possible find attribute associated with geo coordinate.", {filename: 'geo'});
+            return Promise.reject(new Error("It was not possible find attribute associated with geo coordinate"));
+        }
+
+        let geolocation = getLatLng(geoLocationString);
         if (!geolocation) {
-            logger.debug("... geo node was not successfully executed.", { filename: 'geo' });
-            logger.error("Message has no geographic position attached.", { filename: 'geo' });
+            logger.debug("... geo node was not successfully executed.", {filename: 'geo'});
+            logger.error("Message has no geographic position attached.", {filename: 'geo'});
             return Promise.reject(new Error("Message has no geographic position attached"));
         }
 
@@ -85,49 +92,44 @@ class DataHandler extends dojot.DataHandlerBase {
                 message.location.isat = message.location.isat || [];
                 message.location.isat.push(config.name);
             }
-            logger.debug("... geo node was successfully executed.", { filename: 'geo' });
-            logger.debug("Its test had a hit.", { filename: 'geo' });
+            logger.debug("... geo node was successfully executed.", {filename: 'geo'});
+            logger.debug("Its test had a hit.", {filename: 'geo'});
             return Promise.resolve([message]);
         }
 
         if (!inout && (config.filter === "outside")) {
-            logger.debug("... geo node was successfully executed.", { filename: 'geo' });
-            logger.debug("Its test had a hit.", { filename: 'geo' });
+            logger.debug("... geo node was successfully executed.", {filename: 'geo'});
+            logger.debug("Its test had a hit.", {filename: 'geo'});
             return Promise.resolve([message]);
         }
 
 
-        logger.debug("... geo node was successfully executed.", { filename: 'geo' });
-        logger.debug("Its test didn't have a hit.", { filename: 'geo' });
+        logger.debug("... geo node was successfully executed.", {filename: 'geo'});
+        logger.debug("Its test didn't have a hit.", {filename: 'geo'});
         return Promise.resolve([]);
 
         /**
-         * Look for a lat,lng string repesentation and return an
+         * Look for a lat,lng string representation and return an
          * object representation of it if any is found.
          *
-         * @param  {[object]}  payload Message payload
-         * @return {[{latitude: string, longitude: string}]}
+         * @return {{latitude: (*|string), longitude: (*|string)} || null}
+         * @param geoLocation
          */
-        function getLatLng(payload) {
-            let latlng = /([+-]?\d+(.\d+)?)[ ]*,[ ]*([+-]?\d+(.\d+)?)/;
+        function getLatLng(geoLocation) {
+            let regLatLong = /([+-]?\d+(.\d+)?)[ ]*,[ ]*([+-]?\d+(.\d+)?)/;
+            if (geoLocation) {
+                let parsed = geoLocation.match(regLatLong);
 
-            for (let attr in payload) {
-                if (payload.hasOwnProperty(attr) && typeof payload[attr] === "string") {
-                    let parsed = payload[attr].match(latlng);
-
-                    if (parsed) {
-                        return {
-                            latitude: parsed[1],
-                            longitude: parsed[3]
-                        };
-                    }
+                if (parsed) {
+                    return {
+                        latitude: parsed[1],
+                        longitude: parsed[3]
+                    };
                 }
             }
-
             return null;
         }
     }
 }
 
-// var main = new DojotHandler(new DataHandler());
-module.exports = { Handler: DataHandler };
+module.exports = {Handler: DataHandler};
