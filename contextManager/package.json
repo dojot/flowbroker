@@ -4,12 +4,16 @@
   "description": "Flow broker's context manager",
   "main": "index.js",
   "scripts": {
-    "test": ""
+    "test": "",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "author": "Raul Negreiros",
   "license": "GPL-3.0",
   "dependencies": {
     "zeromq": "^4.6.0",
-    "zookeeper": "^3.4.9-3"
-  }
+    "zookeeper": "^3.4.9-3",
+    "snyk": "^1.189.0"
+  },
+  "snyk": true
 }
