@@ -4,7 +4,9 @@
   "description": "Flow orchestrator module",
   "main": "src/index.js",
   "scripts": {
-    "test": ""
+    "test": "",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "author": "Matheus Magalhaes",
   "license": "GPL-3.0",
@@ -34,6 +36,8 @@
     "uuid4": "^1.1.4",
     "when": "~3.7.8",
     "zeromq": "^4.6.0",
-    "basic-ftp": "^3.4.4"
-  }
+    "basic-ftp": "^3.4.4",
+    "snyk": "^1.189.0"
+  },
+  "snyk": true
 }
