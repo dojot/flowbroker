@@ -476,6 +476,7 @@ class ContextHandler {
 
 let zkHost = process.env.ZOOKEEPER_HOST || "zookeeper";
 let zkPort = process.env.ZOOKEEPER_PORT || 2181;
+let loggerPort = process.env.LOGGER_PORT || 80;
 let zmqPort = process.env.ZEROMQ_PORT || 5556;
 let holdLockTimeout = process.env.HOLD_LOCK_TIMEOUT || 10000;
 let waitLockTimeout = process.env.WAIT_LOCK_TIMEOUT || 30000;
@@ -488,8 +489,8 @@ if (logger.setLevel(logLevel) !== 0) {
 
 app.use(bodyParser.json());
 app.use(DojotLogger.getHTTPRouter());
-app.listen(80, () => {
-  logger.info(`Listening on port 80.`);
+app.listen(loggerPort, () => {
+  logger.info(`Listening on port ${loggerPort}.`);
 });
 
 let handler = new ContextHandler(zkHost,
