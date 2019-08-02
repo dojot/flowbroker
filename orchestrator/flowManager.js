@@ -4,7 +4,6 @@
  * Manages flows configured by the application
  */
 
-var mongo = require('mongodb');
 var uuid = require('uuid/v4');
 var util = require('util');
 const logger = require("@dojot/dojot-module-logger").logger;
@@ -28,6 +27,7 @@ class UnknownFlowError extends FlowError {
   constructor(id) {
     super("Unknown flow: " + id);
     this.flowid = id;
+    this.httpStatus = 404;
   }
 
   payload() {
@@ -84,7 +84,7 @@ class FlowManager {
   /**
    * Given a flow representation (json, node-red schema), perform initial validation
    * and parsing.
-   * 
+   *
    * This function will ignore any 'tab' and undefined nodes.
    *
    * @param  {[type]} flow [description]
@@ -159,12 +159,8 @@ class FlowManager {
           throw new UnknownFlowError(flowid);
         }
 
+
         return flow;
-      })
-      .catch(error => {
-        if (error instanceof mongo.MongoError) {
-          throw error;
-        }
       });
   }
 
