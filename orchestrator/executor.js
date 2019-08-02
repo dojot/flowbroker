@@ -47,14 +47,14 @@ module.exports = class Executor {
                 tenant: event.metadata.tenant,
                 originatorDeviceId: event.metadata.originator,
                 timestamp: event.metadata.timestamp,
-            }
+            };
             let handleMessagePromise = handler.handleMessage(at, event.message, metadata, this.contextHandler);
 
             const handleMessageTimeoutPromise = new Promise((resolve, reject) => {
                 setTimeout(() => {
                     return reject(`timeout`);
                 }, config.taskProcessing.taskTimeout);
-            });            
+            });
 
             Promise.race([handleMessagePromise, handleMessageTimeoutPromise])
                 .then((result) => {
@@ -82,17 +82,16 @@ module.exports = class Executor {
                     }
                     return Promise.all(sendMsgPromises).then((promises) => {
                         for (let i = 0; i < promises.length; i++) {
-                            promises[i];
-                            if (!promises[i].isFulfilled) {
-//todo
+                            if (!(promises[i].isFulfilled)) {
+                                logger.error(`[executor] Failed to sent message to the next task. Error: ${error}. Aborting flow ${event.flow.id} branch execution.`);
                             }
                         }
                         return ack();
                     }).catch((error) => {
+                        logger.error(`[executor] Node excution failed. Error: ${error}`);
                         return ack();
                     });
-                    
-                }).catch( (error) => {
+                }).catch((error) => {
                     logger.warn(`[executor] Node (${at.type}) execution failed. Error: ${error}. Aborting flow ${event.flow.id} branch execution.`);
                     // TODO notify alarmManager
                     return ack();
