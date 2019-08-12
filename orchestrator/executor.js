@@ -39,7 +39,7 @@ module.exports = class Executor {
             return ack();
         }
 
-        logger.debug(`[executor] will handle node ${at.type}`);
+        logger.debug(`[executor] will handle node ${at.id}:${at.type}`);
         let handler = nodes.getNode(at.type, event.metadata.tenant);
         if (handler) {
             let metadata = {
@@ -83,21 +83,21 @@ module.exports = class Executor {
                     return Promise.all(sendMsgPromises).then((promises) => {
                         for (let i = 0; i < promises.length; i++) {
                             if (!(promises[i].isFulfilled)) {
-                                logger.error(`[executor] Failed to sent message to the next task. Error: ${error}. Aborting flow ${event.flow.id} branch execution.`);
+                                logger.error(`[executor] Failed to sent message to the next task. Error: ${error}. Aborting flow ${event.flow.id} branch execution at node ${at.id}.`);
                             }
                         }
                         return ack();
                     }).catch((error) => {
-                        logger.error(`[executor] Node excution failed. Error: ${error}`);
+                        logger.error(`[executor] Node (${at.id}:${at.type}) excution failed. Error: ${error}. Aborting flow ${event.flow.id} branch execution.`);
                         return ack();
                     });
                 }).catch((error) => {
-                    logger.warn(`[executor] Node (${at.type}) execution failed. Error: ${error}. Aborting flow ${event.flow.id} branch execution.`);
+                    logger.warn(`[executor] Node (${at.id}:${at.type}) execution failed. Error: ${error}. Aborting flow ${event.flow.id} branch execution.`);
                     // TODO notify alarmManager
                     return ack();
                 });
         } else {
-            logger.warn(`[executor] Unknown node ${at.type} detected. Igoring. Aborting flow ${event.flow.id} branch execution.`);
+            logger.warn(`[executor] Unknown node (${at.id}:${at.type}) detected. Igoring. Aborting flow ${event.flow.id} branch execution.`);
             return ack();
         }
     }
