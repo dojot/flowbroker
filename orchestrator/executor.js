@@ -47,18 +47,19 @@ module.exports = class Executor {
                 tenant: event.metadata.tenant,
                 originatorDeviceId: event.metadata.originator,
                 timestamp: event.metadata.timestamp,
-            }
+            };
             let handleMessagePromise = handler.handleMessage(at, event.message, metadata, this.contextHandler);
 
             const handleMessageTimeoutPromise = new Promise((resolve, reject) => {
                 setTimeout(() => {
                     return reject(`timeout`);
                 }, config.taskProcessing.taskTimeout);
-            });            
+            });
 
             Promise.race([handleMessagePromise, handleMessageTimeoutPromise])
                 .then((result) => {
                     logger.debug(`[executor] hop (${at.type}) result: ${JSON.stringify(result)}`);
+                    let sendMsgPromises = [];
                     for (let output = 0; output < at.wires.length; output++) {
                         let newEvent = result[output];
                         if (newEvent) {
@@ -67,17 +68,30 @@ module.exports = class Executor {
                                 // the maximum priority, in this way new
                                 // coming event will need to wait until
                                 // the previous being processed
-                                this.producer.sendMessage(JSON.stringify({
+                                let sendMsgPromise = this.producer.sendMessage(JSON.stringify({
                                     hop: hop,
                                     message: newEvent,
                                     flow: event.flow,
                                     metadata: event.metadata
                                 }), 1);
+
+                                let reflectPromise = sendMsgPromise.then(r => ({isFulfilled: true, data: r})).catch(r => ({isFulfilled: false, data: r}));
+                                sendMsgPromises.push(reflectPromise);
                             }
                         }
                     }
-                    return ack();
-                }).catch( (error) => {
+                    return Promise.all(sendMsgPromises).then((promises) => {
+                        for (let i = 0; i < promises.length; i++) {
+                            if (!(promises[i].isFulfilled)) {
+                                logger.error(`[executor] Failed to sent message to the next task. Error: ${error}. Aborting flow ${event.flow.id} branch execution.`);
+                            }
+                        }
+                        return ack();
+                    }).catch((error) => {
+                        logger.error(`[executor] Node excution failed. Error: ${error}`);
+                        return ack();
+                    });
+                }).catch((error) => {
                     logger.warn(`[executor] Node (${at.type}) execution failed. Error: ${error}. Aborting flow ${event.flow.id} branch execution.`);
                     // TODO notify alarmManager
                     return ack();
