@@ -23,7 +23,7 @@ services:
         max-size: 100m
 
   data-broker-redis:
-    image: redis
+    image: "redis:5.0.5"
     restart: always
     logging:
       driver: json-file
@@ -46,7 +46,7 @@ services:
       - flowbroker
 
   flowbroker-redis:
-    image: redis:alpine
+    image: "redis:5.0.5-alpine3.10"
     restart: always
     logging:
       driver: json-file
@@ -81,7 +81,7 @@ services:
       - flowbroker
 
   rabbitmq:
-    image: rabbitmq
+    image: "rabbitmq:3.7.17"
     restart: always
     logging:
       driver: json-file
@@ -113,7 +113,7 @@ services:
         max-size: 100m
 
   auth-redis:
-    image: redis
+    image: "redis:5.0.5"
     restart: always
     logging:
       driver: json-file
@@ -154,7 +154,7 @@ services:
         max-size: 100m
 
   device-manager-redis:
-    image: redis:alpine
+    image: "redis:5.0.5-alpine3.10"
     restart: always
     logging:
       driver: json-file
