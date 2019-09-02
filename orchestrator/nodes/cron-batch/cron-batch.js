@@ -39,7 +39,7 @@ class DataHandler extends dojot.DataHandlerBase {
         (new Buffer('dummy signature').toString('base64'));
     }
 
-    _removeSingleJob(tenant, jobId) {
+    _removeSingleJob(tenant, jobId, timeout) {
         return new Promise((resolve, reject) => {
             axios({
                 method: "DELETE",
@@ -47,7 +47,7 @@ class DataHandler extends dojot.DataHandlerBase {
                     Authorization: `Bearer ${this._makeJwtToken(tenant)}`
                 },
                 url: `http://cron:5000/cron/v1/jobs/${jobId}`,
-                timeout: 1000
+                timeout: timeout
             }).then(response => {
                 logger.debug(`Succeeded to remove cron job ${jobId}`, { filename: 'cron-batch' });
                 return resolve();
@@ -59,15 +59,15 @@ class DataHandler extends dojot.DataHandlerBase {
         });
     }
 
-    _removeMultipleJobs(tenant, jobIds) {
+    _removeMultipleJobs(tenant, jobIds, timeout) {
         let removePromises = [];
         for(let id of jobIds) {
-            removePromises.push(this._removeSingleJob(tenant, id));
+            removePromises.push(this._removeSingleJob(tenant, id, timeout));
         }
         return Promise.all(removePromises);
     }
 
-    _createSingleJob(tenant, jobRequest) {
+    _createSingleJob(tenant, jobRequest, timeout) {
         return new Promise((resolve, reject) => {
             axios({
                 method: "POST",
@@ -77,28 +77,32 @@ class DataHandler extends dojot.DataHandlerBase {
                 },
                 url: `http://cron:5000/cron/v1/jobs`,
                 data: JSON.stringify(jobRequest),
-                timeout: 1000
+                timeout: timeout
             }).then(response => {
                 let jobId = response.data.jobId;
                 logger.debug(`Succeeded to create cron job ${jobId}`, { filename: 'cron-batch' });
                 return resolve(jobId);
 
             }).catch(error => {
-                logger.error(`Failed to create cron job (${JSON.stringify(error.response.data)}).`, { filename: 'cron-batch' });
+                logger.error(`Failed to create cron job (${JSON.stringify(error)}).`, { filename: 'cron-batch' });
                 return reject(error);
             });
         });
     }
 
-    _createMultipleJobs(tenant, requests) {
+    _createMultipleJobs(tenant, requests, timeout) {
         let createPromises = [];
         for(let req of requests) {
-            createPromises.push(this._createSingleJob(tenant, req));
+            createPromises.push(this._createSingleJob(tenant, req, timeout));
         }
         return Promise.all(createPromises);
     }
 
     handleMessage(config, message, metadata) {
+        let timeout = config.timeout;
+        if (isNaN(timeout)) {
+            return Promise.reject(new Error(`Invalid timeout.`));
+        }
         logger.debug("Executing cron-batch node...", { filename: 'cron-batch' });
         return new Promise(async (resolve, reject) => {
             try {
@@ -110,7 +114,7 @@ class DataHandler extends dojot.DataHandlerBase {
                             logger.debug(`The input must be an array of job requests.`, { filename: 'cron-batch' });
                             return reject(new Error(`The input must be an array of job requests.`));
                         }
-                        let jobIds = await this._createMultipleJobs(metadata.tenant, requests);
+                        let jobIds = await this._createMultipleJobs(metadata.tenant, requests, timeout);
                         this._set(config.outJobIds, jobIds, message);
                         break;
                     }
@@ -121,7 +125,7 @@ class DataHandler extends dojot.DataHandlerBase {
                             logger.debug(`The input must be an array of job identifiers.`, { filename: 'cron-batch' });
                             return reject(new Error(`The input must be an array of job identifiers.`));
                         }
-                        await this._removeMultipleJobs(metadata.tenant, jobIds);
+                        await this._removeMultipleJobs(metadata.tenant, jobIds, timeout);
                         break;
                     }
                     default:

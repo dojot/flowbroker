@@ -5,7 +5,8 @@
     "operation": "Operação",
     "jobs": "Requisições de trabalho",
     "inJobIds": "Identificadores de trabalho",
-    "outJobIds": "Identificadores de trabalho"
+    "outJobIds": "Identificadores de trabalho",
+    "timeout": "Tempo limite de requisição (ms)"
   },
   "jobsKey": "array de requisições de trabalho",
   "inJobIdsKey": "array de identificadores de trabalho",
