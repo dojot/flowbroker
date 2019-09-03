@@ -4,7 +4,9 @@
   "description": "Basic interface to dojot's flowbroker",
   "main": "index.js",
   "scripts": {
-    "test": ""
+    "test": "",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "author": "Matheus Magalhaes",
   "contributors": [
@@ -20,6 +22,8 @@
   "dependencies": {
     "zeromq": "^4.6.0",
     "uuid": "^3.2.1",
-    "@dojot/dojot-module-logger": "0.0.1-alpha.5"
-  }
+    "@dojot/dojot-module-logger": "0.0.1-alpha.5",
+    "snyk": "^1.223.0"
+  },
+  "snyk": true
 }
