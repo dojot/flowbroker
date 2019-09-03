@@ -4,10 +4,9 @@
  * Manages flows configured by the application
  */
 
-var mongo = require('mongodb');
 var uuid = require('uuid/v4');
 var util = require('util');
-var logger = require('./logger').logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 
 class FlowError extends Error {
   constructor(...params) {
@@ -28,6 +27,7 @@ class UnknownFlowError extends FlowError {
   constructor(id) {
     super("Unknown flow: " + id);
     this.flowid = id;
+    this.httpStatus = 404;
   }
 
   payload() {
@@ -84,7 +84,7 @@ class FlowManager {
   /**
    * Given a flow representation (json, node-red schema), perform initial validation
    * and parsing.
-   * 
+   *
    * This function will ignore any 'tab' and undefined nodes.
    *
    * @param  {[type]} flow [description]
@@ -92,19 +92,19 @@ class FlowManager {
    * @throws InvalidFlowError If any node has no 'type' attribute.
    */
   parse(flow) {
-    logger.debug("Parsing new flow...");
+    logger.debug("Parsing new flow...", { filename: 'flowMngr' });
     let parsed = new ParsedFlow(flow);
-    logger.debug(`New flow: ${util.inspect(parsed, { depth: null })}`);
+    logger.debug(`New flow: ${util.inspect(parsed, { depth: null })}`, { filename: 'flowMngr' });
 
     for (let node of flow) {
       if (!node.hasOwnProperty('type')) {
-        logger.debug(`Node ${util.inspect(node, { depth: null })} has no 'type' attribute.`);
+        logger.debug(`Node ${util.inspect(node, { depth: null })} has no 'type' attribute.`, { filename: 'flowMngr' });
         throw new InvalidFlowError();
       }
 
       if ((node.type === 'tab') || (node.wires === undefined)) {
         // ignore tab node (used to identify flow by node-red front-end)
-        logger.debug(`Ignoring 'tab' node.`);
+        logger.debug(`Ignoring 'tab' node.`, { filename: 'flowMngr' });
         continue;
       }
 
@@ -112,18 +112,26 @@ class FlowManager {
 
       // Properly add the head nodes.
       switch (node.type) {
+        case "event device in":
+          parsed.heads.push(node.id);
+          parsed.devices.push(node.device_id);
+          break;
+        case "event template in":
+          parsed.heads.push(node.id);
+          parsed.templates.push(node.template_id);
+          break;
         case "device in":
           parsed.heads.push(node.id);
           parsed.devices.push(node._device_id);
           break;
         case "device template in":
           parsed.heads.push(node.id);
-          parsed.templates.push(node.device_template_id);
+          parsed.templates.push(node.device_template_id.toString());
           break;
       }
     }
 
-    logger.debug("... flow was successfully parsed.");
+    logger.debug("... flow was successfully parsed.", { filename: 'flowMngr' });
     return parsed;
   }
 
@@ -151,24 +159,20 @@ class FlowManager {
           throw new UnknownFlowError(flowid);
         }
 
+
         return flow;
-      })
-      .catch(error => {
-        if (error instanceof mongo.MongoError) {
-          throw error;
-        }
       });
   }
 
   create(label, enabled, flow) {
     return new Promise((resolve, reject) => {
-      logger.debug("Creating new flow...");
+      logger.debug("Creating new flow...", { filename: 'flowMngr' });
       if (!label) {
-        logger.error("Flow has no label.");
+        logger.error("Flow has no label.", { filename: 'flowMngr' });
         return reject(new InvalidFlowError("Label field is required"));
       }
 
-      logger.debug("Checking 'enabled' field...");
+      logger.debug("Checking 'enabled' field...", { filename: 'flowMngr' });
       let enabledVal;
       if ((enabled === undefined) || (enabled === null)) {
         enabledVal = true;
@@ -177,17 +181,17 @@ class FlowManager {
       } else if ((enabled instanceof Boolean) || (typeof enabled === 'boolean')) {
         enabledVal = enabled;
       } else {
-        logger.error("Invalid 'enabled' field: ", enabled, enabled instanceof Boolean, typeof enabled);
+        logger.error(`Invalid 'enabled' field: ${enabled}`, { filename: 'flowMngr' });
         return reject(new InvalidFlowError("Invalid 'enabled' field: ", enabled));
       }
-      logger.debug("... 'enabled' field was checked.");
+      logger.debug("... 'enabled' field was checked.", { filename: 'flowMngr' });
 
       let parsed;
       try {
         parsed = this.parse(flow);
         delete parsed.nodes; // mongo doesn't like dots on keys
       } catch (e) {
-        logger.info("... new flow has errors - it was not created.");
+        logger.error("... new flow has errors - it was not created.", { filename: 'flowMngr' });
         return reject(new InvalidFlowError());
       }
 
@@ -197,12 +201,12 @@ class FlowManager {
       parsed.created = new Date();
       parsed.updated = parsed.created;
 
-      logger.debug('Inserting flow into the database...');
+      logger.debug('Inserting flow into the database...', { filename: 'flowMngr' });
       this.collection.insert(parsed).then(() => {
-        logger.debug("... new flow was successfully inserted into the database.");
+        logger.debug("... new flow was successfully inserted into the database.", { filename: 'flowMngr' });
         return resolve(parsed);
       }).catch((error) => {
-        logger.debug(`... new flow was not inserted into the database. Error is ${error}`);
+        logger.error(`... new flow was not inserted into the database. Error is ${error}`, { filename: 'flowMngr' });
         return reject(error);
       });
     });

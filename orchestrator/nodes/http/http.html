@@ -56,12 +56,12 @@
     -->
     <div class="form-row">
       <label for="node-input-body"><i class="fa fa-envelope"></i> <span data-i18n="httpin.label.body"></span></label>
-      <input type="text" id="node-input-body" placeholder="Message body">
+      <input type="text" id="node-input-body" data-i18n="[placeholder]httpin.label.body">
     </div>
 
     <div class="form-row">
         <label for="node-input-response"><i class="fa fa-envelope"></i> <span data-i18n="httpin.label.response"></span></label>
-        <input type="text" id="node-input-response" placeholder="Response body">
+        <input type="text" id="node-input-response" data-i18n="[placeholder]httpin.label.response">
     </div>
 
     <div class="form-row">
@@ -159,6 +159,9 @@
         labelStyle: function() {
             return this.name?"node_label_italic":"";
         },
+        paletteLabel: function() {
+            return this.name||this._("httpin.httpreq");
+        },
         oneditprepare: function() {
             // $("#node-input-useAuth").change(function() {
             //     if ($(this).is(":checked")) {
@@ -202,10 +205,5 @@
             $("#node-input-body").typedInput({default:'msg',types:['msg']});
             $("#node-input-response").typedInput({default:'msg',types:['msg']});
         },
-        oneditsave: function() {
-            // if (!$("#node-input-usetls").is(':checked')) {
-            //     $("#node-input-tls").val("_ADD_");
-            // }
-        }
     });
 </script>

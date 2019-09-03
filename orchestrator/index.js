@@ -1,11 +1,15 @@
 'use strict';
 
-var fs = require("fs");
-var logger = require('./logger').logger;
+var config = require('./config');
+const logger = require("@dojot/dojot-module-logger").logger;
+if (logger.setLevel(config.logging.level) !== 0) {
+  logger.error(`Invalid logger level: ${config.logging.level}`);
+  process.exit(1);
+}
 
+var fs = require("fs");
 var ArgumentParser = require('argparse').ArgumentParser;
 
-var config = require('./config');
 var FlowManagerBuilder = require('./flowManager').FlowManagerBuilder;
 var amqp = require('./amqp');
 var MongoManager = require('./mongodb');
@@ -17,8 +21,20 @@ var ContextHandler = require('@dojot/flow-node').ContextHandler;
 
 var dojotModule = require("@dojot/dojot-module");
 
-function fail(error) {
-  logger.error('[flowbroker] Initialization failed.', error.message);
+var healthCheck = require('./healthcheck');
+
+process.on('unhandledRejection', (reason) => {
+  logger.error(`Unhandled Rejection at: ${reason.stack || reason}. Bailing out!!`);
+  process.kill(process.pid, "SIGTERM");
+});
+
+process.on('uncaughtException', (ex) => {
+  logger.error(`Unhandled Exception at: ${ex.stack || ex}. Bailing out!!`);
+  process.kill(process.pid, "SIGTERM");
+});
+
+function logAndKill(error) {
+  logger.error(`[flowbroker] Initialization failed. Error: ${error}`);
   process.kill(process.pid, "SIGTERM");
 }
 
@@ -67,6 +83,11 @@ parser.addArgument(['-w', '--workers'],
 parser.addArgument(['-v', '--verbose'], {action: 'storeTrue'});
 var args = parser.parseArgs();
 
+if (logger.setLevel(config.logging.level) !== 0) {
+  logger.error(`Invalid logger level: ${config.logging.level}`);
+  process.exit(1);
+}
+
 if (args.flow) {
   var flows = FlowManagerBuilder.get("admin");
   var rawFlow = JSON.parse(fs.readFileSync(args.flow));
@@ -89,7 +110,7 @@ if (args.message && args.device) {
     message = JSON.parse(args.message);
   } catch (e) {
     if (e instanceof SyntaxError) {
-      fail(new Error("Given message is not in valid JSON format:" + e));
+      logAndKill(new Error("Given message is not in valid JSON format:" + e));
     }
   }
 
@@ -97,7 +118,7 @@ if (args.message && args.device) {
   try {
     producer = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
   } catch (error) {
-    fail(error);
+    logAndKill(error);
   }
 
   let triggeredFlows = [];
@@ -135,7 +156,7 @@ let loggerCallback = () => {
 };
 
 let errorCallback = (error) => {
-  fail(error);
+  logAndKill(error);
 };
 
 let contextManagerClient = new ContextManagerClient(
@@ -180,12 +201,12 @@ kafkaMessenger.init().then(() => {
 
   // chain other initialization steps
   return MongoManager.get();
-
-  }).then((client) => {
-    let FlowManager = new FlowManagerBuilder(client);
-    APIHandler.init(FlowManager);
-    let ingestor = new Ingestor(FlowManager, kafkaMessenger);
-    ingestor.init();
-  }).catch((error) => {
-    fail(error);
+}).then((client) => {
+  let FlowManager = new FlowManagerBuilder(client);
+  healthCheck.init(kafkaMessenger, FlowManager);
+  APIHandler.init(FlowManager, healthCheck.get());
+  let ingestor = new Ingestor(FlowManager, kafkaMessenger);
+  return ingestor.init();
+}).catch((error) => {
+  logAndKill(error);
 });

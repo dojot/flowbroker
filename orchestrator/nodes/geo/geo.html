@@ -15,30 +15,34 @@
 -->
 
 <script type="text/x-red" data-template-name="geofence">
-    <div class="form-row">
+   <div class="form-row">
+       <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.name"></label>
+       <input type="text" id="node-input-name">
+   </div>
+   <div class="form-row">
+        <label for="node-input-geopoint"><i class="fa fa-tag"/> <span data-i18n="label.geopoint"/></label>
+        <input id="node-input-geopoint" type="text"/>
+   </div>
+   <div class="form-row">
+        <label for="node-input-filter">
+            <i class="fa fa-sign-in"></i> <span data-i18n="label.filter"></label>
+        <select id="node-input-filter" value="true" style="width: 70%;">
+            <option value="inside" data-i18n="text.inside"> </option>
+            <option value="outside"  data-i18n="text.outside"> </option>
+        </select>
+    </div>
+   <div class="form-row">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.2/leaflet.draw.css" />
         <div id="node-geofence-map" style="width: 100%; height: 400px"></div>
     </div>
 
-    <div class="form-row">
-        <label for="node-input-filter">
-            <i class="fa fa-sign-in"></i> Filter</label>
-        <select id="node-input-filter" value="true" style="width: 70%;">
-            <option value="inside">only points inside</option>
-            <option value="outside">only points outside</option>
-            <!--
-                <option value="enters">enters area</option>
-                <option value="exits">exits area</option>
-            -->
-        </select>
-    </div>
 
-    <div class="form-row">
-        <label for="node-input-name">
-            <i class="icon-tag"></i> Name</label>
-        <input type="text" id="node-input-name" placeholder="Geofence name">
-    </div>
+
+
+
+
+
 </script>
 
 
@@ -58,16 +62,18 @@
         or
         <i>msg.lat</i> &amp;
         <i>msg.lon</i> values.</p>
+
+
 </script>
 
 <script type="text/javascript">
     RED.nodes.registerType('geofence', {
-        category: 'location',
+        category: RED._('dojot/geofence:category'),
         color: "#DEBD5C",
         icon: "white-globe.png",
         defaults: {
             name: {
-                value: ""
+                value: "", required: false
             },
             mode: {
                 value: "polyline"
@@ -78,16 +84,24 @@
             points: {
                 value: []
             },
+            geopoint: {
+                value: ""
+            },
         },
         inputs: 1,
         outputs: 1,
         label: function () {
-            return this.name || "geofence";
+            return this.name || RED._('dojot/geofence:title');
         },
+        paletteLabel: RED._('dojot/geofence:title'),
+
         labelStyle: function () {
             return this.name ? "node_label_italic" : "";
         },
         oneditprepare: function () {
+
+            $("#node-input-geopoint").typedInput({default: "msg", types: ["msg"]});
+
             function setupMap(node) {
                 var map = L.map('node-geofence-map').setView([-22.9223, -47.0406], 7);
 

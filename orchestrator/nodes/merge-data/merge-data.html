@@ -1,0 +1,59 @@
+<script type="text/x-red" data-template-name="merge data">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="config.name"></label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-targetData"><i class="fa fa-cube"></i> <span data-i18n="config.target_data"></label>
+        <input type="text" id="node-input-targetData" style="width:250px;">
+        <input type="hidden" id="node-input-fieldType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-mergedData"><i class="fa fa-arrow-left"></i> <span data-i18n="config.merged_data"></label>
+        <input type="text" id="node-input-mergedData" style="width:250px;">
+        <input type="hidden" id="node-input-fieldType">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="merge data">
+    <p></p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('merge data', {
+        category: 'function',      // the palette category
+        defaults: {              // defines the editable properties of the node
+            name: { value: "", required: false },
+            targetData: { value: undefined, required: true },
+            mergedData: { value: undefined, required: true },
+        },
+        inputs: 1,                // set the number of inputs - only 0 or 1
+        outputs: 1,               // set the number of outputs - 0 to n
+        align: "left",          // align the icon
+        icon: "function.png", // set the icon (held in icons dir below where you save the node)
+        color: "#f3b567",        // background-color
+        label: function () {
+            // sets the default label contents
+            return this.name || RED._('dojot/merge-data:title');
+        },
+        labelStyle: function () {
+            // sets the class to apply to the label
+            return this.name ? "node_label_italic" : "";
+        },
+        paletteLabel:  RED._('dojot/merge-data:title'),
+        oneditprepare: function () {
+            let msgAttrs = ["targetData", "mergedData"];
+
+            for (let attr of msgAttrs ) {
+                $("#node-input-" + attr).typedInput({
+                    default: 'msg',
+                    types: ['msg'],
+                    typeField: $("#node-input-fieldType")
+                });
+            }
+        },
+        oneditsave: function () {
+        }
+    });
+
+</script>

@@ -28,16 +28,13 @@ class RemoteNodeHandler extends dojot.DataHandlerBase {
     return this.dispatcher.sendRequest({command: 'metadata'})
       .then(meta => {
         this.metadata = meta.payload;
-        return this.dispatcher.sendRequest({ command: 'html' })
+        return this.dispatcher.sendRequest({ command: 'html' });
       })
       .then(html => {
         this.html = '/tmp/' + this.id;
         fs.writeFileSync(this.html, html.payload);
-        return this.dispatcher.sendRequest({ command: 'locale', locale: 'en-US' })
-      })
-      .then(reply => {
-        this.locale = reply.payload;
       });
+
   }
   getNodeRepresentationPath() {
     return this.html;
@@ -63,8 +60,9 @@ class RemoteNodeHandler extends dojot.DataHandlerBase {
    * @param  {[string]} locale Locale string, such as "en-US"
    * @return {[object]}        Locale settings used by the module
    */
-  getLocaleData() {
-    return this.locale;
+  async getLocaleData(locale) {
+      const  res = await (this.dispatcher.sendRequest({command: 'locale', locale: locale}));
+      return res.payload;
   }
 
   handleMessage(config, message, metadata) {

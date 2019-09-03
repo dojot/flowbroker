@@ -1,15 +1,12 @@
 "use strict";
 
-let fs = require('fs');
-let path = require('path');
-var logger = require("../../logger").logger;
+const path = require('path');
+const logger = require("@dojot/dojot-module-logger").logger;
+const geolib = require('geolib');
+const dojot = require('@dojot/flow-node');
 
-var geolib = require('geolib');
+class DataHandler extends dojot.DataHandlerBase {
 
-// Sample node implementation
-class DataHandler {
-    constructor() {
-    }
 
     /**
      * Returns full path to html file
@@ -34,20 +31,13 @@ class DataHandler {
     }
 
     /**
-     * Returns object with locale data (for the given locale)
-     * @param  {[string]} locale Locale string, such as "en-US"
-     * @return {[object]}        Locale settings used by the module
+     * Returns full path to locales
+     * @returns String
      */
-    getLocaleData(locale) {
-
-        let filepath = path.join(__dirname, "locales/" + locale + "/geo.json");
-        if (fs.existsSync(filepath)) {
-            return require(filepath);
-        } else {
-            return null;
-        }
-
+    getLocalesPath() {
+        return path.resolve(__dirname, './locales');
     }
+
 
     /**
      * Check if the node configuration is valid
@@ -74,12 +64,21 @@ class DataHandler {
      * @return {[undefined]}
      */
     handleMessage(config, message) {
-        logger.debug("Executing geo node...");
-        let geolocation = getLatLng(message.payload);
+        logger.debug("Executing geo node...", {filename: 'geo'});
 
+        let geoLocationString = '';
+        try {
+            geoLocationString = this._get(config.geopoint, message);
+        } catch (e) {
+            logger.debug("... geo node was not successfully executed.", {filename: 'geo'});
+            logger.error("It was not possible find attribute associated with geo coordinate.", {filename: 'geo'});
+            return Promise.reject(new Error("It was not possible find attribute associated with geo coordinate"));
+        }
+
+        let geolocation = getLatLng(geoLocationString);
         if (!geolocation) {
-            logger.debug("... geo node was not successfully executed.");
-            logger.error("Message has no geographic position attached.");
+            logger.debug("... geo node was not successfully executed.", {filename: 'geo'});
+            logger.error("Message has no geographic position attached.", {filename: 'geo'});
             return Promise.reject(new Error("Message has no geographic position attached"));
         }
 
@@ -93,49 +92,44 @@ class DataHandler {
                 message.location.isat = message.location.isat || [];
                 message.location.isat.push(config.name);
             }
-            logger.debug("... geo node was successfully executed.");
-            logger.debug("Its test had a hit.");
+            logger.debug("... geo node was successfully executed.", {filename: 'geo'});
+            logger.debug("Its test had a hit.", {filename: 'geo'});
             return Promise.resolve([message]);
         }
 
         if (!inout && (config.filter === "outside")) {
-            logger.debug("... geo node was successfully executed.");
-            logger.debug("Its test had a hit.");
+            logger.debug("... geo node was successfully executed.", {filename: 'geo'});
+            logger.debug("Its test had a hit.", {filename: 'geo'});
             return Promise.resolve([message]);
         }
 
 
-        logger.debug("... geo node was successfully executed.");
-        logger.debug("Its test didn't have a hit.");
+        logger.debug("... geo node was successfully executed.", {filename: 'geo'});
+        logger.debug("Its test didn't have a hit.", {filename: 'geo'});
         return Promise.resolve([]);
 
         /**
-         * Look for a lat,lng string repesentation and return an
+         * Look for a lat,lng string representation and return an
          * object representation of it if any is found.
-         * 
-         * @param  {[object]}  payload Message payload
-         * @return {[{latitude: string, longitude: string}]}
+         *
+         * @return {{latitude: (*|string), longitude: (*|string)} || null}
+         * @param geoLocation
          */
-        function getLatLng(payload) {
-            let latlng = /([+-]?\d+(.\d+)?)[ ]*,[ ]*([+-]?\d+(.\d+)?)/;
+        function getLatLng(geoLocation) {
+            let regLatLong = /([+-]?\d+(.\d+)?)[ ]*,[ ]*([+-]?\d+(.\d+)?)/;
+            if (geoLocation && typeof geoLocation === 'string') {
+                let parsed = geoLocation.match(regLatLong);
 
-            for (let attr in payload) {
-                if (payload.hasOwnProperty(attr) && typeof payload[attr] === "string") {
-                    let parsed = payload[attr].match(latlng);
-
-                    if (parsed) {
-                        return {
-                            latitude: parsed[1],
-                            longitude: parsed[3]
-                        };
-                    }
+                if (parsed) {
+                    return {
+                        latitude: parsed[1],
+                        longitude: parsed[3]
+                    };
                 }
             }
-
             return null;
         }
     }
 }
 
-// var main = new DojotHandler(new DataHandler());
-module.exports = { Handler: DataHandler };
+module.exports = {Handler: DataHandler};

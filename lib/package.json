@@ -1,6 +1,6 @@
 {
   "name": "@dojot/flow-node",
-  "version": "3.0.0-alpha2",
+  "version": "3.0.0-alpha.5",
   "description": "Basic interface to dojot's flowbroker",
   "main": "index.js",
   "scripts": {
@@ -8,15 +8,18 @@
   },
   "author": "Matheus Magalhaes",
   "contributors": [
-    { "name": "Raul Negreiros" }
+    {
+      "name": "Raul Negreiros"
+    }
   ],
   "license": "GPL-3.0",
-  "repository" : {
-    "type" : "git",
-    "url" : "https://github.com/dojot/flowbroker.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dojot/flowbroker.git"
   },
   "dependencies": {
     "zeromq": "^4.6.0",
-    "uuid": "^3.2.1"
+    "uuid": "^3.2.1",
+    "@dojot/dojot-module-logger": "0.0.1-alpha.5"
   }
 }

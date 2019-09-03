@@ -14,50 +14,16 @@ var nodeManager = require('./nodeManager').Manager;
 
 var InvalidFlowError = require('./flowManager').InvalidFlowError;
 
-var pjson = require('./package.json');
-var HealthChecker = require('@dojot/healthcheck').HealthChecker;
-var DataTrigger = require('@dojot/healthcheck').DataTrigger;
-var endpoint = require('@dojot/healthcheck').getHTTPRouter;
-const logger = require('./logger').logger;
-
-const configHealth = {
-  description: pjson.name,
-  status: "pass",
-  version: pjson.version,
-};
-const healthChecker = new HealthChecker(configHealth);
-
-const monitor = {
-  componentId: "service-memory",
-  componentName: "total memory used",
-  componentType: "system",
-  measurementName: "memory",
-  observedUnit: "MB",
-  status: "pass",
-};
-
-const min = process.env.MEMORY_VERIFY || 90;
-
-const collector = (trigger = DataTrigger) => {
-  logger.debug('Checking memory.');
-  const used = process.memoryUsage().heapUsed / 1024 / 1024;
-  const round = Math.round(used * 100) / 100
-  if (round > min) {
-    trigger.trigger(round, "fail", "Over memory");
-  } else {
-    trigger.trigger(round, "pass", "I'm ok");
-  }
-  return round;
-};
-
-healthChecker.registerMonitor(monitor, collector, 10000);
+var healthCheck = require('@dojot/healthcheck');
+const logger = require("@dojot/dojot-module-logger").logger;
+const DojotLogger = require("@dojot/dojot-module-logger");
 
 // initialized by init()
 var FlowManager;
 
 const app = express();
+app.use(DojotLogger.getHTTPRouter()); // adds the endpoint '/log'
 app.use(bodyParser.json()); // for parsing application/json
-app.use(endpoint(healthChecker));
 // all APIs should be invoked with valid dojot-issued JWT tokens
 app.use(authChecker.authParse);
 app.use(authChecker.authEnforce);
@@ -84,6 +50,13 @@ function summarizeFlow(flow) {
   };
 }
 
+function summarizeNode(node) {
+  return {
+    'id': node.id,
+    'image': node.image
+  };
+}
+
 app.post('/v1/node', (req, res) => {
 
   const error = validateMandatoryFields(req.body, ['image', 'id']);
@@ -91,7 +64,7 @@ app.post('/v1/node', (req, res) => {
     return res.status(400).send({'message': error});
   }
 
-  nodeManager.addRemote(req.body.image, req.body.id, req.service).then(() => {
+  nodeManager.addRemoteNode(req.body.image, req.body.id, req.service).then(() => {
     return res.status(200).send({message: 'ok'});
   }).catch((error) => {
     if (error instanceof InvalidFlowError) {
@@ -102,11 +75,45 @@ app.post('/v1/node', (req, res) => {
 });
 
 app.delete('/v1/node/:id', (req, res) => {
-  nodeManager.delRemote(req.params.id, req.service).then(() => {
+  nodeManager.delRemoteNode(req.params.id, req.service).then(() => {
     return res.status(200).send({message: 'ok'});
   }).catch((error) => {
-    console.log(error)
+    logger.error(error, { filename: 'api' });
     return res.status(500).send({message: 'Failed to remove node.', error: error.message});
+  });
+});
+
+app.delete('/v1/node', (req, res) => {
+  nodeManager.getAll(req.service).then((nodes) => {
+    var promises = [];
+    for (let node of nodes) {
+      promises.push(nodeManager.delRemoteNode(node.id, req.service));
+    }
+
+    Promise.all(promises).then(() => {
+      return res.status(200).send({message: 'ok'});
+    }).catch((error) => {
+      logger.error(error, { filename: 'api' });
+      return res.status(500).send({message: 'Failed to remove node.', error: error.message});
+    });
+
+  }).catch((error) => {
+    logger.error(error, { filename: 'api' });
+    return res.status(500).send({'message': 'Failed to list nodes'});
+  });
+
+});
+
+app.get('/v1/node', (req, res) => {
+  nodeManager.getAll(req.service).then((nodes) => {
+    let filtered = [];
+    for (let node of nodes) {
+      filtered.push(summarizeNode(node));
+    }
+    return res.status(200).send({'nodes': filtered});
+  }).catch((error) => {
+    logger.error(error, { filename: 'api' });
+    return res.status(500).send({'message': 'Failed to list nodes'});
   });
 });
 
@@ -119,7 +126,7 @@ app.get('/v1/flow', (req, res) => {
       return res.status(e.httpStatus).send(e.payload());
     }
 
-    console.error(e);
+    logger.error(e, { filename: 'api' });
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
@@ -130,7 +137,7 @@ app.get('/v1/flow', (req, res) => {
     }
     return res.status(200).send({'flows': filtered});
   }).catch((error) => {
-    console.error(error);
+    logger.error(error, { filename: 'api' });
     return res.status(500).send({'message': 'Failed to list flows'});
   });
 });
@@ -144,7 +151,7 @@ app.post('/v1/flow', (req, res) => {
       return res.status(e.httpStatus).send(e.payload());
     }
 
-    console.error(e);
+    logger.error(e, { filename: 'api' });
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
@@ -159,11 +166,10 @@ app.post('/v1/flow', (req, res) => {
       'flow': summarizeFlow(parsed)
     });
   }).catch((error) => {
-    if (error instanceof FlowError) {
-      console.error(error);
+    logger.error(error, { filename: 'api' });
+    if (error instanceof FlowError) {      
       return res.status(error.httpStatus).send(error.payload());
     } else {
-      console.error(error);
       return res.status(500).send({'message': 'failed to create flow'});
     }
   });
@@ -178,14 +184,14 @@ app.delete('/v1/flow', (req, res) => {
       return res.status(e.httpStatus).send(e.payload());
     }
 
-    console.error(e);
+    logger.error(e, { filename: 'api' });
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
   fm.removeAll().then(() => {
     return res.status(200).send({'message': 'All flows removed'});
   }).catch((error) => {
-    console.error(error);
+    logger.error(error, { filename: 'api' });
     return res.status(500).send({'message': 'failed to remove flows'});
   });
 });
@@ -199,7 +205,7 @@ app.get('/v1/flow/:id', (req, res) => {
       return res.status(e.httpStatus).send(e.payload());
     }
 
-    console.error(e);
+    logger.error(e, { filename: 'api' });
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
@@ -212,7 +218,7 @@ app.get('/v1/flow/:id', (req, res) => {
     if (error instanceof FlowError) {
       return res.status(error.httpStatus).send(error.payload());
     } else {
-      console.error(error);
+      logger.error(error, { filename: 'api' });
       return res.status(500).send({'message': 'Failed to get flow'});
     }
   });
@@ -227,7 +233,7 @@ app.put('/v1/flow/:id', (req, res) => {
       return res.status(e.httpStatus).send(e.payload());
     }
 
-    console.error(e);
+    logger.error(e, { filename: 'api' });
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
@@ -240,7 +246,7 @@ app.put('/v1/flow/:id', (req, res) => {
     if (error instanceof FlowError) {
       return res.status(error.httpStatus).send(error.payload());
     } else {
-      console.error(error);
+      logger.error(error, { filename: 'api' });
       return res.status(500).send({'message': 'Failed to update flows'});
     }
   });
@@ -255,7 +261,7 @@ app.delete('/v1/flow/:id', (req, res) => {
       return res.status(e.httpStatus).send(e.payload());
     }
 
-    console.error(e);
+    logger.error(e, { filename: 'api' });
     return res.status(500).send({"message": "Failed to switch tenancy context"});
   }
 
@@ -268,15 +274,18 @@ app.delete('/v1/flow/:id', (req, res) => {
     if (error instanceof FlowError) {
       return res.status(error.httpStatus).send(error.payload());
     } else {
-      console.error(error);
+      logger.error(error, { filename: 'api' });
       return res.status(500).send({'message': 'Failed to remove flow'});
     }
   });
 });
 
 module.exports = {
-  init: (flowManager) => {
+  init: (flowManager, healthChecker) => {
     FlowManager = flowManager;
-    app.listen(80, () => {console.log('[api] Service listening on port 80');});
+    app.use(healthCheck.getHTTPRouter(healthChecker));
+    app.listen(80, () => {
+      logger.info(' Service listening on port 80', { filename: 'api' });
+    });
   }
 };

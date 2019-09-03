@@ -1,0 +1,18 @@
+{
+  "label": {
+    "name": "Name",
+    "device_out": "device out",
+    "action": "Action",
+    "self": "The device which triggered the flow",
+    "configured": "A specific device",
+    "dynamic": "A device defined during the flow",
+    "attribute": "Attribute",
+    "device": "Device",
+    "source": "Source"
+  },
+  "text": {
+    "help": "Set the value of a virtual device, based on the results of the previous operations on the flow.",
+    "attr_placeholder": "Enter an attribute",
+    "select_dev_placeholder": "Select a device"
+  }
+}

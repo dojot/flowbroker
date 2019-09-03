@@ -1,8 +1,7 @@
 "use strict";
 
-let fs = require('fs');
 let path = require('path');
-var logger = require("../../logger").logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 var dojot = require('@dojot/flow-node');
 
 // Sample node implementation
@@ -50,19 +49,11 @@ class DataHandler extends dojot.DataHandlerBase {
     }
 
     /**
-     * Returns object with locale data (for the given locale)
-     * @param  {[string]} locale Locale string, such as "en-US"
-     * @return {[object]}        Locale settings used by the module
+     * Returns full path to locales
+     * @returns String
      */
-    getLocaleData(locale) {
-
-        let filepath = path.join(__dirname, "locales/" + locale + "/switch.json");
-        if (fs.existsSync(filepath)) {
-            return require(filepath);
-        } else {
-            return null;
-        }
-
+    getLocalesPath() {
+        return path.resolve(__dirname, './locales');
     }
 
     /**
@@ -203,7 +194,7 @@ class DataHandler extends dojot.DataHandlerBase {
      * @return {[undefined]}
      */
     handleMessage(config, message) {
-        logger.debug("Executing switch node...");
+        logger.debug("Executing switch node...", { filename: 'switch' });
         let onward = [];
         try {
             let value;
@@ -211,8 +202,8 @@ class DataHandler extends dojot.DataHandlerBase {
             try {
                 value = this._get(config.property, message);
             } catch (error) {
-                logger.debug("... switch node was not successfully executed.");
-                logger.error(`Error while retrieving variables from switch node: ${error}`);
+                logger.debug("... switch node was not successfully executed.", { filename: 'switch' });
+                logger.error(`Error while retrieving variables from switch node: ${error}`, { filename: 'switch' });
                 return Promise.reject(error);
             }
             prop = this._getTyped(value, config.propertyType);
@@ -236,8 +227,8 @@ class DataHandler extends dojot.DataHandlerBase {
                     try {
                         v1 = rule.v.evaluate({ msg: message });
                     } catch (err) {
-                        logger.debug("... switch node was not successfully executed.");
-                        logger.error(`Error while evaluating value in jsonata first test: ${err}`);
+                        logger.debug("... switch node was not successfully executed.", { filename: 'switch' });
+                        logger.error(`Error while evaluating value in jsonata first test: ${err}`, { filename: 'switch' });
                         return Promise.reject(err);
                     }
                 } else {
@@ -253,8 +244,8 @@ class DataHandler extends dojot.DataHandlerBase {
                     try {
                         v2 = rule.v2.evaluate({ msg: message });
                     } catch (err) {
-                        logger.debug("... switch node was not successfully executed.");
-                        logger.error(`Error while evaluating value in jsonata second test: ${err}`);
+                        logger.debug("... switch node was not successfully executed.", { filename: 'switch' });
+                        logger.error(`Error while evaluating value in jsonata second test: ${err}`, { filename: 'switch' });
                         return Promise.reject(err);
                     }
                 } else if (typeof v2 !== 'undefined') {
@@ -276,12 +267,12 @@ class DataHandler extends dojot.DataHandlerBase {
                 }
             }
             config.previousValue = prop;
-            logger.debug("... switch node was successfully executed.");
+            logger.debug("... switch node was successfully executed.", { filename: 'switch' });
             return Promise.resolve(onward);
 
         } catch (err) {
-            logger.debug("... switch node was not successfully executed.");
-            logger.error(`Error while executing switch node: ${err}`);
+            logger.debug("... switch node was not successfully executed.", { filename: 'switch' });
+            logger.error(`Error while executing switch node: ${err}`, { filename: 'switch' });
             return Promise.reject(err);
         }
     }

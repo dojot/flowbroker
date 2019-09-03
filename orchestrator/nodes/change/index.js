@@ -1,7 +1,6 @@
 "use strict";
 
-let fs = require('fs');
-var logger = require("../../logger").logger;
+const logger = require("@dojot/dojot-module-logger").logger;
 let path = require('path');
 var dojot = require('@dojot/flow-node');
 
@@ -33,19 +32,13 @@ class DataHandler extends dojot.DataHandlerBase {
     };
   }
 
-  /**
-   * Returns object with locale data (for the given locale)
-   * @param  {[string]} locale Locale string, such as "en-US"
-   * @return {[object]}        Locale settings used by the module
-   */
-  getLocaleData(locale) {
-    let filepath = path.join(__dirname, "locales/" + locale + "/change.json");
-    if (fs.existsSync(filepath)) {
-      return require(filepath);
-    } else {
-      return null;
+    /**
+     * Returns full path to locales
+     * @returns String
+     */
+    getLocalesPath() {
+        return path.resolve(__dirname, './locales');
     }
-  }
 
   /**
    * Check if the node configuration is valid
@@ -143,7 +136,7 @@ class DataHandler extends dojot.DataHandlerBase {
    * @return {[undefined]}
    */
   handleMessage(config, message) {
-    logger.debug("Executing change node...");
+    logger.debug("Executing change node...", { filename: 'change' });
     try {
       for (let rule of config.rules) {
         if (rule.t === "set") {
@@ -155,7 +148,8 @@ class DataHandler extends dojot.DataHandlerBase {
             case "num":
               this._set(rule.p, Number(rule.to), message);
               break;
-            case "boolean":
+              case "bool":
+              case "boolean":
               v2 = ['1', 'true'].includes(rule.to.toLowerCase());
               this._set(rule.p, v2, message);
               break;
@@ -165,23 +159,23 @@ class DataHandler extends dojot.DataHandlerBase {
                 v2 = this._get(rule.to, message);
                 this._set(rule.p, v2, message);
               } catch (e) {
-                logger.error("... change node was not successfully executed.");
-                logger.error(`Error while executing change node: ${e}`);
+                logger.error("... change node was not successfully executed.", { filename: 'change' });
+                logger.error(`Error while executing change node: ${e}`, { filename: 'change' });
                 return Promise.reject(e);
               }
               break;
             default:
-              logger.debug("... change node was not successfully executed.");
-              logger.error(`Change node has invalid value type: ${rule.tot}`);
+              logger.debug("... change node was not successfully executed.", { filename: 'change' });
+              logger.error(`Change node has invalid value type: ${rule.tot}`, { filename: 'change' });
               return Promise.reject(new Error('Invalid value type: ' + rule.tot));
           }
         }
       }
-      logger.debug("... change node was successfully executed.");
+      logger.debug("... change node was successfully executed.", { filename: 'change' });
       return Promise.resolve([message]);
     } catch (error) {
-      logger.debug("... change node was not successfully executed.");
-      logger.error(`Error while executing change node: ${error}`);
+      logger.debug("... change node was not successfully executed.", { filename: 'change' });
+      logger.error(`Error while executing change node: ${error}`, { filename: 'change' });
       return Promise.reject(error);
     }
   }

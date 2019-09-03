@@ -3,7 +3,8 @@
 
 var redisClient = require("ioredis");
 var config = require("./config");
-var { ClientWrapper } = require('./redisClientWrapper');
+var { DeviceCache } = require('./DeviceCache');
+const logger = require("@dojot/dojot-module-logger").logger;
 
 class RedisManager {
   constructor() {
@@ -26,21 +27,21 @@ class RedisManager {
     */
     this.redis.on("connect", () => {
       this.redisState = "Connected";
-      console.log(`[redis] Succesfully connected to redis`);
+      logger.info(`Succesfully connected to redis`, { filename: 'redisMngr' });
       this.redis.flushdb().then(() => {
-        console.log(`[redis] Cache is cleared`);
+        logger.info(`Cache is cleared`, { filename: 'redisMngr' });
       }).catch((error) => {
-        console.log(error);
+        logger.error(error, { filename: 'redisMngr' });
       });
     });
 
     this.redis.on("error", (error) => {
       this.redisState = "notConnected";
-      console.log(`[redis] An error occurred with redis ${error}`);
+      logger.error(`An error occurred with redis ${error}`, { filename: 'redisMngr' });
     });
 
     this.redis.on("reconnect", () => {
-      console.log(`[redis] Connection reestablished`)
+      logger.info(`[redis] Connection reestablished`, { filename: 'redisMngr' })
     });
   }
 
@@ -53,10 +54,16 @@ class RedisManager {
 
   /**
    * Build a new client wrapper based on the already created REDIS connection.
+   * @param {string} client which client is desired. Supported values: 'deviceCache'
    * @returns A new client wrapper.
    */
-  getClient() {
-    return new ClientWrapper(this.redis);
+  getClient(client) {
+    switch (client) {
+      case "deviceCache":
+        return new DeviceCache(this.redis);
+      default:
+        return null;
+    }
   }
 }
 

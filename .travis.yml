@@ -18,11 +18,11 @@ script:
   - docker build -t flowbroker -f orchestrator.docker .
   - docker build -t flowbroker-context-manager -f contextManager.docker .
   - docker build -t tests-flowbroker -f ./tests/Dockerfile .
-  - docker-compose -f tests/docker-compose.yml up -d kafka rabbitmq data-broker mongodb auth postgres-users
+  - docker-compose -f tests/docker-compose.yml up -d kafka rabbitmq data-broker mongodb auth postgres-users device-manager device-manager-redis
   - sleep 10
   - docker-compose -f tests/docker-compose.yml up -d flowbroker flowbroker-context-manager flowbroker-redis
   - sleep 10
-  - docker-compose -f ./tests/docker-compose.yml run --rm tester
+  - docker-compose -f ./tests/docker-compose.yml run --rm tester * --level=debug
 
 after_success:
   - travis/publish.sh

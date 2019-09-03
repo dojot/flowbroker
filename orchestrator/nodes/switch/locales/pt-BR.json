@@ -1,0 +1,54 @@
+{
+  "title": "interruptor",
+  "common": {
+    "label": {
+      "payload": "Payload",
+      "topic": "Tópico",
+      "name": "Nome",
+      "username": "Nome de usuário",
+      "password": "Senha"
+    },
+    "status": {
+      "connected": "conectado",
+      "not-connected": "não conectado",
+      "disconnected": "desconectado",
+      "connecting": "conectando",
+      "error": "erro",
+      "ok": "OK"
+    },
+    "notification": {
+      "error": "<strong>Erro</strong>: __message__",
+      "errors": {
+        "not-deployed": "nó não implantado",
+        "no-response": "nenhuma resposta do servidor",
+        "unexpected": "erro inesperado (__status__) __message__"
+      }
+    },
+    "errors": {
+      "nooverride": "Aviso: as propriedades msg não podem mais substituir as propriedades do nó definido. Consulte bit.ly/nr-override-msg-props"
+    }
+  },
+  "switch": {
+    "label": {
+      "property": "Propriedade",
+      "rule": "regra"
+    },
+    "and": "e",
+    "checkall": "verificar todas as regras",
+    "stopfirst": "parar após a primeira correspondência",
+    "ignorecase": "ignorar maiúsculas e minúsculas",
+    "rules": {
+      "btwn": "está entre",
+      "cont": "contém",
+      "regex": "corresponde a regex",
+      "true": "é verdadeiro",
+      "false": "é falso",
+      "null": "é nulo",
+      "nnull": "não é nulo",
+      "else": "caso contrário"
+    },
+    "errors": {
+      "invalid-expr": "Expressão inválida: __error__"
+    }
+  }
+}
