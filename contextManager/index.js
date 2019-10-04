@@ -10,7 +10,7 @@ const DojotLogger = require("@dojot/dojot-module-logger");
 const logger = DojotLogger.logger;
 
 function checkField(target, field, message) {
-  if (!target.hasOwnProperty(field)) {
+  if (!target[field]) {
     throw new Error(message);
   }
 }
@@ -198,6 +198,7 @@ class ContextHandler {
       this.zkRWLock.init('context-manager').then( () => {
         this.zmqSock.on("message", (identity, request) => {
           let payload;
+          let promise = undefined;
 
           //parse the payload
           try {
@@ -208,63 +209,52 @@ class ContextHandler {
           }
 
           try {
-            // console.log('Got message. invoking handler ...', payload);
             checkField(payload, 'command', "Request is missing command field");
 
             switch (payload.command) {
               case 'rlock_and_get':
                 checkField(payload, 'data', "Request is missing data field");
-                this._lock_and_get(identity, payload.data, READ).then( (response) => {
-                  this.zmqSock.send([identity, JSON.stringify(response)]);
-                }).catch((response) => {
-                  this.zmqSock.send([identity, JSON.stringify(response)]);
-                });
+                promise = this._lock_and_get(identity, payload.data, READ);
                 break;
               case 'wlock_and_get':
                 checkField(payload, 'data', "Request is missing data field");
-                this._lock_and_get(identity, payload.data, WRITE).then( (response) => {
-                  this.zmqSock.send([identity, JSON.stringify(response)]);
-                }).catch((response) => {
-                  this.zmqSock.send([identity, JSON.stringify(response)]);
-                });
+                promise = this._lock_and_get(identity, payload.data, WRITE);
                 break;
               case 'lock_get_and_unlock':
                 checkField(payload, 'data', "Request is missing data field");
-                this._lock_and_get(identity, payload.data, READ).then( (response) => {
-                  this._unlock(identity, payload.data).then( () => {
-                    this.zmqSock.send([identity, JSON.stringify(response)]);
-                  }).catch( (response) => {
-                    this.zmqSock.send([identity, JSON.stringify(response)]);
+                promise = this._lock_and_get(identity, payload.data, READ).then( (response) => {
+                  return this._unlock(identity, payload.data).then(() => {
+                    return Promise.resolve(response);
                   });
-                }).catch((response) => {
-                  this.zmqSock.send([identity, JSON.stringify(response)]);
                 });
                 break;
               case 'save_and_unlock':
                 checkField(payload, 'data', "Request is missing data field");
-                this._save_and_unlock(identity, payload.data).then( (response) => {
-                  this.zmqSock.send([identity, JSON.stringify(response)]);
-                }).catch((response) => {
-                  this.zmqSock.send([identity, JSON.stringify(response)]);
-                });
+                promise = this._save_and_unlock(identity, payload.data);
                 break;
               case 'unlock':
                 checkField(payload, 'data', "Request is missing data field");
-                this._unlock(identity, payload.data).then( (response) => {
-                  this.zmqSock.send([identity, JSON.stringify(response)]);
-                }).catch((response) => {
-                  this.zmqSock.send([identity, JSON.stringify(response)]);
-                });
+                promise = this._unlock(identity, payload.data);
                 break;
               case 'dump':
                 this._dump();
-                break;
+                return;
               default:
                 logger.warn(`Unknown command: ${payload.command}`);
                 return;
             }
+
+            promise.then( (response) => {
+              this.zmqSock.send([identity, JSON.stringify(response)]);
+            }).catch((response) => {
+              if (response.request_id) {
+                this.zmqSock.send([identity, JSON.stringify(response)]);
+              } else {
+                logger.warn(response);
+              }
+            });
           } catch (error) {
-            logger.error(`Exception: ${error}`);
+            logger.warn(`Exception: ${error}`);
             return;
           }
         }); // on message
@@ -288,7 +278,7 @@ class ContextHandler {
     });
   }
 
-  _lock_and_get(identity, data, lockMode) {
+  async _lock_and_get(identity, data, lockMode) {
     checkField(data, 'context_name', "Request is missing context_name field");
     checkField(data, 'request_id', "Request is missing request_id field");
 
@@ -348,7 +338,7 @@ class ContextHandler {
     });
   } //_lock_and_get
 
-  _save_and_unlock(identity, data) {
+  async _save_and_unlock(identity, data) {
     return new Promise ((resolve, reject) => {
       checkField(data, 'request_id', "Request is missing request_id field");
       checkField(data, 'context_content', "Request is missing context_content field");
@@ -411,7 +401,7 @@ class ContextHandler {
     });
   } // _save_and_unlock
 
-  _unlock(identity, data) {
+  async _unlock(identity, data) {
     checkField(data, 'request_id', "Request is missing request_id field");
 
     if (!this.controlMap.hasOwnProperty(identity + '.' + data.request_id)) {
@@ -449,7 +439,7 @@ class ContextHandler {
   _timeout(lock, identity, data, contextManager) {
     delete contextManager.controlMap[identity + '.' + data.request_id];
 
-    logger.warn(`lock hold time timed out. identity: ${identity.toString()} request: ${data.request_id} path: ${lock.getLockPath()}`);
+    logger.warn(`lock hold time timed out. identity: ${identity.toString('hex')} request: ${data.request_id} path: ${lock.getLockPath()}`);
 
 	  lock.unlock().then(
       () => {
