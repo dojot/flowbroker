@@ -17,4 +17,4 @@ COPY --from=basis /opt/flowbroker/orchestrator /opt/flowbroker/orchestrator
 WORKDIR /opt/flowbroker/orchestrator
 COPY orchestrator ./src
 
-CMD ["node", "src/index.js", "-w", "1", "-s"]
+CMD ["node", "src/index.js", "-s"]
