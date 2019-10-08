@@ -1,16 +1,13 @@
 "use strict";
 
-module.exports = {
-
-    'redis': {
+let config = {
+    redis: {
         url: process.env.FLOWBROKER_CACHE_HOST || "flowbroker-redis"
     },
-
-    'deviceManager': {
+    deviceManager: {
         url: process.env.DEVICE_MANAGER_HOST || "http://device-manager:5000"
     },
-
-    'mongodb': {
+    mongodb: {
         url: process.env.MONGO_URL || "mongodb://mongodb:27017",
         opt: {
             connectTimeoutMS: 2500,
@@ -20,18 +17,15 @@ module.exports = {
             replicaSet: process.env.REPLICA_SET
         }
     },
-
-    'dataBroker': {
+    dataBroker: {
         url: process.env.DATA_BROKER_URL || "http://data-broker:80"
     },
-
-    'amqp': {
+    amqp: {
         url: process.env.AMQP_URL || "amqp://rabbitmq",
         queue: process.env.AMQP_QUEUE || "task_queue",
         event_queue: process.env.AMQP_EVENT_QUEUE || "event_queue"
     },
-
-    'deploy': {
+    deploy: {
         engine: process.env.DEPLOY_ENGINE || "kubernetes",
         kubernetes: {
             url: `https://${process.env.KUBERNETES_SERVICE_HOST}:${process.env.KUBERNETES_PORT_443_TCP_PORT}`,
@@ -42,14 +36,12 @@ module.exports = {
             network: process.env.FLOWBROKER_NETWORK || "dojot"
         }
     },
-
-    'contextManager': {
+    contextManager: {
         contextManagerAddress: process.env.CONTEXT_MANAGER_ADDRESS || "flowbroker-context-manager",
         contextManagerPort: process.env.CONTEXT_MANAGER_PORT || 5556,
         responseTimeout: process.env.CONTEXT_MANAGER_RESPONSE_TIMEOUT || 10000
     },
-
-    'kafkaMessenger' : {
+    kafkaMessenger : {
         kafka: {
             producer: {
                 "metadata.broker.list": process.env.KAFKA_HOSTS || "kafka:9092",
@@ -65,18 +57,33 @@ module.exports = {
             consumer: {
                 "group.id": process.env.KAFKA_GROUP_ID || "flowbroker",
                 "metadata.broker.list": process.env.KAFKA_HOSTS || "kafka:9092"
+            },
+            dojot: {
+                subscriptionHoldoff: Number(process.env.DOJOT_SUBSCRIPTION_HOLDOFF) || 2500,
+                timeoutSleep: 5,
+                connectionRetries: 5
             }
         },
         databroker: {
-            host: process.env.DATA_BROKER_URL || "http://data-broker",
+            url: process.env.DATA_BROKER_URL || "http://data-broker",
+            timeoutSleep: 5,
+            connectionRetries: 5
         },
         auth: {
-            host: process.env.AUTH_URL || "http://auth:5000",
+            url: process.env.AUTH_URL || "http://auth:5000",
+            timeoutSleep: 5,
+            connectionRetries: 5
         },
         deviceManager: {
-            host: process.env.DEVICE_MANAGER_URL || "http://device-manager:5000",
+            url: process.env.DEVICE_MANAGER_URL || "http://device-manager:5000",
+            timeoutSleep: 5,
+            connectionRetries: 5
         },
         dojot: {
+            management: {
+                user: process.env.DOJOT_MANAGEMENT_USER || "dojot-management",
+                tenant: process.env.DOJOT_MANAGEMENT_TENANT || "dojot-management"
+            },
             managementService: process.env.DOJOT_SERVICE_MANAGEMENT || "dojot-management",
             subjects: {
                 tenancy: process.env.DOJOT_SUBJECT_TENANCY || "dojot.tenancy",
@@ -115,3 +122,48 @@ module.exports = {
         level: process.env.LOG_LEVEL || 'info' // it could be error, warn, info or debug
     }
 };
+
+/**
+ * This function appends a base object with properties related to the kafka.
+ * Every property in the env parameter will be appended in the baseObj parameter
+ * with the following rules:
+ * - properties with the prefix 'kafka_producer_' will be appended to the baseObj as
+ * kafka.producer.<...>
+ * - properties with the prefix 'kafka_consumer_' will be appended to the baseObj as
+ * kafka.consumer.<...>
+ * @param {*} baseObj a base object to be appended
+ * @param {*} env a dictionary with the configurations
+ */
+function _setKafkaConfiguration(baseObj, env) {
+  if (!baseObj.kafka) {
+    baseObj.kafka = {};
+  }
+  if (!baseObj.kafka.producer) {
+    baseObj.kafka.producer = {};
+  }
+  if (!baseObj.kafka.consumer) {
+    baseObj.kafka.consumer = {};
+  }
+
+  let keys = Object.keys(env);
+  for (let i = 0; i < keys.length; ++i) {
+    let key = keys[i];
+    let keyNormalized = key.toLowerCase();
+    let value = env[key];
+    if (keyNormalized.startsWith("kafka_producer_")) {
+      // removes the prefix and replaces the '_' by '.'
+      let newKey = keyNormalized.substring(15).replace(/_/g, '.');
+      
+      baseObj.kafka.producer[newKey] = isNaN(value)?value:Number(value);
+    } else if (keyNormalized.startsWith("kafka_consumer_")) {
+      // removes the prefix and replaces the '_' by '.'
+      let newKey = keyNormalized.substring(15).replace(/_/g, '.');
+      baseObj.kafka.consumer[newKey] = isNaN(value)?value:Number(value);
+    }
+  }
+}
+
+_setKafkaConfiguration(config.kafkaMessenger, process.env);
+
+
+module.exports = config;

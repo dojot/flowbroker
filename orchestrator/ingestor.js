@@ -56,7 +56,7 @@ module.exports = class DeviceIngestor {
     // Create a channel using a particular for FTP
     this.kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.ftp, "rw");
 
-    return auth.getTenants(config.kafkaMessenger.auth.host).then((tenants) => {
+    return auth.getTenants(config.kafkaMessenger.auth.url).then((tenants) => {
       return this.deviceCache.populate(tenants).then(() => {
         //tenancy subject
         logger.debug("Registering callbacks for tenancy subject...");
