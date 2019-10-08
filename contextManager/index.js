@@ -334,7 +334,7 @@ class ContextHandler {
         result: "error",
         reason: error
       };
-      return reject(response);
+      return Promise.reject(response);
     });
   } //_lock_and_get
 
