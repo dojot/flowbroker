@@ -344,7 +344,7 @@ class ContextHandler {
       checkField(data, 'context_content', "Request is missing context_content field");
 
       if (!this.controlMap.hasOwnProperty(identity + '.' + data.request_id)) {
-        logger.error('entry does not exists');
+        logger.error(`entry does not exists: ZMQ: ${identity.toString('hex')} Request: ${data.request_id}`);
         let response = {
           request_id: data.request_id,
           result: "error",
