@@ -13,7 +13,8 @@ const DEPLOY_TEMPLATE = JSON.stringify({
   "kind": "Deployment",
   "metadata": {
     "labels": {
-      "name": ""
+      "app": "flowbroker",
+      "name": "",
     },
     "name": ""
   },
@@ -22,7 +23,8 @@ const DEPLOY_TEMPLATE = JSON.stringify({
     "template": {
       "metadata": {
         "labels": {
-          "name": ""
+          "name": "",
+          "app": "flowbroker",
         }
       },
       "spec": {
@@ -37,7 +39,11 @@ const SERVICE_TEMPLATE = JSON.stringify({
   "apiVersion": "v1",
   "kind": "Service",
   "metadata": {
-    "name": ""
+    "name": "",
+    "labels": {
+      "app": "flowbroker",
+      "name": ""
+    }
   },
   "spec": {
     "selector": {
@@ -53,7 +59,11 @@ const SCALEDOWN_TEMPLATE = JSON.stringify({
   "apiVersion": "extensions/v1beta1",
   "kind": "Deployment",
   "metadata": {
-    "name": ""
+    "name": "",
+    "labels": {
+      "app": "flowbroker",
+      "name": ""
+    }
   },
   "spec": {
     "replicas": 0
@@ -68,7 +78,7 @@ class DataHandler extends RemoteNode {
    * @param {string} id Node ID
    */
   constructor(image, id) {
-    super(id);
+    super(id, undefined, 5555);
     logger.debug("Using kubernetes driver.", { filename: 'kb8sRemoveNode' });
     this.image = image;
     this.id = id;
@@ -254,6 +264,7 @@ class DataHandler extends RemoteNode {
       service.spec.selector.name = deployment.metadata.name;
       logger.debug(`Service to be created: ${util.inspect(service, { depth: null })}`, { filename: 'kb8sRemoveNode' });
       this.api.namespaces("dojot").services.post({ body: service }).then((value) => {
+        this.serverAddress = service.metadata.name;
         logger.debug(`... service for deployment created:  ${util.inspect(value, { depth: null })}`, { filename: 'kb8sRemoveNode' });
         resolve("Deployment and associated service successfully created.");
       }).catch((error) => {
