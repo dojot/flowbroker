@@ -114,13 +114,15 @@ class NodeManager {
           //      them according to the status of their containers. This demands changes
           //      in the docker-compose and kubernetes libraries.
           node.deinit();
-          try {
-            logger.debug(`Trying to remove docker container ${item.containerId}`, { filename: 'nodeMngr' });
-            await node.remove(item.containerId);
-            logger.debug(`Succeeded to remove container.`, { filename: 'nodeMngr' });
-          }
-          catch (error) {
-            logger.error(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`, { filename: 'nodeMngr' });
+          if (config.deploy.engine === "docker") {
+            try {
+              logger.debug(`Trying to remove docker container ${item.containerId}`, { filename: 'nodeMngr' });
+              await node.remove(item.containerId);
+              logger.debug(`Succeeded to remove container.`, { filename: 'nodeMngr' });
+            }
+            catch (error) {
+              logger.error(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`, { filename: 'nodeMngr' });
+            }
           }
 
           // re-create container
