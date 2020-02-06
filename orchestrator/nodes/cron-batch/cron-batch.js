@@ -100,7 +100,7 @@ class DataHandler extends dojot.DataHandlerBase {
 
     handleMessage(config, message, metadata) {
         let timeout = config.timeout;
-        if (isNaN(timeout)) {
+        if (isNaN(timeout) || (timeout <= 0)) {
             return Promise.reject(new Error(`Invalid timeout.`));
         }
         logger.debug("Executing cron-batch node...", { filename: 'cron-batch' });
