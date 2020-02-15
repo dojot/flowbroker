@@ -63,6 +63,10 @@
             },
             outJobIdsType: {
                 value: 'msg'
+            },
+            timeout: {
+                value: 1000,
+                validate: RED.validators.number()
             }
         },
         // (string|function) the label to use in the workspace
@@ -129,6 +133,10 @@
         <label for="node-input-outJobIds"><i class="fa fa-arrow-circle-o-left"></i> <span data-i18n="label.outJobIds"></span></label>
         <input type="text" id="node-input-outJobIds" data-i18n="[placeholder]outJobIdsKey">
         <input type="hidden" id="node-input-outJobIdsType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-timeout"><i class="fa fa-tag"></i> <span data-i18n="label.timeout"></span></label>
+        <input type="text" id="node-input-timeout">
     </div>
 </script>
 
