@@ -1,0 +1,70 @@
+<script type="text/x-red" data-template-name="publish-ftp">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i> 
+            <span data-i18n="label.name"></span>
+        </label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-encode" style="width: 22%;">
+            <i class="fa fa-file-code-o"></i> 
+            <span data-i18n="label.encode"></span>
+        </label>
+        <select type="text" id="node-input-encode" style="width: 70%;">
+            <option value="ascii">ascii</option>
+            <option value="base64">base64</option>
+            <option value="hex">hex</option>
+            <option value="utf16le">utf16le</option>
+            <option value="utf8">utf8</option>
+            <option value="utf8">binary</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-filename">
+            <i class="fa fa-file"></i>
+            <span data-i18n="label.filename"></span>
+        </label>
+        <input type="text" id="node-input-filename" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-filecontent">
+            <i class="fa fa-file-text-o"></i> 
+            <span data-i18n="label.filecontent"></span>
+        </label>
+        <input type="text" id="node-input-filecontent"/>
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="publish-ftp">
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('publish-ftp', {
+        category: 'output',
+        color: "#D8BFD8",
+        defaults: {
+            name: {value: "", required: false},
+            encode:{ value: "base64" },
+            filename: {value: ""},
+            filecontent: {value: ""},
+        },
+        inputs: 1,
+        outputs: 0,
+        align: "right",  
+        icon: "inject.png",
+        label: function () {
+            return this.name || RED._('dojot/publish-ftp:title');
+        },
+        paletteLabel: RED._('dojot/publish-ftp:title'),
+        labelStyle: function () {
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function () {
+            $("#node-input-filecontent").typedInput({default:'msg',types:['msg']});
+        },
+        oneditsave: function () {
+        }
+    });
+</script>
+

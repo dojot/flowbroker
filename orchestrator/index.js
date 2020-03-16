@@ -199,6 +199,10 @@ kafkaMessenger.init().then(() => {
   kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.deviceData, "rw");
   logger.debug("... r+w channel for device-data was created.");
 
+  // logger.debug("Creating r+w channel for device-data subject...");
+  // kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.deviceData, "rw");
+  // logger.debug("... r+w channel for device-data was created.");
+
   // chain other initialization steps
   return MongoManager.get();
 }).then((client) => {
