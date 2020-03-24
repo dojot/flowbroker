@@ -49,10 +49,10 @@ class DataHandler extends dojot.DataHandlerBase {
         };
     }
 
-        /**
-     * Returns full path to locales
-     * @returns {String} Path segments into an absolute path.
-     */
+    /**
+ * Returns full path to locales
+ * @returns {String} Path segments into an absolute path.
+ */
     getLocalesPath() {
         return path.resolve(__dirname, './locales');
     }
@@ -114,13 +114,15 @@ class DataHandler extends dojot.DataHandlerBase {
         var method = config.method.toUpperCase() || "PUT";
         const filename = this._get(config.filename, message);
         var stream;
-        try {
-            const buffer = Buffer.from(this._get(config.filecontent, message), encoding);
-            stream = new ReadStream(buffer);
-        } catch (e) {
-            logger.debug("... ftp node was not successfully executed.", { filename: 'ftp' });
-            logger.error(`Error while retrieving ftp payload: ${e}`, { filename: 'ftp' });
-            return Promise.reject("ftpin.errors.no-body");
+        if (method === "PUT") {
+            try {
+                const buffer = Buffer.from(this._get(config.filecontent, message), encoding);
+                stream = new ReadStream(buffer);
+            } catch (e) {
+                logger.debug("... ftp node was not successfully executed.", { filename: 'ftp' });
+                logger.error(`Error while retrieving ftp payload: ${e}`, { filename: 'ftp' });
+                return Promise.reject("ftpin.errors.no-body");
+            }
         }
 
         if (!url) {
@@ -144,7 +146,7 @@ class DataHandler extends dojot.DataHandlerBase {
             case "PUT":
                 response = await client.upload(stream, filename);
                 this._set(config.response, {}, response);
-            break;
+                break;
             case "GET": {
                 response = await client.download(filename);
                 this._set(config.response, {}, response);
