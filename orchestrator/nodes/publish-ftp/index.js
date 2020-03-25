@@ -74,6 +74,11 @@ class DataHandler extends dojot.DataHandlerBase {
         extractedContent = this._get(filecontent, message);
       }
 
+      let extractedFilename = "";
+      if (filename) {
+        extractedFilename = this._get(filename, message);
+      }
+
       let output = {
         metadata: {
           msgID: uuid4(),
@@ -82,7 +87,7 @@ class DataHandler extends dojot.DataHandlerBase {
           contentType: "application/vnd.dojot.ftp+json"
         },
         data: {
-          "filename": filename,
+          "filename": extractedFilename,
           "encoding": encode,
           "content": extractedContent,
         }
