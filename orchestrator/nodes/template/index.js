@@ -13,7 +13,7 @@ class DataHandler extends dojot.DataHandlerBase {
             return JSON.stringify(context);
         });
         
-        handlebars.registerHelper("math", function(lvalue, operator, rvalue, options) {
+        handlebars.registerHelper("math", function(lvalue, operator, rvalue) {
             if (arguments.length < 4) {
                 // Operator omitted, assuming "+"
                 options = rvalue;
