@@ -4,6 +4,8 @@ var uuid4 = require('uuid4');
 const logger = require("@dojot/dojot-module-logger").logger;
 var dojot = require('@dojot/flow-node');
 
+const TAG = { filename: 'notification' };
+
 class DataHandler extends dojot.DataHandlerBase {
 
     constructor(kafka, subject) {
@@ -69,13 +71,27 @@ class DataHandler extends dojot.DataHandlerBase {
 
             if (config.msgType === 'dynamic') {
                 contentMessage = this._get(config.messageDynamic, message);
-            }else {
+            } else {
                 contentMessage = config.messageStatic;
             }
 
-            if(!meta.hasOwnProperty('shouldPersist')){
+            if (!meta) {
+                throw new Error('Metadata must be defined.');
+            } else if (typeof meta !== 'object' || Array.isArray(meta)) {
+                throw new Error('Metadata must be an object except an array.')
+            }
+
+            if (!contentMessage) {
+                throw new Error('Message must be defined.');
+            } else if (typeof contentMessage !== 'string') {
+                throw new Error('Message must be a string.')
+            }
+
+
+            if (!meta.hasOwnProperty('shouldPersist')) {
                 meta.shouldPersist = true;
             }
+
 
             let output = {
                 msgID: uuid4(),
@@ -85,18 +101,18 @@ class DataHandler extends dojot.DataHandlerBase {
                 subject: "user_notification"
             };
 
-            logger.debug(`output is: ${util.inspect(output, {depth: null})}`, { filename: 'notification' });
+            logger.debug(`output is: ${util.inspect(output, { depth: null })}`, TAG);
 
             this.kafkaMessenger.publish(this.subject, metadata.tenant, JSON.stringify(output));
 
-            logger.debug("...notification node was successfully executed.", { filename: 'notification' });
+            logger.debug("...notification node was successfully executed.", TAG);
 
             return Promise.resolve([])
         } catch (error) {
-            logger.error(`Error while executing notification node: ${error}`, { filename: 'notification' });
+            logger.error(`Error while executing notification node: ${error}`, TAG);
             return Promise.reject(error);
         }
     }
 }
 
-module.exports = {Handler: DataHandler};
+module.exports = { Handler: DataHandler };
