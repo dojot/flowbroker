@@ -10,6 +10,8 @@ var dojot = require('@dojot/flow-node');
 var stream = require("stream");
 var ftp = require("basic-ftp");
 
+const TAG = { filename: 'ftp' };
+
 class ReadStream extends stream.Readable {
     constructor(object) {
         super();
@@ -49,10 +51,10 @@ class DataHandler extends dojot.DataHandlerBase {
         };
     }
 
-        /**
-     * Returns full path to locales
-     * @returns {String} Path segments into an absolute path.
-     */
+    /**
+ * Returns full path to locales
+ * @returns {String} Path segments into an absolute path.
+ */
     getLocalesPath() {
         return path.resolve(__dirname, './locales');
     }
@@ -80,8 +82,8 @@ class DataHandler extends dojot.DataHandlerBase {
      * @return {[undefined]}
      */
     async handleMessage(config, message) {
-        logger.debug("Executing ftp node...", { filename: 'ftp' });
-        logger.debug(`Config is: ${util.inspect(config)}`, { filename: 'ftp' });
+        logger.debug("Executing ftp node...", TAG);
+        logger.debug(`Config is: ${util.inspect(config)}`, TAG);
         var url = config.url;
         var tokens = config.url.match(/(ftp|ftps):\/\/(.*)/);
         var transport = "ftp";
@@ -91,8 +93,9 @@ class DataHandler extends dojot.DataHandlerBase {
         var encoding = config.fileencoding;
         const user = config.username;
         const password = config.password; // THIS SHOULD NOT BE LIKE THIS!
-        logger.debug(`Encoding is: ${encoding}`, { filename: 'ftp' });
-        logger.debug(`URL parsing tokens: ${util.inspect(tokens)}`, { filename: 'ftp' });
+
+        logger.debug(`Encoding is: ${encoding}`, TAG);
+        logger.debug(`URL parsing tokens: ${util.inspect(tokens)}`, TAG);
         if (tokens !== null) {
             transport = tokens[1];
             remaining = tokens[2];
@@ -100,7 +103,7 @@ class DataHandler extends dojot.DataHandlerBase {
             remaining = config.url;
         }
         tokens = remaining.match(/(.*):(.*)/);
-        logger.debug(`Port parsing tokens: ${util.inspect(tokens)}`, { filename: 'ftp' });
+        logger.debug(`Port parsing tokens: ${util.inspect(tokens)}`, TAG);
         if (tokens !== null) {
             host = tokens[1];
             port = tokens[2];
@@ -108,24 +111,27 @@ class DataHandler extends dojot.DataHandlerBase {
             host = remaining;
         }
 
-        logger.debug(`Connecting to host ${host}:${port}, using ${transport}`, { filename: 'ftp' });
-        logger.debug(`Original config was ${config.url}`, { filename: 'ftp' });
+        logger.debug(`Connecting to host ${host}:${port}, using ${transport}`, TAG);
+        logger.debug(`Original config was ${config.url}`, TAG);
 
-        var method = config.method.toUpperCase() || "PUT";
         const filename = this._get(config.filename, message);
+
+        console.log("filename", filename);
+
         var stream;
         try {
             const buffer = Buffer.from(this._get(config.filecontent, message), encoding);
             stream = new ReadStream(buffer);
         } catch (e) {
-            logger.debug("... ftp node was not successfully executed.", { filename: 'ftp' });
-            logger.error(`Error while retrieving ftp payload: ${e}`, { filename: 'ftp' });
+            logger.debug("... ftp node was not successfully executed.", TAG);
+            logger.error(`Error while retrieving ftp payload: ${e}`, TAG);
             return Promise.reject("ftpin.errors.no-body");
         }
 
+
         if (!url) {
-            logger.debug("... ftp node was not successfully executed.", { filename: 'ftp' });
-            logger.error("Node has no URL set.", { filename: 'ftp' });
+            logger.debug("... ftp node was not successfully executed.", TAG);
+            logger.error("Node has no URL set.", TAG);
             return Promise.reject("ftpin.errors.no-url");
         }
 
@@ -139,18 +145,11 @@ class DataHandler extends dojot.DataHandlerBase {
             user,
         });
 
-        var response;
-        switch (method) {
-            case "PUT":
-                response = await client.upload(stream, filename);
-                this._set(config.response, {}, response);
-            break;
-            case "GET": {
-                response = await client.download(filename);
-                this._set(config.response, {}, response);
-            }
-        }
+        var response = await client.upload(stream, filename);
+        this._set(config.response, {}, response);
+
         client.close();
+
         return Promise.resolve([message]);
     }
 }
