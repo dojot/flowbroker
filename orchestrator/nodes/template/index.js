@@ -9,8 +9,28 @@ const logger = require("@dojot/dojot-module-logger").logger;
 class DataHandler extends dojot.DataHandlerBase {
     constructor() {
         super();
-        handlebars.registerHelper('stringify', function(context) {
+        handlebars.registerHelper('stringify', function (context) {
             return JSON.stringify(context);
+        });
+
+        handlebars.registerHelper("math", function (lvalue, operator, rvalue) {
+            if (arguments.length < 4) {
+                // Operator omitted, assuming "+"
+                options = rvalue;
+                rvalue = operator;
+                operator = "+";
+            }
+
+            lvalue = parseFloat(lvalue);
+            rvalue = parseFloat(rvalue);
+
+            return {
+                "+": lvalue + rvalue,
+                "-": lvalue - rvalue,
+                "*": lvalue * rvalue,
+                "/": lvalue / rvalue,
+                "%": lvalue % rvalue
+            } [operator];
         });
     }
 
@@ -72,7 +92,7 @@ class DataHandler extends dojot.DataHandlerBase {
         try {
             let templateData = config.template;
             let data = '';
-            switch(config.syntax) {
+            switch (config.syntax) {
                 case 'handlebars': {
                     let template = handlebars.compile(templateData);
                     data = template(fullMessage);
@@ -85,7 +105,9 @@ class DataHandler extends dojot.DataHandlerBase {
                     data = mustache.render(templateData, fullMessage);
                     break;
                 default:
-                    logger.error(`Unsupported syntax on template node: ${config.syntax}`, { filename: 'template' });
+                    logger.error(`Unsupported syntax on template node: ${config.syntax}`, {
+                        filename: 'template'
+                    });
                     return Promise.reject('configuration error');
             }
 
@@ -93,15 +115,23 @@ class DataHandler extends dojot.DataHandlerBase {
                 data = JSON.parse(data);
             }
             this._set(config.field, data, message);
-            logger.debug("... template node was successfully executed.", { filename: 'template' });
+            logger.debug("... template node was successfully executed.", {
+                filename: 'template'
+            });
             return Promise.resolve([message]);
         } catch (error) {
-            logger.debug("... template node was not successfully executed.", { filename: 'template' });
-            logger.error(`Error while executing template node: ${error}`, { filename: 'template' });
+            logger.debug("... template node was not successfully executed.", {
+                filename: 'template'
+            });
+            logger.error(`Error while executing template node: ${error}`, {
+                filename: 'template'
+            });
             return Promise.reject(error);
         }
     }
 }
 
 // var main = new DojotHandler(new DataHandler());
-module.exports = {Handler: DataHandler};
+module.exports = {
+    Handler: DataHandler
+};
