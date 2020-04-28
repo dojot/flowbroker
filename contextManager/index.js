@@ -190,7 +190,7 @@ class ContextHandler {
 
       if (err) {
         logger.error(`Failed to connect on zookeeper. Error: ${err}`);
-        return;
+        process.kill(process.pid, "SIGTERM");
       }
 
       this.zkRWLock = new ZookeeperRWLock(this.zkClient);
@@ -262,7 +262,7 @@ class ContextHandler {
         this.zmqSock.bind('tcp://*:' + this.zmqPort.toString(), (err) => {
           if (err) {
             logger.error(`Failed on bind the zmq port. Error: ${err}`);
-            process.exit(1);
+            process.kill(process.pid, "SIGTERM");
           } else {
             logger.info(`zmq listening on ${this.zmqPort}`);
           }
@@ -273,7 +273,7 @@ class ContextHandler {
         });
       }).catch( () => {
         logger.error("Fail to init zookeeper lock");
-        process.exit(1);
+        process.kill(process.pid, "SIGTERM");
       });
     });
   }
@@ -474,7 +474,7 @@ let logLevel = process.env.LOG_LEVEL || 'info';
 
 if (logger.setLevel(logLevel) !== 0) {
   logger.error(`Invalid logger level: ${logLevel}`);
-  process.exit(1);
+  process.kill(process.pid, "SIGTERM");
 }
 
 app.use(bodyParser.json());
