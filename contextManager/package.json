@@ -4,7 +4,9 @@
   "description": "Flow broker's context manager",
   "main": "index.js",
   "scripts": {
-    "test": ""
+    "test": "",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "author": "Raul Negreiros",
   "license": "GPL-3.0",
@@ -12,6 +14,8 @@
     "zeromq": "^4.6.0",
     "zookeeper": "3.4.9-3",
     "express": "^4.16.2",
-    "@dojot/dojot-module-logger": "^0.0.1-alpha.5"
-  }
+    "@dojot/dojot-module-logger": "^0.0.1-alpha.5",
+    "snyk": "^1.316.1"
+  },
+  "snyk": true
 }
