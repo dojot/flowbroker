@@ -174,7 +174,7 @@ for (let i = 0; i < args.workers; i++) {
 }
 
 // Kafka listeners and writers
-var kafkaMessenger = new dojotModule.Messenger("flowbroker");
+var kafkaMessenger = new dojotModule.Messenger("flowbroker", config.kafkaMessenger);
 
 // Initializes kafka listeners ...
 logger.debug("Initializing kafka messenger ...");
