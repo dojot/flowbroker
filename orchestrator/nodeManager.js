@@ -319,6 +319,9 @@ class NodeManager {
 
       // Step 1: Checks if the 'remote node' exists
       if(this.collection.hasOwnProperty(tenant)) {
+        logger.debug('Tenant junior-' + this.nodes[tenant], { filename: 'nodeMngr' });
+        logger.debug('Tenant junior id-' + id, { filename: 'nodeMngr' });
+        console.log(id);
         if (this.nodes[tenant].hasOwnProperty(id)) {
 
           // Step 2: Remove docker container
