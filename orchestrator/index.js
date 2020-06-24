@@ -73,13 +73,6 @@ parser.addArgument(['-s', '--server'], {help:'Run as a daemon service (productio
 parser.addArgument(['-i', '--kill-idle'],
                    {help:'If no more events are generaed within KILL_IDLE milliseconds, kill ' +
                          'the process'});
-parser.addArgument(['-w', '--workers'],
-                   {
-                      defaultValue: 3,
-                      help: 'Number of workers (AMQP consumers) to spawn. This has a direct effect ' +
-                             'on the amount of messages per second a broker instance is able to ' +
-                             'handle'
-                   });
 parser.addArgument(['-v', '--verbose'], {action: 'storeTrue'});
 var args = parser.parseArgs();
 
@@ -168,7 +161,8 @@ contextManagerClient.init();
 
 let contextHandler = new ContextHandler(contextManagerClient);
 
-for (let i = 0; i < args.workers; i++) {
+logger.info(`Spawning ${config.taskProcessing.workers} workers...`);
+for (let i = 0; i < config.taskProcessing.workers; i++) {
   let exec = new Executor(contextHandler);
   exec.init().then(loggerCallback).catch(errorCallback);
 }

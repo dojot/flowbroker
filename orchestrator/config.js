@@ -89,7 +89,8 @@ let config = {
                 tenancy: process.env.DOJOT_SUBJECT_TENANCY || "dojot.tenancy",
                 devices: process.env.DOJOT_SUBJECT_DEVICES || "dojot.device-manager.device",
                 deviceData: process.env.DOJOT_SUBJECT_DEVICE_DATA || "device-data",
-                notification: process.env.DOJOT_SUBJECT_DEVICE_DATA || "dojot.notifications"
+                notification: process.env.DOJOT_SUBJECT_NOTIFICATIONS || "dojot.notifications",
+                ftp: process.env.DOJOT_SUBJECT_FTP || "dojot.ftp"
             }
         }
     },
@@ -114,7 +115,8 @@ let config = {
         }
     },
     taskProcessing: {
-        taskTimeout: process.env.TASK_TIMEOUT || 30000 // time in ms
+        taskTimeout: process.env.TASK_TIMEOUT || 30000, // time in ms
+        workers: process.env.WORKERS || 1
     },
     logging: {
         level: process.env.LOG_LEVEL || 'info' // it could be error, warn, info or debug
