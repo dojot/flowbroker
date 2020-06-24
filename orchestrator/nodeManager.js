@@ -257,16 +257,17 @@ class NodeManager {
         node.create().then((containerId) => {
           node.init().then(() => {
 
+            this.nodes[tenant][id] = node;
             let metadata = node.getMetadata();
             if(id !== metadata.name) {
-              this.delRemoteNode(containerId).catch((error) => {
+              this.delRemoteNode(id).catch((error) => {
                 logger.error(`Failed to remove remote node
                 ${tenant}/${id} (${error}). keep going ..`, { filename: 'nodeMngr' });
               });
-              return reject(new Error(`The remote node id (${id}) differs from its name (${name}).`));
+              return reject(new Error(`The remote node id (${id}) differs from its name (${metadata.name}).`));
             }
 
-            this.nodes[tenant][id] = node;
+            
 
             // Step 3: Persist remote node
             let nodeDbEntry = {
@@ -279,7 +280,7 @@ class NodeManager {
               logger.debug(`Succeeded to add remote node with id ${id}`, { filename: 'nodeMngr' });
               resolve();
             }).catch((error) => {
-              this.delRemoteNode(containerId).catch((error) => {
+              this.delRemoteNode(id).catch((error) => {
                 logger.error(`Failed to remove remote node
                 ${tenant}/${id} (${error}). keep going ..`, { filename: 'nodeMngr' });
               });
@@ -288,7 +289,7 @@ class NodeManager {
               return reject(new Error(`Failed to persist remote node configuration.`));
             });
           }).catch((error) => {
-            this.delRemoteNode(containerId).catch((error) => {
+            this.delRemoteNode(id).catch((error) => {
               logger.error(`Failed to remove remote node
               ${tenant}/${id} (${error}). keep going ..`, { filename: 'nodeMngr' });
             });
