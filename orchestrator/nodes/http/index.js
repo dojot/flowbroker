@@ -181,56 +181,7 @@ class DataHandler extends dojot.DataHandlerBase {
 
             return new Promise((resolve, reject) => {
                 logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`, { filename: 'http' });
-                var req = ((/^https/.test(urltotest)) ? https : http).request(opts, (res) => {
-                    // Force NodeJs to return a Buffer (instead of a string)
-                    // See https://github.com/nodejs/node/issues/6038
-                    res.setEncoding(null);
-                    delete res._readableState.decoder;
-
-                    this._set(config.response, {}, message);
-                    var httpResponse = this._get(config.response, message);
-                    httpResponse.statusCode = res.statusCode;
-                    httpResponse.headers = res.headers;
-                    httpResponse.responseUrl = res.responseUrl;
-                    httpResponse.payload = [];
-
-                    // msg.url = url;   // revert when warning above finally removed
-                    res.on('data', (chunk) => {
-                        if (!Buffer.isBuffer(chunk)) {
-                            // if the 'setEncoding(null)' fix above stops working in
-                            // a new Node.js release, throw a noisy error so we know
-                            // about it.
-                            logger.debug("... http node was not successfully executed.", { filename: 'http' });
-                            logger.error("Returned HTTP Request data is not a buffer.", { filename: 'http' });
-                            return reject(new Error("HTTP Request data chunk not a Buffer"));
-                        }
-                        httpResponse.payload.push(chunk);
-                    });
-
-                    res.on('end', () => {
-
-                        // Check that message[config.response] is an array - if the req error
-                        // handler has been called, it will have been set to a string
-                        // and the error already handled - so no further action should
-                        // be taken. #1344
-                        if (Array.isArray(httpResponse.payload)) {
-                            // Convert the payload to the required return type
-                            if (ret !== "bin") {
-                                let strData = httpResponse.payload;
-                                httpResponse.payload = strData.toString("utf8");
-                                if (ret === "obj") {
-                                    try {
-                                        httpResponse.payload = JSON.parse(strData);
-                                    } catch (e) {
-                                        logger.warn("Could not parse JSON. Forwarding as plain string.");
-                                    }
-                                }
-                            }
-                            logger.debug("... http node was successfully executed.", { filename: 'http' });
-                            return resolve([message]);
-                        }
-                    });
-                });
+                var req = makeRequest(urltotest,http,http);
 
                 req.setTimeout(reqTimeout, function () {
                     setTimeout(function () {
@@ -257,6 +208,58 @@ class DataHandler extends dojot.DataHandlerBase {
             logger.error(`An exception was thrown: ${error}`, { filename: 'http' });
             return Promise.reject(error);
         }
+    }
+    makeRequest(urltotest,http,http){
+        return ((/^https/.test(urltotest)) ? https : http).request(opts, (res) => {
+            // Force NodeJs to return a Buffer (instead of a string)
+            // See https://github.com/nodejs/node/issues/6038
+            res.setEncoding(null);
+            delete res._readableState.decoder;
+
+            this._set(config.response, {}, message);
+            var httpResponse = this._get(config.response, message);
+            httpResponse.statusCode = res.statusCode;
+            httpResponse.headers = res.headers;
+            httpResponse.responseUrl = res.responseUrl;
+            httpResponse.payload = [];
+
+            // msg.url = url;   // revert when warning above finally removed
+            res.on('data', (chunk) => {
+                if (!Buffer.isBuffer(chunk)) {
+                    // if the 'setEncoding(null)' fix above stops working in
+                    // a new Node.js release, throw a noisy error so we know
+                    // about it.
+                    logger.debug("... http node was not successfully executed.", { filename: 'http' });
+                    logger.error("Returned HTTP Request data is not a buffer.", { filename: 'http' });
+                    return reject(new Error("HTTP Request data chunk not a Buffer"));
+                }
+                httpResponse.payload.push(chunk);
+            });
+
+            res.on('end', () => {
+
+                // Check that message[config.response] is an array - if the req error
+                // handler has been called, it will have been set to a string
+                // and the error already handled - so no further action should
+                // be taken. #1344
+                if (Array.isArray(httpResponse.payload)) {
+                    // Convert the payload to the required return type
+                    if (ret !== "bin") {
+                        let strData = httpResponse.payload;
+                        httpResponse.payload = strData.toString("utf8");
+                        if (ret === "obj") {
+                            try {
+                                httpResponse.payload = JSON.parse(strData);
+                            } catch (e) {
+                                logger.warn("Could not parse JSON. Forwarding as plain string.");
+                            }
+                        }
+                    }
+                    logger.debug("... http node was successfully executed.", { filename: 'http' });
+                    return resolve([message]);
+                }
+            });
+        });
     }
 }
 
