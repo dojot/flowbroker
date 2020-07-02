@@ -181,7 +181,7 @@ class DataHandler extends dojot.DataHandlerBase {
 
             return new Promise((resolve, reject) => {
                 logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`, { filename: 'http' });
-                var req = makeRequest(urltotest,http,http);
+                var req = makeRequest(urltotest,http,https);
 
                 req.setTimeout(reqTimeout, function () {
                     setTimeout(function () {
@@ -209,7 +209,7 @@ class DataHandler extends dojot.DataHandlerBase {
             return Promise.reject(error);
         }
     }
-    makeRequest(urltotest,http,http){
+    makeRequest(urltotest,http,https){
         return ((/^https/.test(urltotest)) ? https : http).request(opts, (res) => {
             // Force NodeJs to return a Buffer (instead of a string)
             // See https://github.com/nodejs/node/issues/6038
