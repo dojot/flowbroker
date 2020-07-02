@@ -259,7 +259,6 @@ class DataHandler extends RemoteNode {
     }
 
     if(this.deploymentNames.includes(deploymentName)){
-      this.serverAddress = deploymentName;
       resolve(`Deployment ${deploymentName} already exists.`);
       return;
     }

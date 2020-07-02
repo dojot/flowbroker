@@ -127,7 +127,7 @@ class NodeManager {
                 logger.error(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`, TAG);
               }
             }
-            
+
             // re-create container
             let containerId;
             try {
@@ -144,7 +144,7 @@ class NodeManager {
               // rollback
               if (containerId) {
                 try {
-                  await this.delRemoteNode(containerId,tenant);
+                  await this.delRemoteNode(containerId);
                 }
                 catch (error) {
                   logger.error(`(Rollback) Failed to remove remote node ${tenant}/${item.id} (${error}). keep going ..`, TAG);
@@ -256,13 +256,14 @@ class NodeManager {
       else if (this.engine === "kubernetes") {
         node = new k8sRemote(image, tenant + id);
       }
+
       if (node) {
         node.create().then((containerId) => {
           node.init().then(() => {
 
             let metadata = node.getMetadata();
             if (id !== metadata.name) {
-              this.delRemoteNode(containerId,tenant).catch((error) => {
+              this.delRemoteNode(containerId).catch((error) => {
                 logger.error(`Failed to remove remote node
                 ${tenant}/${id} (${error}). keep going ..`, TAG);
               });
@@ -282,7 +283,7 @@ class NodeManager {
               logger.debug(`Succeeded to add remote node with id ${id}`, TAG);
               resolve();
             }).catch((error) => {
-              this.delRemoteNode(containerId,tenant).catch((error) => {
+              this.delRemoteNode(containerId).catch((error) => {
                 logger.error(`Failed to remove remote node
                 ${tenant}/${id} (${error}). keep going ..`, TAG);
               });
@@ -291,7 +292,7 @@ class NodeManager {
               return reject(new Error(`Failed to persist remote node configuration.`));
             });
           }).catch((error) => {
-            this.delRemoteNode(containerId,tenant).catch((error) => {
+            this.delRemoteNode(containerId).catch((error) => {
               logger.error(`Failed to remove remote node
               ${tenant}/${id} (${error}). keep going ..`, TAG);
             });
