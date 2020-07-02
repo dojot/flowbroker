@@ -73,7 +73,8 @@ class DataHandler extends dojot.DataHandlerBase {
     handleMessage(config, message) {
         logger.debug("Executing http node...", { filename: 'http' });
         var nodeUrl = config.url;
-        var isTemplatedUrl = (nodeUrl || "").indexOf("{{") !== -1;
+        var isTemplatedUrl = (nodeUrl || "");
+        isTemplatedUrl = isTemplatedUrl.indexOf("{{") !== -1;
         var nodeMethod = config.method || "GET";
         var ret = config.ret || "txt";
         var reqTimeout = 120000;
