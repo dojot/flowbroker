@@ -179,36 +179,40 @@ class DataHandler extends dojot.DataHandlerBase {
             }
             var urltotest = url;
 
-            return new Promise((resolve, reject) => {
-                logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`, { filename: 'http' });
-                var req = makeRequest(urltotest,http,https,ret);
-
-                req.setTimeout(reqTimeout, function () {
-                    setTimeout(function () {
-                        logger.debug("... http node was not successfully executed.", { filename: 'http' });
-                        logger.error("No response was received within timeout period.", { filename: 'http' });
-                        return reject(new Error("common.notification.errors.no-response"));
-                    }, 10);
-                    req.abort();
-                });
-
-                req.on('error', function (err) {
-                    logger.debug("... http node was not successfully executed.", { filename: 'http' });
-                    logger.error(`Error was: ${err}`, { filename: 'http' });
-                    return reject(err);
-                });
-                if (payload) {
-                    req.write(payload);
-                }
-
-                req.end();
-            });
+            return this.handleMessageRequest(opts, urltotest, ret, reqTimeout, payload);
         } catch (error) {
             logger.debug("... http node was not successfully executed.", { filename: 'http' });
             logger.error(`An exception was thrown: ${error}`, { filename: 'http' });
             return Promise.reject(error);
         }
     }
+    handleMessageRequest(opts, urltotest, ret, reqTimeout, payload) {
+        return new Promise((resolve, reject) => {
+            logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`, { filename: 'http' });
+            var req = makeRequest(urltotest, http, https, ret);
+
+            req.setTimeout(reqTimeout, function () {
+                setTimeout(function () {
+                    logger.debug("... http node was not successfully executed.", { filename: 'http' });
+                    logger.error("No response was received within timeout period.", { filename: 'http' });
+                    return reject(new Error("common.notification.errors.no-response"));
+                }, 10);
+                req.abort();
+            });
+
+            req.on('error', function (err) {
+                logger.debug("... http node was not successfully executed.", { filename: 'http' });
+                logger.error(`Error was: ${err}`, { filename: 'http' });
+                return reject(err);
+            });
+            if (payload) {
+                req.write(payload);
+            }
+
+            req.end();
+        });
+    }
+
     makeRequest(urltotest,http,https,ret){
         return ((/^https/.test(urltotest)) ? https : http).request(opts, (res) => {
             // Force NodeJs to return a Buffer (instead of a string)
