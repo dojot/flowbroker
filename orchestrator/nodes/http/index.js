@@ -125,68 +125,71 @@ class DataHandler extends dojot.DataHandlerBase {
 
         try {
             // Fill opts variable. It will be used to send the request.
-            var opts = urllib.parse(url);
-            opts.method = method;
-            opts.headers = {};
-            var ctSet = "Content-Type"; // set default camel case
-            var clSet = "Content-Length";
-
-            if (httpRequest.headers) {
-                for (var v in httpRequest.headers) {
-                    if (httpRequest.headers.hasOwnProperty(v)) {
-                        var name = v.toLowerCase();
-                        if (name !== "content-type" && name !== "content-length") {
-                            // only normalise the known headers used later in this
-                            // function. Otherwise leave them alone.
-                            name = v;
-                        }
-                        else if (name === 'content-type') { ctSet = v; }
-                        else { clSet = v; }
-                        opts.headers[name] = httpRequest.headers[v];
-                    }
-                }
-            }
-
-            var payload = null;
-            if (typeof httpRequest.payload !== "undefined" && (method === "POST" || method === "PUT" || method === "PATCH")) {
-                if (typeof httpRequest.payload === "string" || Buffer.isBuffer(httpRequest.payload)) {
-                    payload = httpRequest.payload;
-                } else if (typeof httpRequest.payload === "number") {
-                    payload = httpRequest.payload + "";
-                } else {
-                    payload = JSON.stringify(httpRequest.payload);
-                    if (opts.headers['content-type'] === null) {
-                        opts.headers[ctSet] = "application/json";
-                    }
-                }
-
-                if (opts.headers['content-length'] === null) {
-                    if (Buffer.isBuffer(payload)) {
-                        opts.headers[clSet] = payload.length;
-                    } else {
-                        opts.headers[clSet] = Buffer.byteLength(payload);
-                    }
-                }
-            }
-            // revert to user supplied Capitalisation if needed.
-            if (opts.headers.hasOwnProperty('content-type') && (ctSet !== 'content-type')) {
-                opts.headers[ctSet] = opts.headers['content-type'];
-                delete opts.headers['content-type'];
-            }
-            if (opts.headers.hasOwnProperty('content-length') && (clSet !== 'content-length')) {
-                opts.headers[clSet] = opts.headers['content-length'];
-                delete opts.headers['content-length'];
-            }
-            var urltotest = url;
-
-            return this.handleMessageRequest(opts, urltotest, ret, reqTimeout, payload);
+            return this.handleMessageRequest(url, method, httpRequest, ret, reqTimeout);
         } catch (error) {
             logger.debug("... http node was not successfully executed.", { filename: 'http' });
             logger.error(`An exception was thrown: ${error}`, { filename: 'http' });
             return Promise.reject(error);
         }
     }
-    handleMessageRequest(opts, urltotest, ret, reqTimeout, payload) {
+    handleMessageRequest(url, method, httpRequest, ret, reqTimeout) {
+        var opts = urllib.parse(url);
+        opts.method = method;
+        opts.headers = {};
+        var ctSet = "Content-Type"; // set default camel case
+        var clSet = "Content-Length";
+
+        if (httpRequest.headers) {
+            for (var v in httpRequest.headers) {
+                if (httpRequest.headers.hasOwnProperty(v)) {
+                    var name = v.toLowerCase();
+                    if (name !== "content-type" && name !== "content-length") {
+                        // only normalise the known headers used later in this
+                        // function. Otherwise leave them alone.
+                        name = v;
+                    }
+                    else if (name === 'content-type') { ctSet = v; }
+                    else { clSet = v; }
+                    opts.headers[name] = httpRequest.headers[v];
+                }
+            }
+        }
+
+        var payload = null;
+        if (typeof httpRequest.payload !== "undefined" && (method === "POST" || method === "PUT" || method === "PATCH")) {
+            if (typeof httpRequest.payload === "string" || Buffer.isBuffer(httpRequest.payload)) {
+                payload = httpRequest.payload;
+            }
+            else if (typeof httpRequest.payload === "number") {
+                payload = httpRequest.payload + "";
+            }
+            else {
+                payload = JSON.stringify(httpRequest.payload);
+                if (opts.headers['content-type'] === null) {
+                    opts.headers[ctSet] = "application/json";
+                }
+            }
+
+            if (opts.headers['content-length'] === null) {
+                if (Buffer.isBuffer(payload)) {
+                    opts.headers[clSet] = payload.length;
+                }
+                else {
+                    opts.headers[clSet] = Buffer.byteLength(payload);
+                }
+            }
+        }
+        // revert to user supplied Capitalisation if needed.
+        if (opts.headers.hasOwnProperty('content-type') && (ctSet !== 'content-type')) {
+            opts.headers[ctSet] = opts.headers['content-type'];
+            delete opts.headers['content-type'];
+        }
+        if (opts.headers.hasOwnProperty('content-length') && (clSet !== 'content-length')) {
+            opts.headers[clSet] = opts.headers['content-length'];
+            delete opts.headers['content-length'];
+        }
+        var urltotest = url;
+
         return new Promise((resolve, reject) => {
             logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`, { filename: 'http' });
             var req = makeRequest(urltotest, http, https, ret);
