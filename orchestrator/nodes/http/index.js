@@ -158,6 +158,20 @@ class DataHandler extends dojot.DataHandlerBase {
             }
         }
 
+        var payload = this.handleMessageRequestPayload(httpRequest, method, opts, ctSet, clSet);
+        // revert to user supplied Capitalisation if needed.
+        if (opts.headers.hasOwnProperty('content-type') && (ctSet !== 'content-type')) {
+            opts.headers[ctSet] = opts.headers['content-type'];
+            delete opts.headers['content-type'];
+        }
+        if (opts.headers.hasOwnProperty('content-length') && (clSet !== 'content-length')) {
+            opts.headers[clSet] = opts.headers['content-length'];
+            delete opts.headers['content-length'];
+        }
+        return { opts, payload };
+    }
+
+    handleMessageRequestPayload(httpRequest, method, opts, ctSet, clSet) {
         var payload = null;
         if (typeof httpRequest.payload !== "undefined" && (method === "POST" || method === "PUT" || method === "PATCH")) {
             if (typeof httpRequest.payload === "string" || Buffer.isBuffer(httpRequest.payload)) {
@@ -182,16 +196,7 @@ class DataHandler extends dojot.DataHandlerBase {
                 }
             }
         }
-        // revert to user supplied Capitalisation if needed.
-        if (opts.headers.hasOwnProperty('content-type') && (ctSet !== 'content-type')) {
-            opts.headers[ctSet] = opts.headers['content-type'];
-            delete opts.headers['content-type'];
-        }
-        if (opts.headers.hasOwnProperty('content-length') && (clSet !== 'content-length')) {
-            opts.headers[clSet] = opts.headers['content-length'];
-            delete opts.headers['content-length'];
-        }
-        return { opts, payload };
+        return payload;
     }
 
     resolveRequest(opts, urltotest, ret, reqTimeout, payload) {
