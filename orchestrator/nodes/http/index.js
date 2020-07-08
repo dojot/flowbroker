@@ -106,14 +106,9 @@ class DataHandler extends dojot.DataHandlerBase {
         }
 
         // If no transport protocol was set, then assume http.
-        if (!/^.*:\/\//.test(url)) {
-            url = "http://" + url;
-        }
-
-        // Then, check whether it is correctly set - starts with http:// or https://
-        if (!/^(http|https):\/\//.test(url)) {
-            logger.debug("... http node was not successfully executed.", { filename: 'http' });
-            logger.error("Node has an invalid transport protocol (no http nor https).", { filename: 'http' });
+        var checkUrl;
+        ({ checkUrl, url } = this.testUrl(url));
+        if (checkUrl==false){
             return Promise.reject("httpin.errors.invalid-transport");
         }
 
@@ -135,6 +130,21 @@ class DataHandler extends dojot.DataHandlerBase {
             return Promise.reject(error);
         }
     }
+    testUrl(url) {
+        if (!/^.*:\/\//.test(url)) {
+            url = "http://" + url;
+        }
+
+        var checkUrl = true;
+        // Then, check whether it is correctly set - starts with http:// or https://
+        if (!/^(http|https):\/\//.test(url)) {
+            logger.debug("... http node was not successfully executed.", { filename: 'http' });
+            logger.error("Node has an invalid transport protocol (no http nor https).", { filename: 'http' });
+            checkUrl = false;
+        }
+        return { checkUrl, url };
+    }
+
     handleMessageRequest(url, method, httpRequest) {
         var opts = urllib.parse(url);
         opts.method = method;
