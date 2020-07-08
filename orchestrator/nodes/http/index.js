@@ -125,14 +125,17 @@ class DataHandler extends dojot.DataHandlerBase {
 
         try {
             // Fill opts variable. It will be used to send the request.
-            return this.handleMessageRequest(url, method, httpRequest, ret, reqTimeout);
+            var { opts, payload } = this.handleMessageRequest(url, method, httpRequest);
+            var urltotest = url;
+
+            return this.resolveRequest(opts, urltotest, ret, reqTimeout, payload);
         } catch (error) {
             logger.debug("... http node was not successfully executed.", { filename: 'http' });
             logger.error(`An exception was thrown: ${error}`, { filename: 'http' });
             return Promise.reject(error);
         }
     }
-    handleMessageRequest(url, method, httpRequest, ret, reqTimeout) {
+    handleMessageRequest(url, method, httpRequest) {
         var opts = urllib.parse(url);
         opts.method = method;
         opts.headers = {};
@@ -188,8 +191,10 @@ class DataHandler extends dojot.DataHandlerBase {
             opts.headers[clSet] = opts.headers['content-length'];
             delete opts.headers['content-length'];
         }
-        var urltotest = url;
+        return { opts, payload };
+    }
 
+    resolveRequest(opts, urltotest, ret, reqTimeout, payload) {
         return new Promise((resolve, reject) => {
             logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`, { filename: 'http' });
             var req = makeRequest(urltotest, http, https, ret);
