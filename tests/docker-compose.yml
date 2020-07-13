@@ -81,7 +81,7 @@ services:
       - flowbroker
 
   rabbitmq:
-    image: "rabbitmq:3.7.17"
+    image: rabbitmq:3.7.17
     restart: always
     logging:
       driver: json-file
@@ -94,7 +94,7 @@ services:
       - "25672:25672"
 
   zookeeper:
-    image: "zookeeper:3.4"
+    image: dojot/zookeeper:3.4
     logging:
       driver: json-file
       options:
@@ -154,7 +154,7 @@ services:
         max-size: 100m
 
   device-manager-redis:
-    image: "redis:5.0.5-alpine3.10"
+    image: dojot/redis:5.0.5-alpine3.10
     restart: always
     logging:
       driver: json-file
@@ -204,7 +204,7 @@ services:
     restart: on-failure
 
   apigw:
-    image: dojot/kong:v0.2.1
+    image: dojot/kong:v0.4.2
     restart: always
     depends_on:
       postgres:
@@ -218,7 +218,6 @@ services:
       KONG_PG_HOST: "postgres"
     volumes:
       - ./apigw/plugins/pep-kong:/plugins/pep-kong:Z
-      - ./apigw/plugins/mutualauthentication:/plugins/mutualauthentication:Z
     logging:
       driver: json-file
       options:
