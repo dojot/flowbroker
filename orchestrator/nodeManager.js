@@ -141,7 +141,7 @@ class NodeManager {
             // rollback
             if (containerId) {
               try {
-                await this.delRemoteNode(containerId);
+                await this.delRemoteNode(containerId,tenant);
               }
               catch (error) {
                 logger.error(`(Rollback) Failed to remove remote node ${tenant}/${item.id} (${error}). keep going ..`, { filename: 'nodeMngr' });
@@ -259,7 +259,7 @@ class NodeManager {
 
             let metadata = node.getMetadata();
             if(id !== metadata.name) {
-              this.delRemoteNode(containerId).catch((error) => {
+              this.delRemoteNode(containerId,tenant).catch((error) => {
                 logger.error(`Failed to remove remote node
                 ${tenant}/${id} (${error}). keep going ..`, { filename: 'nodeMngr' });
               });
@@ -279,7 +279,7 @@ class NodeManager {
               logger.debug(`Succeeded to add remote node with id ${id}`, { filename: 'nodeMngr' });
               resolve();
             }).catch((error) => {
-              this.delRemoteNode(containerId).catch((error) => {
+              this.delRemoteNode(containerId,tenant).catch((error) => {
                 logger.error(`Failed to remove remote node
                 ${tenant}/${id} (${error}). keep going ..`, { filename: 'nodeMngr' });
               });
@@ -288,7 +288,7 @@ class NodeManager {
               return reject(new Error(`Failed to persist remote node configuration.`));
             });
           }).catch((error) => {
-            this.delRemoteNode(containerId).catch((error) => {
+            this.delRemoteNode(containerId,tenant).catch((error) => {
               logger.error(`Failed to remove remote node
               ${tenant}/${id} (${error}). keep going ..`, { filename: 'nodeMngr' });
             });
