@@ -1,6 +1,7 @@
 'use strict';
 
 var config = require('./config');
+const { calculateQueue } = require('./util');
 const logger = require("@dojot/dojot-module-logger").logger;
 if (logger.setLevel(config.logging.level) !== 0) {
   logger.error(`Invalid logger level: ${config.logging.level}`);
@@ -63,24 +64,27 @@ let parser = new ArgumentParser({
   description: "Flow manager and executor for dojot"
 });
 parser.addArgument(['-f', '--flow'],
-                   {help:'Load flow definition from file. FLOW must be a valid JSON file, ' +
-                         'containing a valid node-red flow'});
+  {
+    help: 'Load flow definition from file. FLOW must be a valid JSON file, ' +
+      'containing a valid node-red flow'
+  });
 parser.addArgument(['-m', '--message'],
-                   {help:'Event that should trigger a flow execution run.'});
-parser.addArgument(['-d', '--device'], {help:'Device that generated the event.'});
-parser.addArgument(['-t', '--template'], {help:'Device template that generated the event.'});
-parser.addArgument(['-s', '--server'], {help:'Run as a daemon service (production)', action: "storeTrue"});
+  { help: 'Event that should trigger a flow execution run.' });
+parser.addArgument(['-d', '--device'], { help: 'Device that generated the event.' });
+parser.addArgument(['-t', '--template'], { help: 'Device template that generated the event.' });
+parser.addArgument(['-s', '--server'], { help: 'Run as a daemon service (production)', action: "storeTrue" });
 parser.addArgument(['-i', '--kill-idle'],
-                   {help:'If no more events are generaed within KILL_IDLE milliseconds, kill ' +
-                         'the process'});
+  {
+    help: 'If no more events are generaed within KILL_IDLE milliseconds, kill ' +
+      'the process'
+  });
 parser.addArgument(['-w', '--workers'],
-                   {
-                      defaultValue: 3,
-                      help: 'Number of workers (AMQP consumers) to spawn. This has a direct effect ' +
-                             'on the amount of messages per second a broker instance is able to ' +
-                             'handle'
-                   });
-parser.addArgument(['-v', '--verbose'], {action: 'storeTrue'});
+  {
+    help: 'Number of workers (AMQP consumers) to spawn. This has a direct effect ' +
+      'on the amount of messages per second a broker instance is able to ' +
+      'handle'
+  });
+parser.addArgument(['-v', '--verbose'], { action: 'storeTrue' });
 var args = parser.parseArgs();
 
 if (logger.setLevel(config.logging.level) !== 0) {
@@ -114,9 +118,12 @@ if (args.message && args.device) {
     }
   }
 
-  let producer;
+  let producer = [];
   try {
-    producer = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
+    //create a number of queues to produce on rabbitmq
+    for (let i = 0; i < config.amqp.queue_n; i++) {
+      producer.push(new amqp.AMQPProducer(config.amqp.queue_prefix + i, config.amqp.url, 2));
+    }
   } catch (error) {
     logAndKill(error);
   }
@@ -133,10 +140,14 @@ if (args.message && args.device) {
   }
 
   hasMessages = triggeredFlows.length > 0;
+
   for (let flow of triggeredFlows) {
     for (let node in flow.heads) {
       if (flow.heads.hasOwnProperty(node)) {
-        producer.sendMessage(JSON.stringify({
+        //calculates based on the device id in which queue
+        // processing should take place in rabbitmq
+        const queue = calculateQueue(args.device)
+        producer[queue].sendMessage(JSON.stringify({
           msg: message,
           node: node,
           flow: flow.id
@@ -168,8 +179,14 @@ contextManagerClient.init();
 
 let contextHandler = new ContextHandler(contextManagerClient);
 
-for (let i = 0; i < args.workers; i++) {
-  let exec = new Executor(contextHandler);
+//instantiate n executors, passing the executor number as a parameter,
+//to be used as a suffix of the rabbitmq queue name
+let queueNumber = config.amqp.queue_n;
+if (args.workers) {
+  queueNumber = args.workers
+}
+for (let i = 0; i < queueNumber; i++) {
+  let exec = new Executor(contextHandler, i);
   exec.init().then(loggerCallback).catch(errorCallback);
 }
 

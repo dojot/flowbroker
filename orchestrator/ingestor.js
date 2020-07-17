@@ -1,4 +1,5 @@
 var config = require('./config');
+const { calculateQueue } = require('./util');
 var amqp = require('./amqp');
 var util = require('util');
 var node = require('./nodeManager').Manager;
@@ -10,7 +11,7 @@ var auth = require("@dojot/dojot-module").Auth;
 
 function hotfixTemplateIdFormat(message) {
   let msg = JSON.parse(message);
-  if ( (msg.event === "create") || (msg.event === "update") ) {
+  if ((msg.event === "create") || (msg.event === "update")) {
     let templates = [];
     for (let templateId of msg.data.templates) {
       templates.push(templateId.toString());
@@ -37,7 +38,12 @@ module.exports = class DeviceIngestor {
 
     // rabbitmq
     this.preProcessEvent = this.preProcessEvent.bind(this);
-    this.amqpTaskProducer = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
+    this.queueN = config.amqp.queue_n;
+    this.amqpTaskProducer = [];
+    // create a number of queues to produce on rabbitmq
+    for (let i = 0; i < this.queueN; i++) {
+      this.amqpTaskProducer.push(new amqp.AMQPProducer(config.amqp.queue_prefix + i, config.amqp.url, 2));
+    }
     this.amqpEventProducer = new amqp.AMQPProducer(config.amqp.event_queue, config.amqp.url, 1);
     this.amqpEventConsumer = new amqp.AMQPConsumer(config.amqp.event_queue, this.preProcessEvent,
       config.amqp.url, 1);
@@ -114,14 +120,19 @@ module.exports = class DeviceIngestor {
         }
         logger.debug("... flow nodes initialized for current tenants.");
 
+        const amqpTaskProducerPromises = []
+        // create array of promises to connect each task producer to rabbitmq
+        for (let i = 0; i < this.queueN; i++) {
+          amqpTaskProducerPromises.push(this.amqpTaskProducer[i].connect());
+        }
         // Connects to RabbitMQ
-        return Promise.all([this.amqpTaskProducer.connect(),
-          this.amqpEventProducer.connect(), this.amqpEventConsumer.connect()]).then(() => {
-            logger.debug('Connections established with RabbitMQ!');
-          }).catch( errors => {
-            logger.error(`Failed to establish connections with RabbitMQ. Error = ${errors}`);
-            process.exit(1);
-          });
+        return Promise.all([...amqpTaskProducerPromises,
+        this.amqpEventProducer.connect(), this.amqpEventConsumer.connect()]).then(() => {
+          logger.debug('Connections established with RabbitMQ!');
+        }).catch(errors => {
+          logger.error(`Failed to establish connections with RabbitMQ. Error = ${errors}`);
+          process.exit(1);
+        });
       });
     });
   }
@@ -140,9 +151,13 @@ module.exports = class DeviceIngestor {
     // new events must have the lowest priority in the queue, in this way
     // events that are being processed can be finished first
     // This should work for single output nodes only!
+
+    // Calculates based on the device id in which queue
+    // processing should take place in rabbitmq
+    const queue = calculateQueue(metadata.deviceId)
     for (let output of node.wires) {
       for (let hop of output) {
-        let sendMsgPromise = this.amqpTaskProducer.sendMessage(JSON.stringify({
+        let sendMsgPromise = this.amqpTaskProducer[queue].sendMessage(JSON.stringify({
           hop: hop,
           message: message,
           flow: flow,
@@ -152,21 +167,21 @@ module.exports = class DeviceIngestor {
             timestamp: metadata.timestamp
           }
         }), 0);
-        let reflectPromise = sendMsgPromise.then(r => ({isFulfilled: true, data: r})).catch(r => ({isFulfilled: false, data: r}));
+        let reflectPromise = sendMsgPromise.then(r => ({ isFulfilled: true, data: r })).catch(r => ({ isFulfilled: false, data: r }));
         sendMsgPromises.push(reflectPromise);
       }
     }
 
     return Promise.all(sendMsgPromises).then((promises) => {
       for (let i = 0; i < promises.length; i++) {
-          let promise = promises[i];
-          if (!promise.isFulfilled) {
-            this.logger.warn(`Failed to publish some data. Error: ${promise.data}`);
-          }
+        let promise = promises[i];
+        if (!promise.isFulfilled) {
+          this.logger.warn(`Failed to publish some data. Error: ${promise.data}`);
+        }
       }
       return Promise.resolve();
     }).catch((error) => {
-      this.logger.Error(`Unexpect error on publish message. Error: ${error}`);
+      this.logger.error(`Unexpect error on publish message. Error: ${error.stack || error}`);
       return Promise.reject('Internal error');
     });
   }
@@ -186,40 +201,40 @@ module.exports = class DeviceIngestor {
         case 'device in':
         case 'device template in':
           if (source === 'publish') {
-            publishPromise = this._publish(node, { payload: message.data.attrs }, flow, {tenant, deviceId, timestamp});
+            publishPromise = this._publish(node, { payload: message.data.attrs }, flow, { tenant, deviceId, timestamp });
           }
-        break;
+          break;
         case 'event device in':
-          if ( (node.device_id === deviceId) && node['event_' + source] ) {
-            publishPromise = this._publish(node, { payload: message }, flow, {tenant, deviceId, timestamp});
+          if ((node.device_id === deviceId) && node['event_' + source]) {
+            publishPromise = this._publish(node, { payload: message }, flow, { tenant, deviceId, timestamp });
           }
-        break;
+          break;
         case 'event template in':
           if (templates.includes(node.template_id) && node['event_' + source]) {
-            publishPromise = this._publish(node, { payload: message }, flow, {tenant, deviceId, timestamp});
+            publishPromise = this._publish(node, { payload: message }, flow, { tenant, deviceId, timestamp });
           }
-        break;
+          break;
         default:
           logger.error(`Unsupported node type ${node.type}`);
           break;
       }
 
       if (publishPromise !== null) {
-        let reflectPromise = publishPromise.then(r => ({isFulfilled: true, data: r})).catch(r => ({isFulfilled: false, data: r}));
+        let reflectPromise = publishPromise.then(r => ({ isFulfilled: true, data: r })).catch(r => ({ isFulfilled: false, data: r }));
         publishPromises.push(reflectPromise);
       }
     }
 
     return Promise.all(publishPromises).then((promises) => {
       for (let i = 0; i < promises.length; i++) {
-          let promise = promises[i];
-          if (!promise.isFulfilled) {
-            this.logger.warn(`Failed to handle some flow. Error: ${promise.data}`);
-          }
+        let promise = promises[i];
+        if (!promise.isFulfilled) {
+          this.logger.warn(`Failed to handle some flow. Error: ${promise.data}`);
+        }
       }
       return Promise.resolve();
     }).catch((error) => {
-      this.logger.Error(`Unexpected error on handle some flow. Error: ${error}`);
+      this.logger.error(`Unexpected error on handle some flow. Error: ${error.stack || error}`);
       return Promise.reject('Internal error');
     });
   }
@@ -251,20 +266,21 @@ module.exports = class DeviceIngestor {
       for (let flow of Object.values(uniqueFlows)) {
         let promise = this._handleFlow(tenant, deviceId, timestamp, templates, event, flow, source);
 
-        let reflectPromise = promise.then(r => ({isFulfilled: true, data: r})).catch(r => ({isFulfilled: false, data: r}));
+        let reflectPromise = promise.then(r => ({ isFulfilled: true, data: r })).catch(r => ({ isFulfilled: false, data: r }));
         handleFlowPromises.push(reflectPromise);
       }
-      
+
       return Promise.all(handleFlowPromises).then((promises) => {
         for (let i = 0; i < promises.length; i++) {
-            let promise = promises[i];
-            if (!promise.isFulfilled) {
-              this.logger.warn(`Failed to handle some flow. Error: ${promise.data}`);
-            }
+          let promise = promises[i];
+          if (!promise.isFulfilled) {
+            this.logger.warn(`Failed to handle some flow. Error: ${promise.data}`);
+          }
         }
         return Promise.resolve();
       }).catch((error) => {
-        this.logger.Error(`Unexpected error on handle some flow. Error: ${error}`);
+
+        this.logger.error(`Unexpected error on handle some flow. Error: ${error.stack || error}`);
         return Promise.reject('Internal error');
       });
     });
@@ -281,7 +297,7 @@ module.exports = class DeviceIngestor {
       let event = JSON.parse(eventStringfied);
       let preProcessPromise;
 
-      switch(event.source){
+      switch (event.source) {
         case 'device-manager':
           preProcessPromise = this._preProcessDeviceManagerEvent(event.message);
           break;
@@ -293,14 +309,14 @@ module.exports = class DeviceIngestor {
           return ack();
       }
 
-      preProcessPromise.then( () => {
+      preProcessPromise.then(() => {
         return ack();
-      }).catch( error => {
-        logger.error(`Problem on pre process event. Reason: ${error}`);
+      }).catch(error => {
+        logger.error(`Problem on pre process event. Reason: ${error.stack || error}`);
         return ack();
       });
     } catch (error) {
-      logger.error(`Problem on pre process event. Reason: ${error}`);
+      logger.error(`Problem on pre process event. Reason: ${error.stack || error}`);
       return ack();
     }
   }
@@ -317,7 +333,7 @@ module.exports = class DeviceIngestor {
       delete message.meta;
       delete message.metadata.service;
 
-      switch(message.event) {
+      switch (message.event) {
         case 'create':
         case 'update':
           // we really don't care if the data was saved successfully into the
@@ -336,8 +352,8 @@ module.exports = class DeviceIngestor {
             }).then(() => {
               return this._handleEvent(message.metadata.tenant, message.data.id, undefined, deviceData.templates, message.event, message);
             });
-          }).catch( (error) => {
-            logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
+          }).catch((error) => {
+            logger.error(`[ingestor] device-manager event ingestion failed: ${error.stack || error}`);
             return Promise.reject('Failed to processe device manager delete message');
           });
         case 'configure':
@@ -349,16 +365,16 @@ module.exports = class DeviceIngestor {
               }
             }
             return this._handleEvent(message.metadata.tenant, message.data.id, undefined, deviceData.templates, message.event, message);
-          }).catch( (error) => {
-            logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
+          }).catch((error) => {
+            logger.error(`[ingestor] device-manager event ingestion failed: ${error.stack || error}`);
             return Promise.reject('Failed to processe device manager configure message');
           });
         default:
-        logger.warn(`[ingestor] unsupported device manager event ${message.event}`);
-        return Promise.reject('Unsupported device manager event');
+          logger.warn(`[ingestor] unsupported device manager event ${message.event}`);
+          return Promise.reject('Unsupported device manager event');
       }
     } catch (error) {
-      logger.warn(`[ingestor] device-manager event ingestion failed: `, error.message);
+      logger.warn(`[ingestor] device-manager event ingestion failed: `, error.stack || error.message);
       return Promise.reject('Failed to processe device manager event');
     }
   }
@@ -382,19 +398,19 @@ module.exports = class DeviceIngestor {
     }
 
     return this.deviceCache.getDeviceInfo(message.metadata.tenant, message.data.id)
-    .then((deviceData) => {
+      .then((deviceData) => {
 
-      if (deviceData.staticAttrs) {
-        // Copy static attrs to event.attrs
-        for (let attr in deviceData.staticAttrs) {
-          message.data.attrs[attr] = deviceData.staticAttrs[attr].value;
+        if (deviceData.staticAttrs) {
+          // Copy static attrs to event.attrs
+          for (let attr in deviceData.staticAttrs) {
+            message.data.attrs[attr] = deviceData.staticAttrs[attr].value;
+          }
         }
-      }
-      return this._handleEvent(message.metadata.tenant, message.data.id, message.metadata.timestamp, deviceData.templates, message.event, message);
-    }).catch((error) => {
-      logger.error(`[ingestor] device-manager event ingestion failed: ${error}`);
-      return Promise.reject('Failed to process device event');
-    });
+        return this._handleEvent(message.metadata.tenant, message.data.id, message.metadata.timestamp, deviceData.templates, message.event, message);
+      }).catch((error) => {
+        logger.error(`[ingestor] device-manager event ingestion failed: ${error.stack || error}`);
+        return Promise.reject('Failed to process device event');
+      });
 
   }
 
@@ -404,17 +420,17 @@ module.exports = class DeviceIngestor {
    */
   _transformDeviceEvent(event) {
     let attrs = {};
-    for (let template of Object.keys(event.data.attrs) ) {
-        let templateAttrs = event.data.attrs[template];
-        for (let attr of templateAttrs) {
-            let label = attr.label;
-            delete attr.label;
-            attrs[label] = attr;
-        }
+    for (let template of Object.keys(event.data.attrs)) {
+      let templateAttrs = event.data.attrs[template];
+      for (let attr of templateAttrs) {
+        let label = attr.label;
+        delete attr.label;
+        attrs[label] = attr;
+      }
     }
     delete event.data.attrs;
     event.data.attrs = attrs;
     return event;
-}
+  }
 
 };

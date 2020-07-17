@@ -6,11 +6,17 @@ var nodes = require('./nodeManager').Manager;
 var logger = require("@dojot/dojot-module-logger").logger;
 
 module.exports = class Executor {
-    constructor(contextHandler) {
+
+    /**
+     *
+     * @param {*} contextHandler
+     * @param {number|string} suffixQueueName Suffix to be added to the queue name
+     */
+    constructor(contextHandler, suffixQueueName) {
         logger.debug('[executor] initializing ...');
         this.hop = this.hop.bind(this);
-        this.producer = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
-        this.consumer = new amqp.AMQPConsumer(config.amqp.queue, this.hop, config.amqp.url, 2);
+        this.producer = new amqp.AMQPProducer(config.amqp.queue_prefix + suffixQueueName, config.amqp.url, 2);
+        this.consumer = new amqp.AMQPConsumer(config.amqp.queue_prefix + suffixQueueName, this.hop, config.amqp.url, 2);
         this.contextHandler = contextHandler;
     }
 
@@ -75,7 +81,7 @@ module.exports = class Executor {
                                     metadata: event.metadata
                                 }), 1);
 
-                                let reflectPromise = sendMsgPromise.then(r => ({isFulfilled: true, data: r})).catch(r => ({isFulfilled: false, data: r}));
+                                let reflectPromise = sendMsgPromise.then(r => ({ isFulfilled: true, data: r })).catch(r => ({ isFulfilled: false, data: r }));
                                 sendMsgPromises.push(reflectPromise);
                             }
                         }

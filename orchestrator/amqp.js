@@ -5,6 +5,7 @@
  */
 var amqp = require('amqplib');
 var config = require('./config');
+const util = require('util');
 const logger = require("@dojot/dojot-module-logger").logger;
 
 class AMQPProducer {
@@ -19,7 +20,6 @@ class AMQPProducer {
   async connect() {
     return amqp.connect(this.url).then((connection) => {
       this.connection = connection;
-
       return this.connection.createConfirmChannel().then((channel) => {
         this.channel = channel;
         channel.prefetch(1); // only 1 unacked msg
@@ -81,11 +81,11 @@ class AMQPConsumer {
               channel.ack(amqpCtx);
             });
           }).then((consumerTag) => {
-            logger.info(`consumer ${consumerTag} ready ... `, { filename: 'amqp' });
+            logger.info(`consumer ${util.inspect(consumerTag, { depth: null })} ready ... `, { filename: 'amqp' });
             return Promise.resolve();
           }).catch((error) => {
             logger.error(`Failed to consume a channel. Error: ${error}`, { filename: 'amqp' });
-            return Promise.reject('Cannot connect to RabbitMQ');    
+            return Promise.reject('Cannot connect to RabbitMQ');
           });
         }).catch((error) => {
           logger.error(`Failed to assert a channel. Error: ${error}`, { filename: 'amqp' });
