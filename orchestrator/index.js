@@ -106,6 +106,12 @@ if (args.kill_idle) {
 
   new IdleManager(args.kill_idle);
 }
+//instantiate n executors and producers, passing the executor number as a parameter,
+//to be used as a suffix of the rabbitmq queue name
+let queueNumber = config.amqp.queue_n;
+if (args.workers) {
+  queueNumber = args.workers
+}
 
 let hasMessages = false;
 if (args.message && args.device) {
@@ -121,7 +127,7 @@ if (args.message && args.device) {
   let producer = [];
   try {
     //create a number of queues to produce on rabbitmq
-    for (let i = 0; i < config.amqp.queue_n; i++) {
+    for (let i = 0; i < queueNumber; i++) {
       producer.push(new amqp.AMQPProducer(config.amqp.queue_prefix + i, config.amqp.url, 2));
     }
   } catch (error) {
@@ -146,7 +152,7 @@ if (args.message && args.device) {
       if (flow.heads.hasOwnProperty(node)) {
         //calculates based on the device id in which queue
         // processing should take place in rabbitmq
-        const queue = calculateQueue(args.device)
+        const queue = calculateQueue(args.device, queueNumber)
         producer[queue].sendMessage(JSON.stringify({
           msg: message,
           node: node,
@@ -179,12 +185,7 @@ contextManagerClient.init();
 
 let contextHandler = new ContextHandler(contextManagerClient);
 
-//instantiate n executors, passing the executor number as a parameter,
-//to be used as a suffix of the rabbitmq queue name
-let queueNumber = config.amqp.queue_n;
-if (args.workers) {
-  queueNumber = args.workers
-}
+
 for (let i = 0; i < queueNumber; i++) {
   let exec = new Executor(contextHandler, i);
   exec.init().then(loggerCallback).catch(errorCallback);
