@@ -15,8 +15,8 @@ module.exports = class Executor {
     constructor(contextHandler, suffixQueueName) {
         logger.debug('[executor] initializing ...');
         this.hop = this.hop.bind(this);
-        this.producer = new amqp.AMQPProducer(config.amqp.queue_prefix + suffixQueueName, config.amqp.url, 2);
-        this.consumer = new amqp.AMQPConsumer(config.amqp.queue_prefix + suffixQueueName, this.hop, config.amqp.url, 2);
+        this.producer = new amqp.AMQPProducer(config.amqp.task_queue_prefix + suffixQueueName, config.amqp.url, 2);
+        this.consumer = new amqp.AMQPConsumer(config.amqp.task_queue_prefix + suffixQueueName, this.hop, config.amqp.url, 2);
         this.contextHandler = contextHandler;
     }
 

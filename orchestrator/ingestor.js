@@ -37,16 +37,24 @@ module.exports = class DeviceIngestor {
     this.fmBuiler = fmBuilder;
 
     // rabbitmq
-    this.preProcessEvent = this.preProcessEvent.bind(this);
-    this.queueN = config.amqp.queue_n;
+    // task queue
+    this.taskQueueN = config.amqp.task_queue_n;
     this.amqpTaskProducer = [];
-    // create a number of queues to produce on rabbitmq
-    for (let i = 0; i < this.queueN; i++) {
-      this.amqpTaskProducer.push(new amqp.AMQPProducer(config.amqp.queue_prefix + i, config.amqp.url, 2));
+    for (let i = 0; i < this.taskQueueN; i++) {
+      this.amqpTaskProducer.push(new amqp.AMQPProducer(config.amqp.task_queue_prefix + i,
+        config.amqp.url, 2));
     }
-    this.amqpEventProducer = new amqp.AMQPProducer(config.amqp.event_queue, config.amqp.url, 1);
-    this.amqpEventConsumer = new amqp.AMQPConsumer(config.amqp.event_queue, this.preProcessEvent,
-      config.amqp.url, 1);
+    // event queue
+    this.preProcessEvent = this.preProcessEvent.bind(this);
+    this.eventQueueN = config.amqp.event_queue_n;
+    this.amqpEventProducer = [];
+    this.amqpEventConsumer = [];
+    for (let i = 0; i < this.eventQueueN; i++) {
+      this.amqpEventProducer.push(new amqp.AMQPProducer(config.amqp.event_queue_prefix + i,
+        config.amqp.url, 1));
+      this.amqpEventConsumer.push(new amqp.AMQPConsumer(config.amqp.event_queue_prefix + i,
+        this.preProcessEvent, config.amqp.url, 1));
+    }
 
     // kafka messenger
     this.kafkaMessenger = kafkaMessenger;
@@ -120,14 +128,22 @@ module.exports = class DeviceIngestor {
         }
         logger.debug("... flow nodes initialized for current tenants.");
 
-        const amqpTaskProducerPromises = []
-        // create array of promises to connect each task producer to rabbitmq
-        for (let i = 0; i < this.queueN; i++) {
+        const amqpTaskProducerPromises = [];
+        const amqpEventProducerPromises = [];
+        const amqpEventConsumerPromises = [];
+        // create array of promises to connect to rabbitmq
+        for (let i = 0; i < this.taskQueueN; i++) {
           amqpTaskProducerPromises.push(this.amqpTaskProducer[i].connect());
         }
+        for (let i = 0; i < this.eventQueueN; i++) {
+          amqpEventProducerPromises.push(this.amqpEventProducer[i].connect());
+          amqpEventConsumerPromises.push(this.amqpEventConsumer[i].connect());
+        }
+
         // Connects to RabbitMQ
         return Promise.all([...amqpTaskProducerPromises,
-        this.amqpEventProducer.connect(), this.amqpEventConsumer.connect()]).then(() => {
+          ...amqpEventProducerPromises,
+          ...amqpEventConsumerPromises]).then(() => {
           logger.debug('Connections established with RabbitMQ!');
         }).catch(errors => {
           logger.error(`Failed to establish connections with RabbitMQ. Error = ${errors}`);
@@ -154,7 +170,7 @@ module.exports = class DeviceIngestor {
 
     // Calculates based on the device id in which queue
     // processing should take place in rabbitmq
-    const queue = calculateQueue(metadata.deviceId)
+    const queue = calculateQueue(metadata.deviceId, this.taskQueueN)
     for (let output of node.wires) {
       for (let hop of output) {
         let sendMsgPromise = this.amqpTaskProducer[queue].sendMessage(JSON.stringify({
@@ -287,7 +303,25 @@ module.exports = class DeviceIngestor {
   }
 
   _enqueueEvent(event) {
-    return this.amqpEventProducer.sendMessage(JSON.stringify(event));
+    // try to parse the message and get device id
+    let deviceId = null;
+    try {
+      const message = JSON.parse(event.message);
+      // try to get the device identifier
+      if (event.source === 'device') {
+        deviceId = message.metadata.deviceid;
+      }
+      else if (event.source === 'device-manager') {
+        deviceId = message.data.id;
+      }
+    } catch (error) {
+      return Promise.reject(`Failed to parse event to be enqueued. Error: ${error.message}`);
+    }
+
+    // compute the queue Index
+    const queueIndex = calculateQueue(deviceId, this.eventQueueN);
+    logger.info(`Mapping device ${deviceId} ===into===> event_queue${queueIndex}`);
+    return this.amqpEventProducer[queueIndex].sendMessage(JSON.stringify(event));
   }
 
   preProcessEvent(eventStringfied, ack) {

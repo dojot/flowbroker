@@ -22,9 +22,10 @@ let config = {
     },
     amqp: {
         url: process.env.AMQP_URL || "amqp://rabbitmq",
-        queue_prefix: process.env.AMQP_PREFIX_TASK_QUEUE || "task_queue",
-        queue_n: process.env.AMQP_TASK_QUEUE_N || 10,
-        event_queue: process.env.AMQP_EVENT_QUEUE || "event_queue"
+        task_queue_prefix: process.env.AMQP_PREFIX_TASK_QUEUE || "task_queue",
+        task_queue_n: process.env.AMQP_TASK_QUEUE_N || 10,
+        event_queue_prefix: process.env.AMQP_PREFIX_EVENT_QUEUE || "event_queue",
+        event_queue_n: process.env.AMQP_EVENT_QUEUE_N || 10,
     },
     deploy: {
         engine: process.env.DEPLOY_ENGINE || "kubernetes",

@@ -5,6 +5,6 @@ const config = require('./config');
  * @param {String} deviceID in hexadecimal
  * @returns {Number} queue number
  */
-const calculateQueue = (deviceID, queueNumber = config.amqp.queue_n) => (parseInt(deviceID, 16) % queueNumber || 0);
+const calculateQueue = (deviceID, queueNumber = 1) => (parseInt(deviceID, 16) % queueNumber || 0);
 
 module.exports = { calculateQueue }
