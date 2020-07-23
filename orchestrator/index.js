@@ -78,12 +78,6 @@ parser.addArgument(['-i', '--kill-idle'],
     help: 'If no more events are generaed within KILL_IDLE milliseconds, kill ' +
       'the process'
   });
-parser.addArgument(['-w', '--workers'],
-  {
-    help: 'Number of workers (AMQP consumers) to spawn. This has a direct effect ' +
-      'on the amount of messages per second a broker instance is able to ' +
-      'handle'
-  });
 parser.addArgument(['-v', '--verbose'], { action: 'storeTrue' });
 var args = parser.parseArgs();
 
