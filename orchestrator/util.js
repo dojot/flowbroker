@@ -1,5 +1,3 @@
-const config = require('./config');
-
 /**
  * Calculates based on the device id in which queue processing should take place in rabbitmq
  * @param {String} deviceID in hexadecimal
