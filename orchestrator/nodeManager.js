@@ -283,7 +283,7 @@ class NodeManager {
               logger.debug(`Succeeded to add remote node with id ${id}`, TAG);
               resolve();
             }).catch((error) => {
-              this.delRemoteNode(containerId).catch((error) => {
+              this.delRemoteNode(containerId, tenant).catch((error) => {
                 logger.error(`Failed to remove remote node
                 ${tenant}/${id} (${error}). keep going ..`, TAG);
               });
@@ -292,7 +292,7 @@ class NodeManager {
               return reject(new Error(`Failed to persist remote node configuration.`));
             });
           }).catch((error) => {
-            this.delRemoteNode(containerId).catch((error) => {
+            this.delRemoteNode(containerId, tenant).catch((error) => {
               logger.error(`Failed to remove remote node
               ${tenant}/${id} (${error}). keep going ..`, TAG);
             });
