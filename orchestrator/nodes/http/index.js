@@ -83,9 +83,11 @@ class DataHandler extends dojot.DataHandlerBase {
         try {
             httpRequest = JSON.parse(this._get(config.body, message));
         } catch (e) {
-            logger.debug("... http node was not successfully executed.", { filename: 'http' });
-            logger.error(`Error while retrieving http payload: ${e}`, { filename: 'http' });
-            return Promise.reject("httpin.errors.no-body");
+            if (config.method !== "GET"){
+                logger.debug("... http node was not successfully executed.", { filename: 'http' });
+                logger.error(`Error while retrieving http payload: ${e}`, { filename: 'http' });
+                return Promise.reject("httpin.errors.no-body");
+            }
         }
 
 
