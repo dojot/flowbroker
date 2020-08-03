@@ -320,7 +320,7 @@ module.exports = class DeviceIngestor {
 
     // compute the queue Index
     const queueIndex = calculateQueue(deviceId, this.eventQueueN);
-    logger.info(`Mapping device ${deviceId} ===into===> event_queue${queueIndex}`);
+    logger.debug(`Mapping device ${deviceId} ===into===> event_queue${queueIndex}`);
     return this.amqpEventProducer[queueIndex].sendMessage(JSON.stringify(event));
   }
 
