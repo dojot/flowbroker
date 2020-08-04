@@ -204,7 +204,7 @@ services:
     restart: on-failure
 
   apigw:
-    image: dojot/kong:v0.2.1
+    image: dojot/kong:v0.4.2
     restart: always
     depends_on:
       postgres:
