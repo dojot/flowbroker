@@ -1,293 +1,420 @@
 "use strict";
 
-var path = require('path');
+const fs = require('fs');
+
+const change = require('./nodes/change/index').Handler;
+//disable email node for now
+//const email = require('./nodes/email/index').Handler;
+const geo = require('./nodes/geo/index').Handler;
+const http = require('./nodes/http/index').Handler;
+const ftp = require('./nodes/ftp/index').Handler;
+const select = require('./nodes/switch/index').Handler;
+const template = require('./nodes/template/index').Handler;
+const device_in = require('./nodes/device-in/device-in').Handler;
+const event_device_in = require('./nodes/event-device-in/event-device-in').Handler;
+const event_template_in = require('./nodes/event-template-in/event-template-in').Handler;
+const template_in = require('./nodes/template-in/template-in').Handler;
+const actuate = require('./nodes/actuate/actuate').Handler;
+const multi_actuate = require('./nodes/multi-actuate/multi_actuate').Handler;
+const device_out = require('./nodes/device-out/device-out').Handler;
+const multi_device_out = require('./nodes/multi-device-out/multi-device-out').Handler;
+const publish_ftp = require('./nodes/publish-ftp/index').Handler;
+const notification = require('./nodes/notification/index').Handler;
+const get_context = require('./nodes/get-context/get-context').Handler;
+const cron = require('./nodes/cron/cron').Handler;
+const cron_batch = require('./nodes/cron-batch/cron-batch').Handler;
+const dockerRemote = require('./nodes/dockerComposeRemoteNode/index').Handler;
+const k8sRemote = require('./nodes/kubernetesRemoteNode/index').Handler;
+const cumulative_sum = require('./nodes/cumulative-sum/cumulative-sum').Handler;
+const merge_data = require('./nodes/merge-data/merge-data').Handler;
+const Publisher = require('./publisher');
 const logger = require("@dojot/dojot-module-logger").logger;
 
-var http = require("follow-redirects").http;
-var https = require("follow-redirects").https;
-var urllib = require("url");
-var mustache = require("mustache");
-var util = require("util");
+const config = require("./config");
+const MongoManager = require('./mongodb');
 
-var dojot = require('@dojot/flow-node');
+const TAG = { filename: 'nodeMngr' };
 
-// Sample node implementation
-class DataHandler extends dojot.DataHandlerBase {
-    constructor() {
-        super();
+class NodeManager {
+
+  /**
+   * Cosntructor
+   * @param {*} engine docker container manager (docker or kubernetes)
+   * @param {*} options
+   */
+  constructor(engine, options) {
+    // processing nodes (by tenant)
+    this.nodes = {};
+    // mongodb collections for persisting remote nodes' metadata (by tenant)
+    this.collection = {};
+    // engine: docker or kubernetes
+    this.engine = engine;
+
+    switch (engine) {
+      case "docker":
+        if (!options.socketPath) {
+          logger.error(`Missing docker socket path configuration.`, TAG);
+          throw new Error('Missing socketPath configuration');
+        }
+        this.socketPath = options.socketPath;
+        if (!options.network) {
+          logger.error(`Missing docker network configuration.`);
+          throw new Error('Missing network configuration');
+        }
+        this.network = options.network;
+        break;
+      case "kubernetes":
+        // for now there is not option for kubernetes
+        break;
+      default:
+        throw new Error('invalid engine: ' + engine);
     }
 
-    /**
-     * Returns full path to html file
-     * @return {string} String with the path to the node representation file
-     */
-    getNodeRepresentationPath() {
-        return path.resolve(__dirname, 'http.html');
-    }
+    logger.debug(`Node manager is using the ${engine} engine`, TAG);
+  }
 
-    /**
-     * Returns node metadata information
-     * This may be used by orchestrator as a liveliness check
-     * @return {object} Metadata object
-     */
-    getMetadata() {
-        return {
-            'id': 'dojot/http',
-            'name': 'http',
-            'module': 'dojot',
-            'version': '1.0.0',
-        };
-    }
+  /**
+   * Creates a mongodb collection for persinting remote node configurations (promise).
+   *
+   * @param {*} tenant identifier of the tenant.
+   */
+  _createMongoDBCollection(tenant) {
+    return MongoManager.get().then((client) => {
+      let collection = client.db(`flowbroker_${tenant}`).collection('remoteNode');
+      return collection;
+    }).catch(() => {
+      throw new Error(`Failed to create mongoDB collection for tenant ${tenant}.`);
+    });
+  }
 
-
-    /**
-     * Check if the node configuration is valid
-     * @param {object} config  Configuration data for the node
-     * @return {[boolean, object]} Boolean variable stating if the configuration is valid or not and error message
-     */
-    checkConfig() {
-
-        return [true, null];
-    }
-
-    /**
-     * Returns full path to locales
-     * @returns String
-     */
-    getLocalesPath() {
-        return path.resolve(__dirname, './locales');
-    }
-
-    /**
-     * Statelessly handle a single given message, using given node configuration parameters
-     *
-     * This method should perform all computation required by the node, transforming its inputs
-     * into outputs. When such processing is done, the node should issue a call to the provided
-     * callback, notifying either failure to process the message with given config, or the set
-     * of transformed messages to be sent to the flow's next hop.
-     *
-     * @param  {[type]}       config   Node configuration to be used for this message
-     * @param  {[type]}       message  Message to be processed
-     * @return {[undefined]}
-     */
-    handleMessage(config, message) {
-        logger.debug("Executing http node...", { filename: 'http' });
-        var nodeUrl = config.url;
-        var isTemplatedUrl = (nodeUrl || "");
-        isTemplatedUrl = isTemplatedUrl.indexOf("{{") !== -1;
-        var nodeMethod = config.method || "GET";
-        var ret = config.ret || "txt";
-        var reqTimeout = 120000;
-        var url = nodeUrl || message.url;
-        var httpRequest;
-
-        try {
-            httpRequest = JSON.parse(this._get(config.body, message));
-        } catch (e) {
-            if (config.method !== "GET"){
-                logger.debug("... http node was not successfully executed.", { filename: 'http' });
-                logger.error(`Error while retrieving http payload: ${e}`, { filename: 'http' });
-                return Promise.reject("httpin.errors.no-body");
+  /**
+   * Loads remote nodes for the given tenant.
+   *
+   * @param {*} tenant identifier of the tenant.
+   */
+  _loadRemoteNodes(tenant) {
+    return new Promise((resolve, reject) => {
+      logger.debug(`Loading remote nodes for tenant ${tenant} ...`, TAG);
+      this.collection[tenant].find().toArray()
+        .then((values) => {
+          values.forEach(async (item) => {
+            logger.debug(`Loading remote node ${JSON.stringify(item)}.`, TAG);
+            let node;
+            if (config.deploy.engine === "docker") {
+              node = new dockerRemote(item.image, tenant + item.id,
+                this.socketPath, this.network, item.containerId);
             }
-        }
+            else if (config.deploy.engine === "kubernetes") {
+              node = new k8sRemote(item.image, tenant + item.id);
+            }
 
+            if (!node) {
+              return reject(new Error('Failed to instantiate handler for remote node ${item.id}.'));
+            }
 
-        // Pre-process URL.
+            //Note: The current implementation is very naive, it tries to remove/create
+            //      existing remote nodes. Nevertheless, the most appropriate solution is to handle
+            //      them according to the status of their containers. This demands changes
+            //      in the docker-compose and kubernetes libraries.
+            node.deinit();
+            if (config.deploy.engine === "docker") {
+              try {
+                logger.debug(`Trying to remove docker container ${item.containerId}`, TAG);
+                await node.remove(item.containerId);
+                logger.debug(`Succeeded to remove container.`, TAG);
+              }
+              catch (error) {
+                logger.error(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`, TAG);
+              }
+            }
 
-        // First, resolve URL if it uses a mustache string.
-        if (isTemplatedUrl) {
-            url = mustache.render(nodeUrl, message);
-        }
-
-        if (!url) {
-            logger.debug("... http node was not successfully executed.", { filename: 'http' });
-            logger.error("Node has no URL set.", { filename: 'http' });
-            return Promise.reject("httpin.errors.no-url");
-        }
-
-        // If no transport protocol was set, then assume http.
-        var checkUrl;
-        ({ checkUrl, url } = this.testUrl(url));
-        if (checkUrl==false){
-            return Promise.reject("httpin.errors.invalid-transport");
-        }
-
-        var method = nodeMethod.toUpperCase() || "GET";
-
-        if (message.method && config.method && (config.method === "use")) {
-            method = message.method.toUpperCase();
-        }
-
-        try {
-            // Fill opts variable. It will be used to send the request.
-            var { opts, payload } = this.handleMessageRequest(url, method, httpRequest);
-            var urltotest = url;
-
-            return this.resolveRequest(opts, urltotest, ret, reqTimeout, payload);
-        } catch (error) {
-            logger.debug("... http node was not successfully executed.", { filename: 'http' });
-            logger.error(`An exception was thrown: ${error}`, { filename: 'http' });
-            return Promise.reject(error);
-        }
-    }
-    testUrl(url) {
-        if (!/^.*:\/\//.test(url)) {
-            url = "http://" + url;
-        }
-
-        var checkUrl = true;
-        // Then, check whether it is correctly set - starts with http:// or https://
-        if (!/^(http|https):\/\//.test(url)) {
-            logger.debug("... http node was not successfully executed.", { filename: 'http' });
-            logger.error("Node has an invalid transport protocol (no http nor https).", { filename: 'http' });
-            checkUrl = false;
-        }
-        return { checkUrl, url };
-    }
-
-    handleMessageRequest(url, method, httpRequest) {
-        var opts = urllib.parse(url);
-        opts.method = method;
-        opts.headers = {};
-        var ctSet = "Content-Type"; // set default camel case
-        var clSet = "Content-Length";
-
-        if (httpRequest.headers) {
-            for (var v in httpRequest.headers) {
-                if (httpRequest.headers.hasOwnProperty(v)) {
-                    var name = v.toLowerCase();
-                    if (name !== "content-type" && name !== "content-length") {
-                        // only normalise the known headers used later in this
-                        // function. Otherwise leave them alone.
-                        name = v;
-                    }
-                    else if (name === 'content-type') { ctSet = v; }
-                    else { clSet = v; }
-                    opts.headers[name] = httpRequest.headers[v];
+            // re-create container
+            let containerId;
+            try {
+              containerId = await node.create();
+              await node.init();
+              // update map
+              this.nodes[tenant][item.id] = node;
+              //update database
+              await this.collection[tenant].updateOne({ _id: item._id },
+                { $set: { containerId: containerId } });
+            }
+            catch (error) {
+              logger.error(`Failed to load remote node ${tenant}/${item.id} (${JSON.stringify(error)})`, TAG);
+              // rollback
+              if (containerId) {
+                try {
+                  await this.delRemoteNode(containerId);
                 }
-            }
-        }
-
-        var payload = this.handleMessageRequestPayload(httpRequest, method, opts, ctSet, clSet);
-        // revert to user supplied Capitalisation if needed.
-        if (opts.headers.hasOwnProperty('content-type') && (ctSet !== 'content-type')) {
-            opts.headers[ctSet] = opts.headers['content-type'];
-            delete opts.headers['content-type'];
-        }
-        if (opts.headers.hasOwnProperty('content-length') && (clSet !== 'content-length')) {
-            opts.headers[clSet] = opts.headers['content-length'];
-            delete opts.headers['content-length'];
-        }
-        return { opts, payload };
-    }
-
-    handleMessageRequestPayload(httpRequest, method, opts, ctSet, clSet) {
-        var payload = null;
-        if (typeof httpRequest.payload !== "undefined" && (method === "POST" || method === "PUT" || method === "PATCH")) {
-            if (typeof httpRequest.payload === "string" || Buffer.isBuffer(httpRequest.payload)) {
-                payload = httpRequest.payload;
-            }
-            else if (typeof httpRequest.payload === "number") {
-                payload = httpRequest.payload + "";
-            }
-            else {
-                payload = JSON.stringify(httpRequest.payload);
-                if (opts.headers['content-type'] === null) {
-                    opts.headers[ctSet] = "application/json";
+                catch (error) {
+                  logger.error(`(Rollback) Failed to remove remote node ${tenant}/${item.id} (${error}). keep going ..`, TAG);
                 }
+              }
+              return reject(new Error(`Failed to load remote node ${tenant}/${item.id}.`));
             }
-
-            if (opts.headers['content-length'] === null) {
-                if (Buffer.isBuffer(payload)) {
-                    opts.headers[clSet] = payload.length;
-                }
-                else {
-                    opts.headers[clSet] = Buffer.byteLength(payload);
-                }
-            }
-        }
-        return payload;
-    }
-
-    resolveRequest(opts, urltotest, ret, reqTimeout, payload) {
-        return new Promise((resolve, reject) => {
-            logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`, { filename: 'http' });
-            var req = makeRequest(urltotest, http, https, ret);
-
-            req.setTimeout(reqTimeout, function () {
-                setTimeout(function () {
-                    logger.debug("... http node was not successfully executed.", { filename: 'http' });
-                    logger.error("No response was received within timeout period.", { filename: 'http' });
-                    return reject(new Error("common.notification.errors.no-response"));
-                }, 10);
-                req.abort();
-            });
-
-            req.on('error', function (err) {
-                logger.debug("... http node was not successfully executed.", { filename: 'http' });
-                logger.error(`Error was: ${err}`, { filename: 'http' });
-                return reject(err);
-            });
-            if (payload) {
-                req.write(payload);
-            }
-
-            req.end();
+          });
+          logger.debug(`...Loaded remote nodes for tenant ${tenant}.`, TAG);
+          return resolve();
+        }).catch((error) => {
+          logger.error(`Failed to get remote nodes from database ${error}`, TAG);
+          return reject(new Error('Failed to get remote nodes from database.'));
         });
-    }
+    });
+  }
 
-    makeRequest(urltotest,http,https,ret){
-        return ((/^https/.test(urltotest)) ? https : http).request(opts, (res) => {
-            // Force NodeJs to return a Buffer (instead of a string)
-            // See https://github.com/nodejs/node/issues/6038
-            res.setEncoding(null);
-            delete res._readableState.decoder;
+  getAll(tenant) {
+    return new Promise((resolve, reject) => {
+      try {
+        resolve(this.collection[tenant].find().toArray());
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
 
-            this._set(config.response, {}, message);
-            var httpResponse = this._get(config.response, message);
-            httpResponse.statusCode = res.statusCode;
-            httpResponse.headers = res.headers;
-            httpResponse.responseUrl = res.responseUrl;
-            httpResponse.payload = [];
 
-            // msg.url = url;   // revert when warning above finally removed
-            res.on('data', (chunk) => {
-                if (!Buffer.isBuffer(chunk)) {
-                    // if the 'setEncoding(null)' fix above stops working in
-                    // a new Node.js release, throw a noisy error so we know
-                    // about it.
-                    logger.debug("... http node was not successfully executed.", { filename: 'http' });
-                    logger.error("Returned HTTP Request data is not a buffer.", { filename: 'http' });
-                    return reject(new Error("HTTP Request data chunk not a Buffer"));
-                }
-                httpResponse.payload.push(chunk);
-            });
+  /**
+   * Sets the manager to handle processing nodes for the given tenant
+   * @param {*} tenant identifier of the tenant.
+   * @param {*} kafkaMessenger instance of dojot kafka messenger. Required for some types of nodes.
+   */
+  addTenant(tenant, kafkaMessenger) {
+    return new Promise((resolve, reject) => {
+      this._createMongoDBCollection(tenant).then((collection) => {
 
-            res.on('end', () => {
+        this.collection[tenant] = collection;
 
-                // Check that message[config.response] is an array - if the req error
-                // handler has been called, it will have been set to a string
-                // and the error already handled - so no further action should
-                // be taken. #1344
-                if (Array.isArray(httpResponse.payload)) {
-                    // Convert the payload to the required return type
-                    if (ret !== "bin") {
-                        let strData = httpResponse.payload;
-                        httpResponse.payload = strData.toString("utf8");
-                        if (ret === "obj") {
-                            try {
-                                httpResponse.payload = JSON.parse(strData);
-                            } catch (e) {
-                                logger.warn("Could not parse JSON. Forwarding as plain string.");
-                            }
-                        }
-                    }
-                    logger.debug("... http node was successfully executed.", { filename: 'http' });
-                    return resolve([message]);
-                }
-            });
+        // load remote nodes from database ...
+        this._loadRemoteNodes(tenant).then(() => {
+          // local nodes
+          this.nodes[tenant] = {
+            "change": new change(),
+            //disable email node for now
+            //"email": new email(),
+            "geofence": new geo(),
+            "http": new http(),
+            "ftp": new ftp(),
+            "switch": new select(),
+            "template": new template(),
+            "event device in": new event_device_in(),
+            "device in": new device_in(),
+            "device out": new device_out(
+              new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
+            "multi device out": new multi_device_out(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData),
+            "publish-ftp": new publish_ftp(kafkaMessenger, config.kafkaMessenger.dojot.subjects.ftp),
+            "notification": new notification(kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
+            "event template in": new event_template_in(),
+            "device template in": new template_in(),
+            "actuate": new actuate(
+              new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
+            "multi actuate": new multi_actuate(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices),
+            "get context": new get_context(),
+            "cron": new cron(),
+            "cron-batch": new cron_batch(),
+            "cumulative sum": new cumulative_sum(),
+            "merge data": new merge_data(),
+          };
+
+          logger.debug(`Succeeded to set manager to handle processing nodes for tenant ${tenant}`, TAG);
+          return resolve();
+        }).catch((error) => {
+          logger.error(`Failed to load remote nodes (${error})`, TAG);
+          return reject(new Error('Failed to load remote nodes.'));
         });
+      }).catch(error => {
+        logger.error(`Failed to create mongodb collection (${error}).`, TAG);
+        return reject(new Error('Failed to create mongodb collection.'));
+      });
+    });
+  }
+
+  /**
+   * This method instantiates a remote node (promise).
+   *
+   * @param {*} image a docker image available to download from a docker registry.
+   * @param {*} id identifier of the remote node must be equal to the name value in the metadata.
+   * @param {*} tenant identifier of the tenant.
+   */
+  addRemoteNode(image, id, tenant) {
+    return new Promise((resolve, reject) => {
+
+      // Step 1: Checks if the 'remote node' exists
+      if (this.nodes.hasOwnProperty(tenant)) {
+        if (this.nodes[tenant].hasOwnProperty(id)) {
+          return reject(new Error(`A remote node with id ${id} already exists.`));
+        }
+      }
+      else {
+        return reject(new Error(`Tenant ${tenant} has not been initialized.`));
+      }
+
+      // Step 2: Create the remote node
+      let node;
+      if (this.engine === "docker") {
+        node = new dockerRemote(image, tenant + id, this.socketPath, this.network);
+      }
+      else if (this.engine === "kubernetes") {
+        node = new k8sRemote(image, tenant + id);
+      }
+
+      if (node) {
+        node.create().then((containerId) => {
+          node.init().then(() => {
+
+            let metadata = node.getMetadata();
+            if (id !== metadata.name) {
+              this.delRemoteNode(containerId).catch((error) => {
+                logger.error(`Failed to remove remote node
+                ${tenant}/${id} (${error}). keep going ..`, TAG);
+              });
+              return reject(new Error(`The remote node id (${id}) differs from its name (${name}).`));
+            }
+
+            this.nodes[tenant][id] = node;
+
+            // Step 3: Persist remote node
+            let nodeDbEntry = {
+              id: id,
+              image: image,
+              containerId: containerId,
+              metadata: metadata
+            }
+            this.collection[tenant].insertOne(nodeDbEntry).then(() => {
+              logger.debug(`Succeeded to add remote node with id ${id}`, TAG);
+              resolve();
+            }).catch((error) => {
+              this.delRemoteNode(containerId).catch((error) => {
+                logger.error(`Failed to remove remote node
+                ${tenant}/${id} (${error}). keep going ..`, TAG);
+              });
+              logger.error(`Failed to persist configuration for
+              remote node ${tenant}/${id} (${error}).`, TAG);
+              return reject(new Error(`Failed to persist remote node configuration.`));
+            });
+          }).catch((error) => {
+            this.delRemoteNode(containerId).catch((error) => {
+              logger.error(`Failed to remove remote node
+              ${tenant}/${id} (${error}). keep going ..`, TAG);
+            });
+            logger.error(`Failed to initiate docker container for
+            remote node ${tenant}/${id} (${error}).`, TAG);
+            return reject(new Error('Failed to initiate docker container.'));
+          });
+        }).catch((error) => {
+          logger.error(`Failed to create docker container for
+          remote node ${tenant}/${id} (${JSON.stringify(error)}).`, TAG);
+          return reject(new Error('Failed to create docker container.'));
+        });
+      }
+      else {
+        return reject(new Error('Failed to instantiate remote node.'));
+      }
+    });
+  }
+
+  /**
+   * This method removes a remote node (promise).
+   *
+   * @param {*} id identifier of the remote node.
+   * @param {*} tenant identifier of the tenant.
+   */
+  delRemoteNode(id, tenant) {
+    return new Promise(async (resolve, reject) => {
+
+      // Step 1: Checks if the 'remote node' exists
+      if (this.collection.hasOwnProperty(tenant)) {
+        if (this.nodes[tenant].hasOwnProperty(id)) {
+
+          // Step 2: Remove docker container
+          let node = this.nodes[tenant][id];
+          node.deinit();
+          try {
+            logger.debug(`Trying to remove docker container ${node.containerId}`, TAG);
+            await node.remove(node.containerId);
+            logger.debug(`Succeeded to remove container.`, TAG);
+          }
+          catch (error) {
+            logger.error(`Failed to remove container (${JSON.stringify(error)}). Keep going ...`, TAG);
+          }
+          finally {
+            delete this.nodes[tenant][id];
+            // Step 3: Remove remote node configuration from database
+            this.collection[tenant].findOneAndDelete({ id: id }).then(() => {
+              logger.debug(`Succeeded to delete remote node with id ${id} for tenant ${tenant}.`, TAG);
+              return resolve();
+            }).catch((error) => {
+              logger.error(`Failed to remove configuration from database
+              for remote node ${temant}/${id} (${error}).`, TAG);
+              return reject(new Error('Failed to remove remote node configuration from database.'));
+            });
+          }
+        }
+        else {
+          return reject(new Error(`Not found remote node with id ${id}.`));
+        }
+      }
+      else {
+        return reject(new Error(`Tenant ${tenant} has not been initialized.`));
+      }
+    });
+  }
+
+  /**
+   * Gets remote nodes representation (JSON).
+   * @param {*} tenant identifier of the tenant.
+   */
+  asJson(tenant) {
+    let result = [];
+    if (this.nodes.hasOwnProperty(tenant)) {
+      for (const id of Object.keys(this.nodes[tenant])) {
+        let metadata = this.nodes[tenant][id].getMetadata();
+        metadata.enabled = true;
+        metadata.local = true;
+        metadata.types = [metadata.name];
+        result.push(metadata);
+      }
     }
+    return result;
+  }
+
+  /**
+   * Gets remote nodes representation (HTML).
+   * @param {*} tenant identifier of the tenant.
+   */
+  asHtml(tenant) {
+    let result = "";
+    if (this.nodes.hasOwnProperty(tenant)) {
+      for (const id of Object.keys(this.nodes[tenant])) {
+        let data = fs.readFileSync(this.nodes[tenant][id].getNodeRepresentationPath());
+        result = result + '\n' + data;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Gets node.
+   *
+   * @param {*} id identifier of the remote node.
+   * @param {*} tenant identifier of the tenant.
+   */
+  getNode(id, tenant) {
+    let node = null;
+    if (this.nodes.hasOwnProperty(tenant)) {
+      if (this.nodes[tenant].hasOwnProperty(id)) {
+        node = this.nodes[tenant][id];
+      }
+    }
+    return node;
+  }
+
 }
 
-module.exports = { Handler: DataHandler };
+let options = {};
+if (config.deploy.engine === "docker") {
+  options.socketPath = config.deploy.docker.socketPath;
+  options.network = config.deploy.docker.network;
+}
+let instance = new NodeManager(config.deploy.engine, options);
+
+module.exports = { Manager: instance };
