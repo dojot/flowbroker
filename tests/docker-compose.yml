@@ -125,7 +125,7 @@ services:
       driver: json-file
       options:
         max-size: 100m
-        
+
   auth:
     image: dojot/auth:v0.4.2
     restart: always
@@ -133,9 +133,6 @@ services:
       - apigw
       - postgres
       - auth-redis
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       AUTH_DB_HOST: "postgres"
       AUTH_DB_USER: "kong"
@@ -244,7 +241,7 @@ services:
       driver: json-file
       options:
         max-size: 100m
-        
+
 networks:
   flowbroker:
     name: ${FLOWBROKER_NETWORK}
