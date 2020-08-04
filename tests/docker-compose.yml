@@ -12,7 +12,7 @@ services:
 
   # orion replacement component
   data-broker:
-    image: dojot/data-broker
+    image: dojot/data-broker:v0.4.2
     restart: always
     depends_on:
       - kafka
@@ -23,7 +23,7 @@ services:
         max-size: 100m
 
   data-broker-redis:
-    image: redis
+    image: dojot/redis:5.0.5-alpine3.10
     restart: always
     logging:
       driver: json-file
@@ -46,7 +46,7 @@ services:
       - flowbroker
 
   flowbroker-redis:
-    image: redis:alpine
+    image: dojot/redis:5.0.5-alpine3.10
     restart: always
     logging:
       driver: json-file
@@ -81,7 +81,7 @@ services:
       - flowbroker
 
   rabbitmq:
-    image: rabbitmq
+    image: dojot/rabbitmq:3.7-alpine
     restart: always
     logging:
       driver: json-file
@@ -94,14 +94,14 @@ services:
       - "25672:25672"
 
   zookeeper:
-    image: "zookeeper:3.4"
+    image: dojot/zookeeper:3.4
     logging:
       driver: json-file
       options:
         max-size: 100m
 
   kafka:
-    image: "ches/kafka:0.10.1.1"
+    image: dojot/wurstmeister-kafka:2.12-2.1.1
     depends_on:
       - zookeeper
     environment:
@@ -113,7 +113,7 @@ services:
         max-size: 100m
 
   auth-redis:
-    image: redis
+    image: dojot/redis:5.0.5-alpine3.10
     restart: always
     logging:
       driver: json-file
@@ -154,7 +154,7 @@ services:
         max-size: 100m
 
   device-manager-redis:
-    image: redis:alpine
+    image: dojot/redis:5.0.5-alpine3.10
     restart: always
     logging:
       driver: json-file
@@ -162,7 +162,7 @@ services:
         max-size: 100m
 
   device-manager:
-    image: dojot/device-manager
+    image: dojot/device-manager:v0.4.2
     restart: always
     environment:
       # TODO: Fill these env variables with suitable values
@@ -193,7 +193,7 @@ services:
         max-size: 100m
 
   kong-migration:
-    image: dojot/kong:latest
+    image: dojot/kong:v0.4.2
     depends_on:
       postgres:
         condition: service_healthy
@@ -204,7 +204,7 @@ services:
     restart: on-failure
 
   apigw:
-    image: dojot/kong:v0.2.1
+    image: dojot/kong:v0.4.2
     restart: always
     depends_on:
       postgres:
@@ -218,7 +218,6 @@ services:
       KONG_PG_HOST: "postgres"
     volumes:
       - ./apigw/plugins/pep-kong:/plugins/pep-kong:Z
-      - ./apigw/plugins/mutualauthentication:/plugins/mutualauthentication:Z
     logging:
       driver: json-file
       options:
