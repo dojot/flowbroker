@@ -126,7 +126,7 @@ services:
       driver: json-file
       options:
         max-size: 100m
-        
+
   auth:
     image: dojot/auth:v0.4.2
     restart: always
@@ -147,7 +147,6 @@ services:
       driver: json-file
       options:
         max-size: 100m
-
 
   postgres:
     image: dojot/postgres:9.4.24-alpine
