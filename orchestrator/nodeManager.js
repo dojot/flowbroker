@@ -144,7 +144,7 @@ class NodeManager {
               // rollback
               if (containerId) {
                 try {
-                  await this.delRemoteNode(containerId);
+                  await this.delRemoteNode(containerId,tenant);
                 }
                 catch (error) {
                   logger.error(`(Rollback) Failed to remove remote node ${tenant}/${item.id} (${error}). keep going ..`, TAG);
@@ -263,14 +263,12 @@ class NodeManager {
 
             let metadata = node.getMetadata();
             if (id !== metadata.name) {
-              this.delRemoteNode(containerId).catch((error) => {
+              this.delRemoteNode(id,tenant).catch((error) => {
                 logger.error(`Failed to remove remote node
                 ${tenant}/${id} (${error}). keep going ..`, TAG);
               });
-              return reject(new Error(`The remote node id (${id}) differs from its name (${name}).`));
+              return reject(new Error(`The remote node id (${id}) differs from its name (${metadata.name}).`));
             }
-
-            this.nodes[tenant][id] = node;
 
             // Step 3: Persist remote node
             let nodeDbEntry = {
