@@ -270,6 +270,8 @@ class NodeManager {
               return reject(new Error(`The remote node id (${id}) differs from its name (${metadata.name}).`));
             }
 
+	    this.nodes[tenant][id] = node;
+
             // Step 3: Persist remote node
             let nodeDbEntry = {
               id: id,
