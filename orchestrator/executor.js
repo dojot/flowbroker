@@ -98,7 +98,7 @@ module.exports = class Executor {
                         return ack();
                     });
                 }).catch((error) => {
-                    logger.warn(`[executor] Node (${at.id}:${at.type}) execution failed. Error: ${error}. Aborting flow ${event.flow.id} branch execution.`);
+                    logger.warn(`[executor] Node (${at.id}:${at.type}) execution failed. Error: ${error.stack || error}. Aborting flow ${event.flow.id} branch execution.`);
                     // TODO notify alarmManager
                     return ack();
                 });
