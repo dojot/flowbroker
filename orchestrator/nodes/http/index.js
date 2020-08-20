@@ -84,7 +84,7 @@ class DataHandler extends dojot.DataHandlerBase {
         try {
             httpRequest = JSON.parse(this._get(config.body, message));
         } catch (e) {
-            if (config.method !== "GET"){
+            if (config.method !== "GET") {
                 logger.debug("... http node was not successfully executed.", { filename: 'http' });
                 logger.error(`Error while retrieving http payload: ${e}`, { filename: 'http' });
                 return Promise.reject("httpin.errors.no-body");
@@ -108,7 +108,7 @@ class DataHandler extends dojot.DataHandlerBase {
         // If no transport protocol was set, then assume http.
         var checkUrl;
         ({ checkUrl, url } = this.testUrl(url));
-        if (checkUrl==false){
+        if (checkUrl == false) {
             return Promise.reject("httpin.errors.invalid-transport");
         }
 
@@ -123,7 +123,7 @@ class DataHandler extends dojot.DataHandlerBase {
             var { opts, payload } = this.handleMessageRequest(url, method, httpRequest);
             var urltotest = url;
 
-            return this.resolveRequest(opts, urltotest, ret, reqTimeout, payload);
+            return this.resolveRequest(opts, urltotest, ret, reqTimeout, payload, config, message);
         } catch (error) {
             logger.debug("... http node was not successfully executed.", { filename: 'http' });
             logger.error(`An exception was thrown: ${error}`, { filename: 'http' });
@@ -209,10 +209,10 @@ class DataHandler extends dojot.DataHandlerBase {
         return payload;
     }
 
-    resolveRequest(opts, urltotest, ret, reqTimeout, payload) {
+    resolveRequest(opts, urltotest, ret, reqTimeout, payload, config, message) {
         return new Promise((resolve, reject) => {
             logger.debug(`HTTP request about to be sent: ${util.inspect(opts)}`, { filename: 'http' });
-            var req = makeRequest(urltotest, http, https, ret);
+            var req = this.makeRequest(urltotest, http, https, ret, opts, config, message, resolve);
 
             req.setTimeout(reqTimeout, function () {
                 setTimeout(function () {
@@ -236,7 +236,7 @@ class DataHandler extends dojot.DataHandlerBase {
         });
     }
 
-    makeRequest(urltotest,http,https,ret){
+    makeRequest(urltotest, http, https, ret, opts, config, message, resolve) {
         return ((/^https/.test(urltotest)) ? https : http).request(opts, (res) => {
             // Force NodeJs to return a Buffer (instead of a string)
             // See https://github.com/nodejs/node/issues/6038
