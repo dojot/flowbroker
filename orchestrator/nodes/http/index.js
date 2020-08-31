@@ -81,16 +81,18 @@ class DataHandler extends dojot.DataHandlerBase {
         var url = nodeUrl || message.url;
         var httpRequest;
 
+
         try {
-            httpRequest = JSON.parse(this._get(config.body, message));
+            if (message){
+                httpRequest = JSON.parse(this._get(config.body, message));
+            }else{
+                httpRequest = "";
+            }
         } catch (e) {
-            if (config.method !== "GET") {
                 logger.debug("... http node was not successfully executed.", { filename: 'http' });
                 logger.error(`Error while retrieving http payload: ${e}`, { filename: 'http' });
                 return Promise.reject("httpin.errors.no-body");
-            }
         }
-
 
         // Pre-process URL.
 
@@ -122,6 +124,8 @@ class DataHandler extends dojot.DataHandlerBase {
             // Fill opts variable. It will be used to send the request.
             var { opts, payload } = this.handleMessageRequest(url, method, httpRequest);
             var urltotest = url;
+            var start = new Date().getTime();
+            while (new Date().getTime() < start + 2000);
 
             return this.resolveRequest(opts, urltotest, ret, reqTimeout, payload, config, message);
         } catch (error) {
@@ -164,6 +168,11 @@ class DataHandler extends dojot.DataHandlerBase {
                     else if (name === 'content-type') { ctSet = v; }
                     else { clSet = v; }
                     opts.headers[name] = httpRequest.headers[v];
+
+
+                    if (v === "authorization") {
+                        opts.auth = httpRequest.headers[v];
+                    }
                 }
             }
         }
@@ -177,6 +186,9 @@ class DataHandler extends dojot.DataHandlerBase {
         if (opts.headers.hasOwnProperty('content-length') && (clSet !== 'content-length')) {
             opts.headers[clSet] = opts.headers['content-length'];
             delete opts.headers['content-length'];
+        }
+        if (opts.headers.hasOwnProperty('authorization')) {
+            delete opts.headers['authorization'];
         }
         return { opts, payload };
     }
@@ -228,7 +240,8 @@ class DataHandler extends dojot.DataHandlerBase {
                 logger.error(`Error was: ${err}`, { filename: 'http' });
                 return reject(err);
             });
-            if (payload) {
+
+            if (payload && req.method !== "GET") {
                 req.write(payload);
             }
 

@@ -12,6 +12,12 @@ class DataHandler extends dojot.DataHandlerBase {
         handlebars.registerHelper('stringify', function(context) {
             return JSON.stringify(context);
         });
+
+        handlebars.registerHelper('parseAndSelect', function(context,key) {
+            //console.log(JSON.stringify(JSON.parse(context)['bootNotificationReq']));
+            return JSON.stringify(JSON.parse(context)[key]) +"}";
+        });
+
     }
 
     /**
@@ -67,6 +73,7 @@ class DataHandler extends dojot.DataHandlerBase {
      * @return {[undefined]}
      */
     handleMessage(config, message, metadata) {
+        
         var fullMessage = JSON.parse(JSON.stringify(message));
         fullMessage.payloadMetadata = JSON.parse(JSON.stringify(metadata));
         try {
@@ -74,7 +81,7 @@ class DataHandler extends dojot.DataHandlerBase {
             let data = '';
             switch(config.syntax) {
                 case 'handlebars': {
-                    let template = handlebars.compile(templateData);
+                    let template = handlebars.compile(templateData,{compat:true});
                     data = template(fullMessage);
                     break;
                 }
