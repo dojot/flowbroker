@@ -22,8 +22,10 @@ let config = {
     },
     amqp: {
         url: process.env.AMQP_URL || "amqp://rabbitmq",
-        queue: process.env.AMQP_QUEUE || "task_queue",
-        event_queue: process.env.AMQP_EVENT_QUEUE || "event_queue"
+        task_queue_prefix: process.env.AMQP_PREFIX_TASK_QUEUE || "task_queue",
+        task_queue_n: process.env.AMQP_TASK_QUEUE_N || 10,
+        event_queue_prefix: process.env.AMQP_PREFIX_EVENT_QUEUE || "event_queue",
+        event_queue_n: process.env.AMQP_EVENT_QUEUE_N || 10,
     },
     deploy: {
         engine: process.env.DEPLOY_ENGINE || "kubernetes",
@@ -41,7 +43,7 @@ let config = {
         contextManagerPort: process.env.CONTEXT_MANAGER_PORT || 5556,
         responseTimeout: process.env.CONTEXT_MANAGER_RESPONSE_TIMEOUT || 10000
     },
-    kafkaMessenger : {
+    kafkaMessenger: {
         kafka: {
             producer: {
                 "metadata.broker.list": process.env.KAFKA_HOSTS || "kafka:9092",
@@ -135,32 +137,32 @@ let config = {
  * @param {*} env a dictionary with the configurations
  */
 function _setKafkaConfiguration(baseObj, env) {
-  if (!baseObj.kafka) {
-    baseObj.kafka = {};
-  }
-  if (!baseObj.kafka.producer) {
-    baseObj.kafka.producer = {};
-  }
-  if (!baseObj.kafka.consumer) {
-    baseObj.kafka.consumer = {};
-  }
-
-  let keys = Object.keys(env);
-  for (let i = 0; i < keys.length; ++i) {
-    let key = keys[i];
-    let keyNormalized = key.toLowerCase();
-    let value = env[key];
-    if (keyNormalized.startsWith("kafka_producer_")) {
-      // removes the prefix and replaces the '_' by '.'
-      let newKey = keyNormalized.substring(15).replace(/_/g, '.');
-      
-      baseObj.kafka.producer[newKey] = isNaN(value)?value:Number(value);
-    } else if (keyNormalized.startsWith("kafka_consumer_")) {
-      // removes the prefix and replaces the '_' by '.'
-      let newKey = keyNormalized.substring(15).replace(/_/g, '.');
-      baseObj.kafka.consumer[newKey] = isNaN(value)?value:Number(value);
+    if (!baseObj.kafka) {
+        baseObj.kafka = {};
     }
-  }
+    if (!baseObj.kafka.producer) {
+        baseObj.kafka.producer = {};
+    }
+    if (!baseObj.kafka.consumer) {
+        baseObj.kafka.consumer = {};
+    }
+
+    let keys = Object.keys(env);
+    for (let i = 0; i < keys.length; ++i) {
+        let key = keys[i];
+        let keyNormalized = key.toLowerCase();
+        let value = env[key];
+        if (keyNormalized.startsWith("kafka_producer_")) {
+            // removes the prefix and replaces the '_' by '.'
+            let newKey = keyNormalized.substring(15).replace(/_/g, '.');
+
+            baseObj.kafka.producer[newKey] = isNaN(value) ? value : Number(value);
+        } else if (keyNormalized.startsWith("kafka_consumer_")) {
+            // removes the prefix and replaces the '_' by '.'
+            let newKey = keyNormalized.substring(15).replace(/_/g, '.');
+            baseObj.kafka.consumer[newKey] = isNaN(value) ? value : Number(value);
+        }
+    }
 }
 
 _setKafkaConfiguration(config.kafkaMessenger, process.env);
