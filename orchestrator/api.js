@@ -192,7 +192,7 @@ app.delete('/v1/flow', (req, res) => {
     return res.status(200).send({'message': 'All flows removed'});
   }).catch((error) => {
     logger.error(error, { filename: 'api' });
-    return res.status(500).send({'message': 'failed to remove flows'});
+    return res.status(500).send({'message': 'Failed to remove flows'});
   });
 });
 
