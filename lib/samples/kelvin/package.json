@@ -1,6 +1,6 @@
 {
-  "name": "dojot-sample-node",
-  "version": "1.0.0",
+  "name": "dojot-kevin-node-package-sample",
+  "version": "0.1.0",
   "description": "This is a sample of node that transforms a given temperature from celcius to kenvin",
   "main": "src/index.js",
   "scripts": {
