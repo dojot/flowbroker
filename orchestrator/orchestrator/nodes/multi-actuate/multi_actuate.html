@@ -1,0 +1,222 @@
+<script type="text/x-red" data-template-name="multi actuate">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.name"></label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-device_source"><i class="fa fa-gears"></i> <span data-i18n="label.action"></label>
+        <select id="node-input-device_source" onchange="nodeDeviceOut_displayDeviceSourceElement()">
+            <option value="self" data-i18n="text.triggered"></option>
+            <option value="configured" data-i18n="text.specific"></option>
+            <option value="dynamic" data-i18n="text.defined"></option>
+        </select>
+    </div>
+    <div class="form-row" id="node-input-dynamic">
+        <label for="node-input-devices_source_dynamic" id="node-input-devices_source_dynamic_label"><i class="fa fa-tag"></i> <span data-i18n="label.attribute"></label>
+        <input type="text" id="node-input-devices_source_dynamic" data-i18n="[placeholder]text.enter_attribute" />
+        <input type="hidden" id="node-input-devices_source_dynamicFieldType">
+    </div>
+    <div class="form-row" id="node-input-configured">
+        <label for="form-row node-input-rule-container-row" id="node-input-devices_source_configured_label"><i class="fa fa-wifi"></i> <span data-i18n="label.devices"></label>
+        <div class="form-row node-input-rule-container-row">
+            <ol id="node-input-rule-container"></ol>
+        </div>
+        <datalist id="node-input-list_devices_id"></datalist>
+    </div>
+    <div class="form-row">
+        <label for="node-input-attrs"><i class="fa fa-cube"></i> <span data-i18n="label.source"></label>
+        <input type="text" id="node-input-attrs" style=""></input>
+        <input type="hidden" id="node-input-msgFieldType">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="multi actuate">
+    <p>Set the value of a virtual device, based on the results of the previous operations on the flow.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('multi actuate', {
+        category: 'output',      // the palette category
+        defaults: {              // defines the editable properties of the node
+            name: { value: "", required: false },
+            device_source: { value: 'self', required: true },
+            devices_source_dynamic: { value: '', required: false },
+            devices_source_dynamicFieldType: { value: "msg" },
+            devices_source_configured: { value: [ "" ], required: false },
+            attrs: { value: "", required: true },
+
+            // private
+            _devices_loaded: {value: false, required: false}
+        },
+        inputs: 1,                // set the number of inputs - only 0 or 1
+        outputs: 0,               // set the number of outputs - 0 to n
+        align: "right",          // align the icon
+        icon: "bridge-dash.png", // set the icon (held in icons dir below where you save the node)
+        color: "#f3b567",        // background-color
+        label: function () {
+            // sets the default label contents
+            return this.name || RED._('dojot/multi-actuate:title');
+        },
+        labelStyle: function () {
+            // sets the class to apply to the label
+            return this.name ? "node_label_italic" : "";
+        },
+        paletteLabel:  RED._('dojot/multi-actuate:title'),
+        oneditprepare: function () {
+            let node = this;
+            let listDevices = $("#node-input-list_devices_id");
+            nodeDeviceOut_displayDeviceSourceElement();
+
+            if (!this.devices_source_dynamicFieldType) {
+                this.devices_source_dynamicFieldType = 'msg';
+            }
+            $("#node-input-devices_source_dynamic").typedInput({
+                default: 'msg',
+                types: ['msg'],
+                typeField: $("#node-input-devices_source_dynamicFieldType")
+            });
+
+            $("#node-input-attrs").typedInput({
+                default: 'msg',
+                types: ['msg'],
+                typeField: $("#node-input-msgFieldType")
+            });
+
+            // request to the device manager all devices
+            function list_all(page) {
+                return new Promise( (resolve,reject) => {
+                    if (page === undefined) {
+                        page=1;
+                    }
+
+                    var extra=`?page_num=${page}`
+                    var orderByLabel = "sortBy=label";
+
+                    extra+='&'+orderByLabel;
+
+                    util.GET(`/device${extra}`).then((list) => {
+                        list.devices.map((dev) => {
+                            listDevices.append('<option data-value="' + dev.id +
+                                '" value="' + dev.label + ' (' + dev.id + ')"/>');
+                        });
+                        if (list.pagination.has_next) {
+                            return list_all(list.pagination.next_page).then(() => {
+                                return resolve();
+                            });
+                        } else {
+                            node._devices_loaded = true;
+                            return resolve();
+                        }
+                    }).catch((error) => {
+                        console.error('Failed to retrieve the list of available devices', error);
+                        node._devices_loaded = false;
+                        return reject();
+                    });
+                });
+            }
+
+            $('#node-input-device_source').css('width', '70%');
+
+            list_all().then( () => {
+                // define the rule box
+                $("#node-input-rule-container").css('min-height','150px').
+                    css('min-width','450px').editableList( {
+
+                    addItem: function(container, index, data) {
+                        let fieldConfig = {
+                            type: "text",
+                            list: "node-input-list_devices_id",
+                            id: `node-input-device_source_id`,
+                            placeholder: RED._('dojot/multi-actuate:text.select_device')
+                        };
+
+                        if (Object.entries(data).length > 0) {
+                            let configuredDeviceEntry = $('#node-input-list_devices_id').find(
+                                'option[data-value="' + data + '"]');
+                            if (configuredDeviceEntry) {
+                                fieldConfig.value = configuredDeviceEntry.attr('value');
+                            } else {
+                                fieldConfig.value = `Missing device: ${data}`;
+                            }
+                        }
+
+                        $('<input/>', fieldConfig).appendTo(container);
+
+                    },
+                    sortable: true,
+                    removable: true
+                });
+
+                // load the previous configuration
+                for (let i=0; i < node.devices_source_configured.length; ++i) {
+                    $("#node-input-rule-container").editableList('addItem',
+                        node.devices_source_configured[i]);
+                }
+            }).catch(() => {
+                node._devices_loaded = false;
+                console.log("Failed to retrieve devices from device manager");
+            });
+
+        },
+        oneditsave: function () {
+            let node = this;
+
+            switch($('#node-input-device_source').val()) {
+                case "configured":
+                    node.devices_source_dynamic = "";
+
+                    // skip save the devices due to problem with the device manager
+                    // communication
+                    if (!node._devices_loaded) {
+                        console.log('Skipping save the devices');
+                        return
+                    }
+                    // rebuilt the list with the devices ids
+                    node.devices_source_configured = [];
+                    let entries = $("#node-input-rule-container").editableList('items');
+                    entries.each(function(i) {
+                        let userLabel = this.find("#node-input-device_source_id").val();
+                        let entry = $('#node-input-list_devices_id').find(
+                            'option[value="' + userLabel + '"]');
+                        if (entry) {
+                            let deviceId = entry.attr('data-value');
+                            if (deviceId) {
+                                node.devices_source_configured.push(deviceId);
+                            }
+                        }
+
+                    });
+                    break;
+                case "self":
+                    node.devices_source_configured = [""];
+                    node.devices_source_dynamic = "";
+                    break;
+                case "dynamic":
+                    node.devices_source_configured = [""];
+                    break;
+            }
+        }
+    });
+
+    function nodeDeviceOut_displayDeviceSourceElement () {
+        let deviceSource = $('#node-input-device_source');
+        let devicesSourceConfigured = $('#node-input-configured');
+        let devicesSourceDynamic = $('#node-input-dynamic');
+
+        switch(deviceSource.val()) {
+            case "self":
+                devicesSourceConfigured.hide();
+                devicesSourceDynamic.hide();
+            break;
+            case "configured":
+                devicesSourceConfigured.show();
+                devicesSourceDynamic.hide();
+            break;
+            case "dynamic":
+                devicesSourceConfigured.hide();
+                devicesSourceDynamic.show();
+            break;
+        }
+    }
+
+</script>

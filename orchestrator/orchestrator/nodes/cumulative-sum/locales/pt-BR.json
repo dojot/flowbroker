@@ -1,0 +1,10 @@
+{
+  "title": "valor acumulado",
+  "config": {
+    "name": "Nome",
+    "time_period": "Período de tempo (min)",
+    "target_attribute": "Atributo alvo",
+    "timestamp": "Tempo do evento",
+    "output": "Somatório"
+  }
+}

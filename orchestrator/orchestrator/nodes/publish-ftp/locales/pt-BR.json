@@ -1,0 +1,9 @@
+{
+  "title": "publicar no tópico FTP",
+  "label": {
+    "name": "Nome",
+    "encode": "Codificação",
+    "filename": "Nome do arquivo",
+    "filecontent": "Conteúdo do arquivo"
+  }
+}

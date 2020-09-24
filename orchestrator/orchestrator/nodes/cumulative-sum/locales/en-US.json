@@ -1,0 +1,10 @@
+{
+  "title": "cumulative sum",
+  "config": {
+    "name": "Name",
+    "time_period": "Time period (min)",
+    "target_attribute": "Target attribute",
+    "timestamp": "Timestamp",
+    "output": "Sum"
+  }
+}
