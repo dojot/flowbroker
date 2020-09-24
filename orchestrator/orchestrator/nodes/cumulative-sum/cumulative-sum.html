@@ -1,0 +1,78 @@
+<script type="text/x-red" data-template-name="cumulative sum">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="config.name"></label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-timePeriod"><i class="fa fa-clock-o"></i> <span data-i18n="config.time_period"></label>
+        <input type="text" id="node-input-timePeriod" style="width:250px;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-targetAttribute"><i class="fa fa-cube"></i> <span data-i18n="config.target_attribute"></label>
+        <input type="text" id="node-input-targetAttribute" style="width:250px;">
+        <input type="hidden" id="node-input-fieldType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-timestamp"><i class="fa fa-cube"></i> <span data-i18n="config.timestamp"></label>
+        <input type="text" id="node-input-timestamp" style="width:250px;">
+        <input type="hidden" id="node-input-fieldType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-output"><i class="fa fa-arrow-left"></i> <span data-i18n="config.output"></label>
+        <input type="text" id="node-input-output" style="width:250px;">
+        <input type="hidden" id="node-input-fieldType">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="cumulative sum">
+    <p>A simple node that computes the cumulative sum of a given attribute
+        in a given temporal window.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('cumulative sum', {
+        category: 'function',      // the palette category
+        defaults: {              // defines the editable properties of the node
+            name: { value: "", required: false },
+            timePeriod: { value: undefined, required: true, validate: function (value) {
+                if ( isNaN(value) || ( value  <= 0 ) ) {
+                    return false;
+                }
+                return true;
+            } },
+            targetAttribute: { value: undefined, required: true },
+            timestamp: { value: undefined, required: true },
+            output: { value: undefined, required: true },
+            fieldType: { value: "msg" },
+        },
+        inputs: 1,                // set the number of inputs - only 0 or 1
+        outputs: 1,               // set the number of outputs - 0 to n
+        align: "left",          // align the icon
+        icon: "function.png", // set the icon (held in icons dir below where you save the node)
+        color: "#f3b567",        // background-color
+        label: function () {
+            // sets the default label contents
+            return this.name || RED._('dojot/cumulative-sum:title');
+        },
+        labelStyle: function () {
+            // sets the class to apply to the label
+            return this.name ? "node_label_italic" : "";
+        },
+        paletteLabel:  RED._('dojot/cumulative-sum:title'),
+        oneditprepare: function () {
+            let msgAttrs = ["targetAttribute", "timestamp", "output"];
+
+            for (let attr of msgAttrs ) {
+                $("#node-input-" + attr).typedInput({
+                    default: 'msg',
+                    types: ['msg'],
+                    typeField: $("#node-input-fieldType")
+                });
+            }
+        },
+        oneditsave: function () {
+
+        }
+    });
+
+</script>

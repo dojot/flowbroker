@@ -1,0 +1,13 @@
+{
+  "title": "notificação",
+  "label": {
+    "message": "Mensagem",
+    "name": "Nome",
+    "source": "Metadados",
+    "value": "Valor"
+  },
+  "text": {
+    "dynamic": "Dinâmica",
+    "static": "Estática"
+  }
+}

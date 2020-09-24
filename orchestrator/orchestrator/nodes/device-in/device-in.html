@@ -1,0 +1,102 @@
+<script type="text/x-red" data-template-name="device in">
+   <div class="form-row">
+       <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.name"></label>
+       <input type="text" id="node-input-name">
+   </div>
+   <div class="form-row">
+       <label for="node-input-device"><i class="fa fa-wifi"></i> <span data-i18n="label.device"></label>
+       <input type="text" list="node-input-list_devices_id" id="node-input-device_source_id" data-i18n="[placeholder]text.select_device" />
+       <datalist id="node-input-list_devices_id"></datalist>
+   </div>
+   <div class="form-row">
+       <label for="node-input-status"><i class="fa fa-bell" /> <span data-i18n="label.status"></label>
+       <select id="node-input-status" value='false' style="width: 70%;">
+            <option value='false' data-i18n="text.exclude"></option>
+            <option value='true' data-i18n="text.include"></option>
+        </select>
+   </div>
+   <div style="display:none">
+       <input type='text' id='node-input-_device_id'/>
+       <input type='text' id='node-input-_device_label'/>
+       <input type='text' id='node-input-_device_type'/>
+   </div>
+</script>
+
+<script type="text/x-red" data-help-name="device in">
+   <p>Use data retrieved from a previously configured sensor as input to logic.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('device in', {
+        category: 'deprecated_nodes',      // the palette category
+        defaults: {
+            // defines the editable properties of the node
+            // just the UI label displayed back to the user on the flow.
+            name: { value: "", required: false },
+            // name of the device which data is retrieved from.
+            device_source_id: { value: '', required: true },
+            status: { value: 'false', required: true },
+
+            // those are the internal types used when routing data through fiware.
+            _device_id: { value: undefined, required: false },
+            _device_label: { value: undefined, required: false },
+            _device_type: { value: undefined, required: false },
+        },
+        inputs: 0,                // set the number of inputs - only 0 or 1
+        outputs: 1,               // set the number of outputs - 0 to n
+        align: "left",          // align the icon
+        icon: "bridge-dash.png", // set the icon (held in icons dir below where you save the node)
+        color: "#f3b567",        // background-color
+        label: function () {
+            // sets the default label contents
+            return this.name || RED._('dojot/device-in:title');
+        },
+        labelStyle: function () {
+            // sets the class to apply to the label
+            return this.name ? "node_label_italic" : "";
+        },
+        paletteLabel:  RED._('dojot/device-in:title'),
+        oneditprepare: function () {
+            var listDevices = $("#node-input-list_devices_id");
+
+            // this will only work from the device management interface
+            function list_all(page) {
+
+                if (page === undefined) {
+                    page=1;
+                }
+
+                var extra=`?page_num=${page}`
+                var orderByLabel = "sortBy=label";
+
+                extra+='&'+orderByLabel;
+
+                util.GET(`/device${extra}`).then((list) => {
+                    list.devices.map((dev) => {
+                        listDevices.append('<option data-value="' + dev.id +
+                            '" value="' + dev.label + ' (' + dev.id + ')"/>');
+                    });
+                    if (list.pagination.has_next) {
+                        list_all(list.pagination.next_page);
+                    }
+                }).catch((error) => {
+                    console.error('Failed to retrieve the list of available devices', error);
+                });
+
+            }
+            list_all();
+        },
+        oneditsave: function () {
+            let deviceLabel = $('#node-input-device_source_id').val();
+
+            let deviceId = $('#node-input-list_devices_id').find(
+                    'option[value="' + deviceLabel + '"]').attr('data-value');
+
+                if (!deviceId) {
+                    $('#node-input-_device_id').val(undefined);
+                } else {
+                    $('#node-input-_device_id').val(deviceId);
+                }
+        }
+    });
+</script>

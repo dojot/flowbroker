@@ -1,0 +1,14 @@
+{
+  "label": {
+    "cron-batch": "cron batch",
+    "name": "Name",
+    "operation": "Operation",
+    "jobs": "JOB requests",
+    "inJobIds": "JOB identifiers",
+    "outJobIds": "JOB identifiers",
+    "timeout": "Request timeout (ms)"
+  },
+  "jobsKey": "array of job's requests",
+  "inJobIdsKey": "array of job identifiers",
+  "outJobIdsKey": "array of job identifiers"
+}

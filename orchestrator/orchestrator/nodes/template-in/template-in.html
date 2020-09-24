@@ -1,0 +1,97 @@
+<script type="text/x-red" data-template-name="device template in">
+  <div class="form-row">
+      <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.name"></label>
+      <input type="text" id="node-input-name">
+  </div>
+  <div class="form-row">
+      <label for="node-input-device-template"><i class="fa fa-wifi"></i> <span data-i18n="label.device_template"></label>
+      <select id="node-input-device-template" style=""></select>
+  </div>
+  <div class="form-row">
+       <label for="node-input-status"><i class="fa fa-bell" /> <span data-i18n="label.status"></label>
+       <select id="node-input-status" value='false' style="width: 70%;">
+            <option value='false'  data-i18n="text.exclude"></option>
+            <option value='true'  data-i18n="text.include"></option>
+        </select>
+   </div>
+  <div style="display:none">
+      <input type='text' id='node-input-device-template-label'/>
+      <input type='text' id='node-input-device-template-id'/>
+  </div>
+</script>
+
+<script type="text/x-red" data-help-name="device template in">
+  <p>Use data retrieved from a previously configured sensor as input to logic.</p>
+</script>
+
+<script type="text/javascript">
+   RED.nodes.registerType('device template in',{
+       category: 'deprecated_nodes',      // the palette category
+       defaults: {
+           // defines the editable properties of the node
+
+           // just the UI label displayed back to the user on the flow.
+           name: {value:"", required:false},
+           // name of the device which data is retrieved from.
+           device_template: {value:"", required:true},
+           status: {value:'false', required:true},
+
+           // those are the internal types used when routing data through fiware.
+           device_template_label: { value:"", required: false},
+           device_template_id: { value:"", required: false}
+       },
+       inputs:0,                // set the number of inputs - only 0 or 1
+       outputs:1,               // set the number of outputs - 0 to n
+       align: "left",          // align the icon
+       icon: "bridge-dash.png", // set the icon (held in icons dir below where you save the node)
+       color: "#679BF3",        // background-color
+       label: function() {
+           // sets the default label contents
+           return this.name || RED._('dojot/device-template-in:title');
+       },
+       paletteLabel:  RED._('dojot/device-template-in:title'),
+       labelStyle: function() {
+           // sets the class to apply to the label
+           return this.name ? "node_label_italic" : "";
+       },
+       oneditprepare: function() {
+        var select = document.getElementById("node-input-device-template");
+        let node = this;
+
+        // this will only work from the device management interface
+        function list_all(page) {
+          var orderBy = 'sortBy=label';
+          var extra = `?page_num=${page}&${orderBy}`
+          if (page === undefined) {
+            extra = '?page_num=1&'+orderBy;
+          }
+
+          util.GET(`/template${extra}`).then((list) => {
+            list.templates.map((dev) => {
+              select.options[select.options.length] = new Option(dev.label, JSON.stringify({ 'id': dev.id }));
+            });
+            if (list.pagination.has_next) {
+              list_all(list.pagination.next_page);
+            } else {
+              select.value = JSON.stringify(node.device_template);
+            }
+          }).catch((error) => {
+            console.error('Failed to retrieve the list of available devices', error);
+          });
+        }
+
+         list_all();
+       },
+
+       oneditsave: function() {
+         if ($('#node-input-device-template').val()) {
+           const deviceData = JSON.parse($('#node-input-device-template').val());
+           $('#node-input-device-template-label').val(deviceData.label);
+           $('#node-input-device-template-id').val(deviceData.id);
+           this.device_template_label = deviceData.label;
+           this.device_template_id = deviceData.id;
+           this.device_template = deviceData;
+         }
+       }
+   });
+</script>

@@ -1,0 +1,17 @@
+{
+  "title": "obter contexto",
+  "label": {
+    "name": "Nome",
+    "inputs": "Entradas",
+    "layer": "Camada de contexto",
+    "tenant": "Tenant",
+    "flow": "Fluxo",
+    "context_name": "Nome do contexto",
+    "output": "Saída",
+    "context_content": "Contexto"
+  },
+  "text": {
+    "property_context": "Propriedade para armazenar o conteúdo do contexto"
+  },
+  "category": "contexto"
+}
