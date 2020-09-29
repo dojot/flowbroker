@@ -6,11 +6,17 @@ var nodes = require('./nodeManager').Manager;
 var logger = require("@dojot/dojot-module-logger").logger;
 
 module.exports = class Executor {
-    constructor(contextHandler) {
+
+    /**
+     *
+     * @param {*} contextHandler
+     * @param {number|string} suffixQueueName Suffix to be added to the queue name
+     */
+    constructor(contextHandler, suffixQueueName) {
         logger.debug('[executor] initializing ...');
         this.hop = this.hop.bind(this);
-        this.producer = new amqp.AMQPProducer(config.amqp.queue, config.amqp.url, 2);
-        this.consumer = new amqp.AMQPConsumer(config.amqp.queue, this.hop, config.amqp.url, 2);
+        this.producer = new amqp.AMQPProducer(config.amqp.task_queue_prefix + suffixQueueName, config.amqp.url, 2);
+        this.consumer = new amqp.AMQPConsumer(config.amqp.task_queue_prefix + suffixQueueName, this.hop, config.amqp.url, 2);
         this.contextHandler = contextHandler;
     }
 
@@ -39,7 +45,7 @@ module.exports = class Executor {
             return ack();
         }
 
-        logger.debug(`[executor] will handle node ${at.type}`);
+        logger.debug(`[executor] will handle node ${at.id}:${at.type}`);
         let handler = nodes.getNode(at.type, event.metadata.tenant);
         if (handler) {
             let metadata = {
@@ -47,18 +53,19 @@ module.exports = class Executor {
                 tenant: event.metadata.tenant,
                 originatorDeviceId: event.metadata.originator,
                 timestamp: event.metadata.timestamp,
-            }
+            };
             let handleMessagePromise = handler.handleMessage(at, event.message, metadata, this.contextHandler);
 
             const handleMessageTimeoutPromise = new Promise((resolve, reject) => {
                 setTimeout(() => {
                     return reject(`timeout`);
                 }, config.taskProcessing.taskTimeout);
-            });            
+            });
 
             Promise.race([handleMessagePromise, handleMessageTimeoutPromise])
                 .then((result) => {
                     logger.debug(`[executor] hop (${at.type}) result: ${JSON.stringify(result)}`);
+                    let sendMsgPromises = [];
                     for (let output = 0; output < at.wires.length; output++) {
                         let newEvent = result[output];
                         if (newEvent) {
@@ -67,23 +74,36 @@ module.exports = class Executor {
                                 // the maximum priority, in this way new
                                 // coming event will need to wait until
                                 // the previous being processed
-                                this.producer.sendMessage(JSON.stringify({
+                                let sendMsgPromise = this.producer.sendMessage(JSON.stringify({
                                     hop: hop,
                                     message: newEvent,
                                     flow: event.flow,
                                     metadata: event.metadata
                                 }), 1);
+
+                                let reflectPromise = sendMsgPromise.then(r => ({ isFulfilled: true, data: r })).catch(r => ({ isFulfilled: false, data: r }));
+                                sendMsgPromises.push(reflectPromise);
                             }
                         }
                     }
-                    return ack();
-                }).catch( (error) => {
-                    logger.warn(`[executor] Node (${at.type}) execution failed. Error: ${error}. Aborting flow ${event.flow.id} branch execution.`);
+                    return Promise.all(sendMsgPromises).then((promises) => {
+                        for (let i = 0; i < promises.length; i++) {
+                            if (!(promises[i].isFulfilled)) {
+                                logger.error(`[executor] Failed to sent message to the next task. Error: ${error}. Aborting flow ${event.flow.id} branch execution at node ${at.id}.`);
+                            }
+                        }
+                        return ack();
+                    }).catch((error) => {
+                        logger.error(`[executor] Node (${at.id}:${at.type}) excution failed. Error: ${error}. Aborting flow ${event.flow.id} branch execution.`);
+                        return ack();
+                    });
+                }).catch((error) => {
+                    logger.warn(`[executor] Node (${at.id}:${at.type}) execution failed. Error: ${error.stack || error}. Aborting flow ${event.flow.id} branch execution.`);
                     // TODO notify alarmManager
                     return ack();
                 });
         } else {
-            logger.warn(`[executor] Unknown node ${at.type} detected. Igoring. Aborting flow ${event.flow.id} branch execution.`);
+            logger.warn(`[executor] Unknown node (${at.id}:${at.type}) detected. Igoring. Aborting flow ${event.flow.id} branch execution.`);
             return ack();
         }
     }
