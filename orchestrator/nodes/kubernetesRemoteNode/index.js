@@ -115,7 +115,6 @@ class DataHandler extends RemoteNode {
       this.token = "";
       this.host = "";
       this.api = null;
-      //this.ext = null;
       logger.debug('Kubernetes was not selected in config file or its config is empty.', { filename: 'kb8sRemoveNode' });
       logger.error(`Could not instantiate kubernetes driver (no config). All request will be ignored.`, { filename: 'kb8sRemoveNode' });
     }
