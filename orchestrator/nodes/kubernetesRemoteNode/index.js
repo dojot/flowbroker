@@ -100,9 +100,7 @@ class DataHandler extends RemoteNode {
       let options = this.getDefaultGroupOptions();
       options.version = "v1";
       this.api = new k8s.Client({ version: '1.13' });
-      //this.api = new k8s.Core(options);
       options.version = "v1";
-      //this.ext = new k8s.Extensions(options);
 
       logger.debug(`Using kubernetes API servera @ ${this.host}`, { filename: 'kb8sRemoveNode' });
       logger.debug(`Testing access...`, { filename: 'kb8sRemoveNode' });
@@ -159,14 +157,12 @@ class DataHandler extends RemoteNode {
       logger.debug(`Sending request to server...`, { filename: 'kb8sRemoveNode' });
       this.api.apis.apps.v1.namespaces("dojot").deployments('').get().then((value) => {
         let tempDeploymentNames = [];
-
-        //for(let i = 0; i < value.items.length; i++){ 
         for (let deployment of value.body.items) {
           tempDeploymentNames.push(deployment.metadata.name);
         }
         // Get only those ones created by flowbroker
         this.deploymentNames = tempDeploymentNames.filter((name) => (name.match(/^flownode-.*/) != null));
-        //logger.debug(`Current flowbroker deployments are: ${util.inspect(value, { depth: null })}`, { filename: 'kb8sRemoveNode' });
+        logger.debug(`Current flowbroker deployments are: ${util.inspect(value, { depth: null })}`, { filename: 'kb8sRemoveNode' });
         resolve("Deployments were successfully retrieved.");
         return;
       }).catch((value) => {
@@ -193,7 +189,7 @@ class DataHandler extends RemoteNode {
           deployment.metadata.name = deploymentName;
           deployment.spec.selector.matchLabels.name = deploymentName;
           deployment.spec.template.metadata.labels.name = deploymentName;
-          //logger.debug(`Adding container ${this.image} to the set...`, { filename: 'kb8sRemoveNode' });
+          logger.debug(`Adding container ${this.image} to the set...`, { filename: 'kb8sRemoveNode' });
           let containerTemplate = {
             name: this.id,
             image: this.image,
