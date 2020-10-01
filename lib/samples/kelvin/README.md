@@ -1,6 +1,6 @@
 # About
 
-This is a Dojot's flowbroker node that converts a Celcius temperature
+This is a Dojot's flowbroker node that converts a Celsius temperature
 measure into Kelvin.
 
 In the kelvin node, you will find:
@@ -36,10 +36,9 @@ JWT=$(curl -s -X POST http://localhost:8000/auth \
 -d '{"username": "admin", "passwd" : "admin"}' | jq -r ".jwt")
 ```
 
-Note: the previous command requires the `jq`and `curl` command, you can install it on on Debian-based Linux distributions with the following command:
+Note: the previous command requires the `jq` and `curl` command, you can install it on on Debian-based Linux distributions with the following command:
 ```
-sudo apt-get install jq
-sudo apt-get install curl
+sudo apt-get install jq curl
 ```
 
 Add the node to Dojot.
