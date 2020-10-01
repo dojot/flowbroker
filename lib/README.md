@@ -4,12 +4,11 @@
 
 A NodeJS library that allows you to integrate your own node on Dojot's [FlowBroker](https://github.com/dojot/flowbroker).
 
-This library are published at npm as [@dojot/flow-node](https://npmjs.org/package/@dojot/flow-node).
+This library is published at npm as [@dojot/flow-node](https://npmjs.org/package/@dojot/flow-node).
 
 ## How to build your own node
 
-1) You need to create a class that extends the `DataHandlerBase` class, this
-class is the responsible by implements your node behavior. The following methods
+1) You need to create a class that extends the `DataHandlerBase` class, that will be responsible for your node's behaviors. The following methods
 __must be__ implemented:
   - getNodeRepresentationPath
   - getMetadata
@@ -21,19 +20,19 @@ __must be__ implemented:
 
 3) You need to encapsulate your code into a docker container.
 
-4) Publish your container in some public repository like [DockerHub](https://hub.docker.com/) or some private based on [DockerRegistry](https://docs.docker.com/registry).
+4) Publish your container in some public repository like [DockerHub](https://hub.docker.com/) or in a private one based on [DockerRegistry](https://docs.docker.com/registry).
 
-5) Call the FlowBroker endpoint to add a new node. Please check the [Latest FlowBroker documentation](https://dojot.github.io/flowbroker/apiary_latest.html) to check
+5) Call the FlowBroker endpoint to add a new node. Please check the [latest FlowBroker documentation](https://dojot.github.io/flowbroker/apiary_latest.html) to check
 how this endpoint works.
 
-Note: To deploy a remote node, you must deploy to `docker-compose` or `kubernetes`, dojot provides these. Consult the
-[dojot documentation](https://dojotdocs.readthedocs.io)
-for more information on installation methods.
+
+__NOTE THAT__ to deploy your newly-created remote node, you must beforehand either deploy dojot via `docker-compose` or via `Kubernetes`. Check the [dojot documentation](https://dojotdocs.readthedocs.io) for more information on installation methods.
+
+This lib has been developed and tested using node v8.14.x
 
 ## Internationalization
 
-The method `getLocalesPath`  should return the full path (`myNode/locales` ),
-where there're __Message Catalog__ (`myNode/locales/__language__.json` ).
+The `getLocalesPath` method should return the full path to the __message catalog__ file. Example: `myNode/locales/__language__.json`.
 
 The locales directory must be in the same directory as the node’s .js file.
 The __language__ part of the path identifies the language the corresponding files provide. Eg.: 'en-US'.
@@ -65,7 +64,8 @@ console.log(RED._("__id__:myNode.message1"));
 
 ##### Editor
 
-Any HTML element provided in the node template can specify a data-i18n attribute to provide the message identify to use. For example:
+When you need using texts from __Message Catalog__  you can specify a data-i18n attribute to provide the message. For example:
+
 
 ```html
 <span data-i18n="myNode.label.foo"></span>
@@ -77,7 +77,7 @@ Any HTML element provided in the node template can specify a data-i18n attribute
 
 ## Samples
 
-The directory samples contains two examples of nodes. One that converts a Celcius temperature measure into Kelvin and another one that calculates the arithmetic mean using *Flowbroker Context Manager*. They can be used as reference to build your own node.
+The [`samples`](./samples) directory contains two examples of nodes: one that converts a Celsius temperature into Kelvin and the other calculates the arithmetic mean using the *Flowbroker Context Manager*. They can be used as references when building a new node.
 
 We will explain the node structure using [samples/kevin](./samples/kevin) node. There, you will find:
 
@@ -114,10 +114,9 @@ JWT=$(curl -s -X POST http://localhost:8000/auth \
 -d '{"username": "admin", "passwd" : "admin"}' | jq -r ".jwt")
 ```
 
-Note: the previous command requires the `jq`and `curl` command, you can install it on Debian-based Linux distributions with the following command:
+Note: the previous command requires the `jq` and `curl` command, you can install it on Debian-based Linux distributions with the following command:
 ```
-sudo apt-get install jq
-sudo apt-get install curl
+sudo apt-get install jq curl
 ```
 
 How to add a node to Dojot:
@@ -127,7 +126,7 @@ curl -H "Authorization: Bearer ${JWT}" http://localhost:8000/flows/v1/node -H 'c
 ```
 Now the node will be available on the FlowBroker Dojot's interface.
 
-#### Making changes to the source code of the node and seeing them reflected
+#### Live Reloading your node
 
 **Note:** If you need to the source code of the node and seeing them reflected, you need to: **rebuild the container**; **push it to the registry again with a new tag**; **remove the node from dojot via api**; **and add the node to dojot again**. Always change the `<image tag>` of the docker image, to force the update and see your changes reflected.
 
@@ -137,9 +136,13 @@ How to remove a node from Dojot:
 curl -X DELETE -H "Authorization: Bearer ${JWT}" http://localhost:8000//flows/v1/node/<node name> -H 'content-type: application/json'
 ```
 
-**ATTENTION**: The `id` to add the node via API (when request `/flows/v1/node`) must be the same as `name` and `id` defined in `getMetadata` in the class that extends `dojot.DataHandlerBase`. And within the html called in the `getNodeRepresentationPath` method also in the class that extends `dojot.DataHandlerBase`, the references inside the html `data-template-name=`, `data-help-name=`, `registerType(..` ,  and `RED._("...` must have this same `id`/`name`.
+#### **ATTENTION**: Avoiding problems with `id` and `name`
 
-This lib has been developed and tested using node v8.14.x
+To facilitate add the node in flowbroker try to follow the intrusions:
+
+- **add the node via API**: The `id` when request `/flows/v1/node` must be the same as `name` and `id` defined in `getMetadata` in the class that extends `dojot.DataHandlerBase`.
+
+- **Node front end - html** ( the html called in the `getNodeRepresentationPath` method also in the class that extends `dojot.DataHandlerBase`): the references inside the html `data-template-name=...`, `data-help-name=...`, `registerType(..` ,  and `RED._("...` must have this same `id`/`name`.
 
 #### Tip: To view the logs from your remote node run
 
