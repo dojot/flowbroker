@@ -1,7 +1,7 @@
 {
   "name": "dojot-kevin-node-package-sample",
   "version": "0.1.0",
-  "description": "This is a sample of node that transforms a given temperature from celcius to kenvin",
+  "description": "This is a sample of node that transforms a given temperature from Celsius to Kelvin",
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
