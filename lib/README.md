@@ -39,7 +39,7 @@ The __language__ part of the path identifies the language the corresponding file
 
 A example of content in a  __Message Catalog__:
 
-```json 
+```json
 {
      "myNode" : {
          "message1": "This is my first message",
@@ -64,7 +64,7 @@ console.log(RED._("__id__:myNode.message1"));
 
 ##### Editor
 
-When you need using texts from __Message Catalog__  you can specify a data-i18n attribute to provide the message. For example:
+When you need to use text from the __Message Catalog__, you can specify a ``data-i18n`` attribute to provide the message. For example:
 
 
 ```html
@@ -138,11 +138,20 @@ curl -X DELETE -H "Authorization: Bearer ${JWT}" http://localhost:8000//flows/v1
 
 #### **ATTENTION**: Avoiding problems with `id` and `name`
 
-To facilitate add the node in flowbroker try to follow the intrusions:
+To facilitate adding the node to the flowbroker, try to follow these intrusions:
 
-- **add the node via API**: The `id` when request `/flows/v1/node` must be the same as `name` and `id` defined in `getMetadata` in the class that extends `dojot.DataHandlerBase`.
+##### **When adding the node via API**
 
-- **Node front end - html** ( the html called in the `getNodeRepresentationPath` method also in the class that extends `dojot.DataHandlerBase`): the references inside the html `data-template-name=...`, `data-help-name=...`, `registerType(..` ,  and `RED._("...` must have this same `id`/`name`.
+The `id` when request `/flows/v1/node` must be the same as `name` and `id` defined in `getMetadata` in the class that extends `dojot.DataHandlerBase`.
+
+##### **When creating the node front end - html**
+
+The html called in the `getNodeRepresentationPath` method also in the class that extends `dojot.DataHandlerBase`). References within this html listed below must have the same `id`/`name`.
+
+- `data-template-name=...`
+- `data-help-name=...`
+- `registerType(..`
+- `RED._("...`
 
 #### Tip: To view the logs from your remote node run
 
