@@ -128,7 +128,7 @@ Now the node will be available on the FlowBroker Dojot's interface.
 
 #### Live Reloading your node
 
-**Note:** If you need to the source code of the node and seeing them reflected, you need to: **rebuild the container**; **push it to the registry again with a new tag**; **remove the node from dojot via api**; **and add the node to dojot again**. Always change the `<image tag>` of the docker image, to force the update and see your changes reflected.
+**Note:** If you need to change the source code of the node and seeing them reflected, you need to: **rebuild the container**; **push it to the registry again with a new tag**; **remove the node from dojot via api**; **and add the node to dojot again**. Always change the `<image tag>` of the docker image, to force the update and see your changes reflected.
 
 How to remove a node from Dojot:
 
@@ -146,7 +146,7 @@ The `id` when request `/flows/v1/node` must be the same as `name` and `id` defin
 
 ##### **When creating the node front end - html**
 
-The html called in the `getNodeRepresentationPath` method also in the class that extends `dojot.DataHandlerBase`). References within this html listed below must have the same `id`/`name`.
+When creating tThe html called in the `getNodeRepresentationPath` method also in the class that extends `dojot.DataHandlerBase`) the references within this html listed below must have the same `id`/`name`.
 
 - `data-template-name=...`
 - `data-help-name=...`
