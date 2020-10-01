@@ -146,7 +146,7 @@ The `id` when request `/flows/v1/node` must be the same as `name` and `id` defin
 
 ##### **When creating the node front end - html**
 
-When creating tThe html called in the `getNodeRepresentationPath` method also in the class that extends `dojot.DataHandlerBase`) the references within this html listed below must have the same `id`/`name`.
+When creating the html called in the `getNodeRepresentationPath` method also in the class that extends `dojot.DataHandlerBase` , the references within this html listed below must have the same `id`/`name`.
 
 - `data-template-name=...`
 - `data-help-name=...`
