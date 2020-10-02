@@ -102,9 +102,9 @@ REPLICA_SET            | Mongo database's replica set address  | None  | url
 Key                    | Purpose                       | Default Value      | Valid Values  |
 ---------------------- | ----------------------------- | -------------------| --------------|
 DEPLOY_ENGINE           | Choose the type of deployment. It will be used with remote nodes.           |  kubernetes  | "kubernetes" or "docker"
-KUBERNETES_SERVICE_HOST | Kubernetes service host (is automatically passed to services on the k8s)    | None  | hostname/ip
 DOCKER_SOCKET_PATH      | The unix socket (TCP sockets to communicate with nodes running in Docker). It will be used with remote nodes when not using k8s. | /var/run/docker.sock | path
 FLOWBROKER_NETWORK      | Docker network.  It will be used with remote nodes when not using k8s.       | dojot | string
+KUBERNETES_SERVICE_HOST | Kubernetes service host (is automatically passed to services on the k8s)    | None  | hostname/ip
 KUBERNETES_PORT_443_TCP_PORT |  Kubernetes service port  (is automatically passed to services on the k8s). It will be used with remote nodes.   | None  | port
 KUBERNETES_TOKEN        | Credential (token) for service account, if nothing is passed it will be used the file at `/var/run/secrets/kubernetes.io/serviceaccount/token`.  It will be used with remote nodes.  | "" (empty string) | string token
 
