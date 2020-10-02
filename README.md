@@ -21,7 +21,7 @@ A flow is a sequence of functional blocks (nodes) to process incoming particular
 - **processing blocks**: blocks (nodes) that perform operations using the event. The blocks (nodes) might be: testing content for particular values or ranges, geo-positioning analysis, changing message attributes, perform operations on external elements, and so on.
 - **exit point**: blocks (nodes) that represent where the resulting data should be forwarded to. These blocks might be a database, a virtual device, an external element, and so on.
 
-The flowbroker orchestrator is implemented under the [`orchestrator`](./orchestrator)directory.
+The flowbroker orchestrator is implemented under the [`orchestrator`](./orchestrator) directory.
 
 ### Flowbroker Context Manager
 
@@ -83,11 +83,11 @@ Before proceeding, **make sure you configure your environment**.
 
 Key                    | Purpose                       | Default Value      | Valid Values  |
 ---------------------- | ----------------------------- | -------------------| --------------|
-AMQP_URL               | RabbitMQ host address    | amqp://rabbitmq  | url
+AMQP_EVENT_QUEUE_N     | Number of event queues to be used    | 10  | natural number
+AMQP_PREFIX_EVENT_QUEUE| RabbitMQ prefix of queues that map kafka messages in order to ensure order of tasks    | event_queue  | string
 AMQP_PREFIX_TASK_QUEUE | RabbitMQ prefix of the queues that map the tasks to be performed, each block (node) can be seen as a task.   | task_queue  | string
 AMQP_TASK_QUEUE_N      | Number of task queues to be used    | 10  | natural number
-AMQP_PREFIX_EVENT_QUEUE| RabbitMQ prefix of queues that map kafka messages in order to ensure order of tasks    | event_queue  | string
-AMQP_EVENT_QUEUE_N     | Number of event queues to be used    | 10  | natural number
+AMQP_URL               | RabbitMQ host address    | amqp://rabbitmq  | url
 CONTEXT_MANAGER_ADDRESS| **Flowbroker context manager** hostname | flowbroker-context-manager | hostname
 CONTEXT_MANAGER_PORT   | **Flowbroker context manager** port | 5556 | port
 CONTEXT_MANAGER_RESPONSE_TIMEOUT | How long the client should wait for a response (to save/get a context). | 10000 | milliseconds

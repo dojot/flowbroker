@@ -128,7 +128,7 @@ Now the node will be available on the FlowBroker Dojot's interface.
 
 #### Live Reloading your node
 
-**Note:** If you need to change the source code of the node and seeing them reflected, you need to: **rebuild the container**; **push it to the registry again with a new tag**; **remove the node from dojot via api**; **and add the node to dojot again**. Always change the `<image tag>` of the docker image, to force the update and see your changes reflected.
+**Note:** If you need to change the source code of the node and see them reflected, you need to: **rebuild the container**; **push it to the registry again with a new tag**; **remove the node from dojot via api**; **and add the node to dojot again**. Always change the `<image tag>` of the docker image, to force the update and see your changes reflected.
 
 How to remove a node from Dojot:
 
@@ -138,15 +138,15 @@ curl -X DELETE -H "Authorization: Bearer ${JWT}" http://localhost:8000//flows/v1
 
 #### **ATTENTION**: Avoiding problems with `id` and `name`
 
-To facilitate adding the node to the flowbroker, try to follow these intrusions:
+To facilitate the addition of a node to the Flowbroker, follow these instructions:
 
 ##### **When adding the node via API**
 
-The `id` when request `/flows/v1/node` must be the same as `name` and `id` defined in `getMetadata` in the class that extends `dojot.DataHandlerBase`.
+The `id` sent in a request to the `/flows/v1/node` endpoint must be the same as the `name` and the `id` defined in the `getMetadata` function inside the class that extends `dojot.DataHandlerBase`.
 
-##### **When creating the node front end - html**
+##### **When creating the node front end - HTML**
 
-When creating the html called in the `getNodeRepresentationPath` method also in the class that extends `dojot.DataHandlerBase` , the references within this html listed below must have the same `id`/`name`.
+When creating the HTML called in the `getNodeRepresentationPath`  method and also in the class that extends `dojot.DataHandlerBase` , the references within this html listed below must have the same `id`/`name`.
 
 - `data-template-name=...`
 - `data-help-name=...`
