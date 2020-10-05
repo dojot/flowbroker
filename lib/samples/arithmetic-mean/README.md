@@ -1,6 +1,7 @@
 # About
 
 This is a Dojot's flowbroker node that calculates the arithmetic mean.
+This node uses the Flowbroker Context Manager that allows a given set of data to persist beyond the life of the event.
 
 # How to build and add it to Dojot
 
@@ -21,8 +22,7 @@ JWT=$(curl -s -X POST http://localhost:8000/auth \
 -d '{"username": "admin", "passwd" : "admin"}' | jq -r ".jwt")
 ```
 
-Note: the previous command requires the `jq` command, you can install it on ubuntu
-with the following command:
+Note: the previous command requires the `jq` command, you can install it on on Debian-based Linux distributions with the following command:
 ```
 sudo apt-get install jq
 ```
