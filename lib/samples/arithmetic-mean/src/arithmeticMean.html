@@ -20,11 +20,11 @@
 
 <script type="text/javascript">
     RED.nodes.registerType('arithmetic-mean', {
-        category: RED._("sample/arithmetic-mean:category"),
+        category: RED._("arithmetic-mean:category"),
         color: "rgb(231, 231, 174)",
         defaults: {
             name: { value: "", required: false },
-            out:  { value: "payload", validate: RED.validators.typedInput("outFieldType") },
+            out: { value: "payload", validate: RED.validators.typedInput("outFieldType") },
             outFieldType: { value: "msg" },
             in: { value: "payload", validate: RED.validators.typedInput("inFieldType") },
             inFieldType: { value: "msg" },
@@ -33,9 +33,9 @@
         outputs: 1,
         icon: "cog.png",
         label: function () {
-            return this.name  || RED._('sample/arithmetic-mean:title');
+            return this.name || RED._('arithmetic-mean:title');
         },
-        paletteLabel: RED._('sample/arithmetic-mean:title'),
+        paletteLabel: RED._('arithmetic-mean:title'),
         labelStyle: function () {
             return this.name ? "node_label_italic" : "";
         },

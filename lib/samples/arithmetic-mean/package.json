@@ -1,5 +1,5 @@
 {
-  "name": "arithmetic-mean-node",
+  "name": "dojot-arithmetic-mean-node-package-sample",
   "version": "0.1.0",
   "description": "This is a sample of node that computes the arithmetic mean",
   "main": "src/index.js",
