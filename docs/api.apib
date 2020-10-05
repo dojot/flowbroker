@@ -28,7 +28,7 @@ Returns all currently configured flows
 + Response 500 (application/json; charset=utf-8)
 
         {
-          "message": "Failed to list flows"
+          "message": "Failed to list flows" | "Failed to switch tenancy context"
         }
 
 
@@ -70,7 +70,7 @@ Adds a new flow.
 + Response 500 (application/json; charset=utf-8)
 
         {
-          "message" : "failed to create flow"
+          "message" : "failed to create flow" | "Failed to switch tenancy context"
         }
 
 ### Removes all flows [DELETE /v1/flow]
@@ -89,7 +89,7 @@ Removes all flows and their configurations.
 + Response 500 (application/json; charset=utf-8)
 
         {
-          "message" : "failed to remove flows"
+          "message" : "Failed to remove flows" | "Failed to switch tenancy context"
         }
 
 
@@ -124,18 +124,18 @@ Returns the configuration of a particular flow
 + Response 500
 
         {
-          "msg" : "failed to retrieve data"
+          "msg" : "Failed to get flow" | "Failed to switch tenancy context"
         }
 
 + Response 404
 
         {
-          "message": "Unknown flow: 777777",
-          "flow": "777777"
+          "message": "Unknown flow: 123456",
+          "flow": "123456"
         }
 
 ### Reconfigure a specific flow [PUT /v1/flow/{id}]
-Reconfigure a particular flow - the old config will be removed and the new one will be deployed.
+Reconfigure a particular flow - the old configuration will be removed and the new one will be deployed.
 
 + Parameters
   + id: 123456 (required, string) - The identifier associated to the flow
@@ -170,13 +170,13 @@ Reconfigure a particular flow - the old config will be removed and the new one w
 + Response 404
 
         {
-          "message": "Unknown flow: 777777",
-          "flow": "777777"
+          "message": "Unknown flow: 123456",
+          "flow": "123456"
         }
 + Response 500
 
         {
-          "msg" : "failed to remove flow"
+          "msg" : "failed to update flows" | "Failed to switch tenancy context"
         }
 
 ### Remove the flow [DELETE /v1/flow/{id}]
@@ -207,7 +207,7 @@ Removes the flow and its configuration.
 + Response 500
 
         {
-          "msg" : "failed to remove flow"
+          "msg" : "failed to remove flow" | "Failed to switch tenancy context"
         }
 
 + Response 404
@@ -230,7 +230,7 @@ Adds a remote node
   + Body
 
             {
-                "image": "dojot/kelvin-example:3.0.0-alpha2",
+                "image": "dojot/kelvin-example:v0.5",
                 "id": "kelvin"
             }
 
@@ -243,7 +243,7 @@ Adds a remote node
 + Response 400
 
         {
-          "message" : "Missing mandatory field"
+          "message" : "Missing mandatory field" | "Given flow is invalid"
         }
 
 + Response 500
@@ -298,7 +298,7 @@ Removes a remote node
 + Response 500
 
         {
-          "message": "Failed to remove node.",
+          "message": "failed to remove node."
         }
 
 ### Remove all remote nodes [DELETE /v1/node]
@@ -318,7 +318,7 @@ Removes a remote node
 + Response 500 (application/json; charset=utf-8)
 
         {
-          "message": "Failed to remove node.",
+          "message": "failed to remove node."
         }
 
 
