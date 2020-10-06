@@ -9,7 +9,7 @@ var RemoteNode = require("../remoteNode/index").Handler;
 
 
 const DEPLOY_TEMPLATE = JSON.stringify({
-  "apiVersion": "extensions/v1beta1",
+  "apiVersion": "apps/v1",
   "kind": "Deployment",
   "metadata": {
     "labels": {
@@ -19,6 +19,12 @@ const DEPLOY_TEMPLATE = JSON.stringify({
     "name": ""
   },
   "spec": {
+    "selector":{
+      "matchLabels":{
+        "app":"flowbroker",
+        "name":""
+      }
+    },
     "replicas": 1,
     "template": {
       "metadata": {
@@ -56,7 +62,7 @@ const SERVICE_TEMPLATE = JSON.stringify({
 });
 
 const SCALEDOWN_TEMPLATE = JSON.stringify({
-  "apiVersion": "extensions/v1beta1",
+  "apiVersion": "apps/v1",
   "kind": "Deployment",
   "metadata": {
     "name": "",
@@ -93,12 +99,10 @@ class DataHandler extends RemoteNode {
       // Initialize API access
       let options = this.getDefaultGroupOptions();
       options.version = "v1";
-      this.api = new k8s.Core(options);
-      options.version = "v1beta1";
-      this.ext = new k8s.Extensions(options);
+      this.api = new k8s.Client({ version: '1.13' });
+      options.version = "v1";
 
-      logger.debug(`Using kubernetes API server @ ${this.host}`, { filename: 'kb8sRemoveNode' });
-
+      logger.debug(`Using kubernetes API servera @ ${this.host}`, { filename: 'kb8sRemoveNode' });
       logger.debug(`Testing access...`, { filename: 'kb8sRemoveNode' });
       this.retrieveDeployments().then(() => {
         logger.debug(`... server access is OK.`, { filename: 'kb8sRemoveNode' });
@@ -111,7 +115,6 @@ class DataHandler extends RemoteNode {
       this.token = "";
       this.host = "";
       this.api = null;
-      this.ext = null;
       logger.debug('Kubernetes was not selected in config file or its config is empty.', { filename: 'kb8sRemoveNode' });
       logger.error(`Could not instantiate kubernetes driver (no config). All request will be ignored.`, { filename: 'kb8sRemoveNode' });
     }
@@ -130,7 +133,7 @@ class DataHandler extends RemoteNode {
   getDefaultGroupOptions() {
     return {
       url: this.host,
-      version: 'v1beta1',
+      version: 'v1',
       auth: {
         bearer: this.token
       },
@@ -145,15 +148,16 @@ class DataHandler extends RemoteNode {
    */
   retrieveDeployments() {
     return new Promise((resolve, reject) => {
-      if (this.ext === null) {
+      if (this.api === null) {
         reject("Kubernetes driver not fully initialized.");
         return;
       }
       logger.debug(`Retrieving current deployment...`, { filename: 'kb8sRemoveNode' });
       logger.debug(`Sending request to server...`, { filename: 'kb8sRemoveNode' });
-      this.ext.namespaces("dojot").deployments("").get().then((value) => {
+      this.api.apis.apps.v1.namespaces("dojot").deployments('').get().then((value) => {
         let tempDeploymentNames = [];
-        for (let deployment of value.items) {
+
+        for (let deployment of value.body.items) {
           tempDeploymentNames.push(deployment.metadata.name);
         }
         // Get only those ones created by flowbroker
@@ -183,6 +187,7 @@ class DataHandler extends RemoteNode {
           let deploymentName = `flownode-${this.id}`;
           deployment.metadata.labels.name = deploymentName;
           deployment.metadata.name = deploymentName;
+          deployment.spec.selector.matchLabels.name = deploymentName;
           deployment.spec.template.metadata.labels.name = deploymentName;
           logger.debug(`Adding container ${this.image} to the set...`, { filename: 'kb8sRemoveNode' });
           let containerTemplate = {
@@ -253,25 +258,24 @@ class DataHandler extends RemoteNode {
    * @param {function} reject Callback for failure
    */
   createDeployment(deploymentName, deployment, resolve, reject) {
-    if (this.ext === null || this.api === null) {
+    if (this.api === null) {
       reject("Kubernetes drive is not fully initialized");
       return;
     }
 
     if(this.deploymentNames.includes(deploymentName)){
-      this.serverAddress = deploymentName;
       resolve(`Deployment ${deploymentName} already exists.`);
       return;
     }
 
     logger.debug(`Sending request to server...`, { filename: 'kb8sRemoveNode' });
-    this.ext.namespaces("dojot").deployments.post({ body: deployment }).then(() => {
+    this.api.apis.apps.v1.namespaces("dojot").deployments.post({ body: deployment }).then(() => {
       logger.debug('Creating service for this deployment...', { filename: 'kb8sRemoveNode' });
       let service = JSON.parse(SERVICE_TEMPLATE);
       service.metadata.name = `${deployment.metadata.name}`;
       service.spec.selector.name = deployment.metadata.name;
       logger.debug(`Service to be created: ${util.inspect(service, { depth: null })}`, { filename: 'kb8sRemoveNode' });
-      this.api.namespaces("dojot").services.post({ body: service }).then((value) => {
+        this.api.api.v1.namespaces("dojot").services.post({ body: service }).then((value) => {
         this.serverAddress = service.metadata.name;
         logger.debug(`... service for deployment created:  ${util.inspect(value, { depth: null })}`, { filename: 'kb8sRemoveNode' });
         resolve("Deployment and associated service successfully created.");
@@ -295,7 +299,7 @@ class DataHandler extends RemoteNode {
    * @param {function} reject Callback for failure
    */
   removeDeployment(deploymentName, resolve, reject) {
-    if (this.ext === null || this.api === null) {
+    if (this.api === null) {
       reject("Kubernetes drive is not fully initialized");
       return;
     }
@@ -307,14 +311,14 @@ class DataHandler extends RemoteNode {
     let scaleTemplate = JSON.parse(SCALEDOWN_TEMPLATE);
     scaleTemplate.metadata.name = deploymentName;
     scaleTemplate.metadata.labels.name = deploymentName;
-    this.ext.namespaces("dojot").deployments(deploymentName).patch({ body: scaleTemplate }).then(() => {
+    this.api.apis.apps.v1.namespaces("dojot").deployments(deploymentName).patch({ body: scaleTemplate }).then(() => {
       logger.debug(`... deployment ${deploymentName} was scaled down.`, { filename: 'kb8sRemoveNode' });
       logger.debug(`Removing deployment ${deploymentName}...`, { filename: 'kb8sRemoveNode' });
-      this.ext.namespaces("dojot").deployments(deploymentName).delete(options).then(() => {
+      this.api.apis.apps.v1.namespaces("dojot").deployments(deploymentName).delete(options).then(() => {
         logger.debug(`... deployment ${deploymentName} was removed.`, { filename: 'kb8sRemoveNode' });
         logger.debug('Removing service for this deployment...', { filename: 'kb8sRemoveNode' });
         let serviceName = `${deploymentName}`;
-        this.api.namespaces("dojot").services(serviceName).delete(options).then((value) => {
+        this.api.api.v1.namespaces("dojot").services(serviceName).delete(options).then((value) => {
           logger.debug(`... Service for deployment removed:  ${util.inspect(value, { depth: null })}`, { filename: 'kb8sRemoveNode' });
           resolve("Deployment and associated service successfully removed");
         }).catch((error) => {
