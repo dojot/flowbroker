@@ -15,7 +15,7 @@
     "@dojot/dojot-module-logger": "0.0.1-alpha.5",
     "amqplib": "^0.5.2",
     "argparse": "^1.0.9",
-    "axios": "^0.18.0",
+    "axios": "^0.18.1",
     "bluebird": "^3.4.7",
     "express": "^4.16.2",
     "follow-redirects": "^1.4.1",
