@@ -75,7 +75,7 @@ module.exports = class DeviceIngestor {
         //tenancy subject
         logger.debug("Registering callbacks for tenancy subject...");
         this.kafkaMessenger.on(config.kafkaMessenger.dojot.subjects.tenancy,
-          "new-tenant", (tenant, newtenant) => {
+          config.kafkaMessenger.dojot.events.tenantEvent.NEW_TENANT, (_tenant, newtenant) => {
             node.addTenant(newtenant, this.kafkaMessenger).catch((error) => {
               logger.error(`Failed to add tenant ${newtenant} to node handler (${error}). Bailing out...`);
               process.kill(process.pid, "SIGTERM");
