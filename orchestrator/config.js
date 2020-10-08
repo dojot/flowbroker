@@ -93,6 +93,16 @@ let config = {
                 deviceData: process.env.DOJOT_SUBJECT_DEVICE_DATA || "device-data",
                 notification: process.env.DOJOT_SUBJECT_NOTIFICATIONS || "dojot.notifications",
                 ftp: process.env.DOJOT_SUBJECT_FTP || "dojot.ftp"
+            },
+            events: {
+                tenantEvent: {
+                    NEW_TENANT: "new-tenant",
+                    DELETE_TENANT: "delete-tenant"
+                },
+                tenantActionType: {
+                    CREATE: "create",
+                    DELETE: "delete"
+                }
             }
         }
     },
