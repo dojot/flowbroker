@@ -37,7 +37,7 @@ module.exports = class Dispatcher {
     });
 
     this.sock.on("error",(error) => {
-        logger.error('Dispatch error:${error}');
+        logger.error('Dispatch error:' + error);
     });
 
     this.sock.connect('tcp://' + this.address + ':' + this.port);
