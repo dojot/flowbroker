@@ -132,6 +132,11 @@ class NodeManager {
             let containerId;
             try {
               containerId = await node.create();
+
+              // When recreating node.init() dont return and the map dont be updated
+              // So this code is needed after node.init to reload the map when flowbroker
+              // is restarted
+              this.nodes[tenant][item.id] = node;
               await node.init();
               // update map
               this.nodes[tenant][item.id] = node;
