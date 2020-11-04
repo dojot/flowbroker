@@ -3,6 +3,7 @@
 var dojot = require('@dojot/flow-node');
 var Dispatcher = require('../../dispatcher');
 var fs = require('fs');
+const { exception } = require('console');
 
 class RemoteNodeHandler extends dojot.DataHandlerBase {
 
@@ -21,20 +22,24 @@ class RemoteNodeHandler extends dojot.DataHandlerBase {
   }
 
   init() {
-    this.dispatcher = new Dispatcher(this.serverAddress, this.serverPort);
-    this.dispatcher.init();
+      this.dispatcher = new Dispatcher(this.serverAddress, this.serverPort, 60000);
+      this.dispatcher.init();
 
-    // Fetch all meta information from newly created remote impl
-    return this.dispatcher.sendRequest({command: 'metadata'})
-      .then(meta => {
-        this.metadata = meta.payload;
-        return this.dispatcher.sendRequest({ command: 'html' });
-      })
-      .then(html => {
-        this.html = '/tmp/' + this.id;
-        fs.writeFileSync(this.html, html.payload);
-      });
-
+      // Fetch all meta information from newly created remote impl
+      return this.dispatcher.sendRequest({ command: 'metadata' })
+        .then(meta => {
+          console.log('************'+meta)
+          this.metadata = meta.payload;
+          return this.dispatcher.sendRequest({ command: 'html' });
+        })
+        .then(html => {
+          this.html = '/tmp/' + this.id;
+          fs.writeFileSync(this.html, html.payload);
+        })
+        .catch(error =>{
+          console.log('err************'+error)
+        });
+  
   }
   getNodeRepresentationPath() {
     return this.html;
@@ -61,8 +66,8 @@ class RemoteNodeHandler extends dojot.DataHandlerBase {
    * @return {[object]}        Locale settings used by the module
    */
   async getLocaleData(locale) {
-      const  res = await (this.dispatcher.sendRequest({command: 'locale', locale: locale}));
-      return res.payload;
+    const res = await (this.dispatcher.sendRequest({ command: 'locale', locale: locale }));
+    return res.payload;
   }
 
   handleMessage(config, message, metadata) {
@@ -74,13 +79,13 @@ class RemoteNodeHandler extends dojot.DataHandlerBase {
       metadata: metadata
     };
 
-    return new Promise ( (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.dispatcher.sendRequest(command).then((reply) => {
         if (reply.error) {
           return reject(reply.error);
         }
 
-        if (Array.isArray(reply)){
+        if (Array.isArray(reply)) {
           return resolve(reply);
         }
 
@@ -92,4 +97,4 @@ class RemoteNodeHandler extends dojot.DataHandlerBase {
   }
 }
 
-module.exports = {Handler: RemoteNodeHandler};
+module.exports = { Handler: RemoteNodeHandler };
