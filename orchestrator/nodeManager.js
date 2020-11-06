@@ -102,7 +102,7 @@ class NodeManager {
               this.socketPath, this.network, item.containerId);
           }
           else if (config.deploy.engine === "kubernetes") {
-            node = new k8sRemote(item.image, tenant + item.id);
+            node = new k8sRemote(item.image, tenant + item.id,'flownode-' + tenant + item.id);
           }
 
           if(!node) {
@@ -129,11 +129,7 @@ class NodeManager {
           let containerId;
           try {
             containerId = await node.create();
-	    // When recreating node.init() dont return and the map dont be updated
-            // So this code is needed after node.init to reload the map when flowbroker
-            // is restarted
-            this.nodes[tenant][item.id] = node;
-
+	    
             await node.init();
             // update map
             this.nodes[tenant][item.id] = node;
