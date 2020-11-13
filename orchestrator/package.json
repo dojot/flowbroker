@@ -27,7 +27,7 @@
     "mongodb": "^3.0.4",
     "mustache": "^2.3.0",
     "handlebars": "^4.0.12",
-    "nodemailer": "^4.6.4",
+    "nodemailer": "^6.4.16",
     "request": "^2.79.0",
     "url": "^0.11.0",
     "uuid": "^3.2.1",
