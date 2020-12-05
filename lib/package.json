@@ -20,6 +20,6 @@
   "dependencies": {
     "zeromq": "^4.6.0",
     "uuid": "^3.2.1",
-    "@dojot/dojot-module-logger": "0.0.1-alpha.5"
+    "@dojot/dojot-module-logger": "0.1.0"
   }
 }
