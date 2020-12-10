@@ -1,17 +1,24 @@
 {
   "name": "context-manager",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Flow broker's context manager",
   "main": "index.js",
   "scripts": {
-    "test": ""
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check-licenses": "apache2-license-checker"
   },
   "author": "Raul Negreiros",
-  "license": "GPL-3.0",
+  "license": "Apache-2.0",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
   "dependencies": {
     "zeromq": "^4.6.0",
     "zookeeper": "3.4.9-3",
     "express": "^4.16.2",
-    "@dojot/dojot-module-logger": "^0.0.1-alpha.5"
+    "@dojot/dojot-module-logger": "^0.1.0"
   }
 }
