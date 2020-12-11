@@ -58,5 +58,8 @@
     "when": "~3.7.8",
     "zeromq": "^4.6.0",
     "basic-ftp": "^3.4.4"
+  },
+  "devDependencies": {
+    "@bbc/apache2-license-checker": "^1.1.4"
   }
 }
