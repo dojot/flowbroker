@@ -1,6 +1,6 @@
 # Flowbroker
 
-[![License badge](https://img.shields.io/badge/license-GPL-blue.svg)](https://opensource.org/licenses/GPL-3.0)
+[![License badge](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Docker badge - flowbroker](https://img.shields.io/docker/pulls/dojot/flowbroker.svg)](https://hub.docker.com/r/dojot/flowbroker/)
 [![Docker badge - flowbroker-context-manager](https://img.shields.io/docker/pulls/dojot/flowbroker-context-manager.svg)](https://hub.docker.com/r/dojot/flowbroker-context-manager/)
 [![Build Status](https://travis-ci.org/dojot/flowbroker.svg?branch=development)](https://travis-ci.org/dojot/flowbroker)
