@@ -105,7 +105,7 @@ class NodeManager {
                 this.socketPath, this.network, item.containerId);
             }
             else if (config.deploy.engine === "kubernetes") {
-              node = new k8sRemote(item.image, tenant + item.id,'flownode-' + tenant + item.id);
+              node = new k8sRemote(item.image, tenant + item.id);
             }
 
             if (!node) {
