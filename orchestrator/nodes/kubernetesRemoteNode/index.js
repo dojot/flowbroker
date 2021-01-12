@@ -83,8 +83,8 @@ class DataHandler extends RemoteNode {
    * @param {string} image The image to be added to Kubernetes pod
    * @param {string} id Node ID
    */
-  constructor(image, id) {
-    super(id, undefined, 5555);
+  constructor(image, id,serverAddress) {
+    super(id, serverAddress, 5555);
     logger.debug("Using kubernetes driver.", { filename: 'kb8sRemoveNode' });
     this.image = image;
     this.id = id;
