@@ -5,6 +5,7 @@ WORKDIR /opt/flowbroker-node
 RUN apk --no-cache add gcc g++ musl-dev make python bash zlib-dev
 
 COPY package.json ./package.json
+COPY package-lock.json ./package-lock.json
 RUN npm install
 
 
