@@ -1,0 +1,16 @@
+{
+    "exceptions": {
+      "tslib@1.14.1": {
+        "reason": "0BSD is public-domain-equivalent license, so it should be compatible with Apache-2.0."
+      },
+      "cluster-key-slot@1.1.0": {
+        "reason": "It is lincensed as Apache-2.0."
+      },
+      "pako@1.0.11": {
+        "reason": "The license file is MIT, but in the package.json appears MIT and Zlib. Both licenses shouldn't be a problem."
+      },
+      "node-forge@0.8.5": {
+        "reason": "It allows to choose between BSD-3-Clause and GPL. We chose BSD-3-Clause to be compatible with Apache-2.0."
+      }
+    }
+  }

@@ -7,8 +7,14 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Matheus Magalhaes",
-  "license": "GPL-3.0",
+  "license": "Apache-2.0",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
   "dependencies": {
-    "@dojot/flow-node": "3.0.0-alpha.5"
+    "@dojot/flow-node": "3.1.0"
   }
 }
