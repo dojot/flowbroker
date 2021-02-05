@@ -1,18 +1,23 @@
 {
   "name": "@dojot/flow-node",
-  "version": "3.0.0-alpha.6",
+  "version": "3.1.0",
   "description": "Basic interface to dojot's flowbroker",
   "main": "index.js",
   "scripts": {
-    "test": ""
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check-licenses": "apache2-license-checker"
   },
   "author": "Matheus Magalhaes",
   "contributors": [
+    "Raul Negreiros"
+  ],
+  "license": "Apache-2.0",
+  "licenses": [
     {
-      "name": "Raul Negreiros"
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
     }
   ],
-  "license": "GPL-3.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/dojot/flowbroker.git"
@@ -20,6 +25,9 @@
   "dependencies": {
     "zeromq": "^4.6.0",
     "uuid": "^3.2.1",
-    "@dojot/dojot-module-logger": "0.0.1-alpha.5"
+    "@dojot/dojot-module-logger": "^0.1.0"
+  },
+  "devDependencies": {
+    "@bbc/apache2-license-checker": "^1.1.4"
   }
 }
