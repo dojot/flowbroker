@@ -1,0 +1,98 @@
+<script type="text/x-red" data-template-name="lora-node">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="loradecrypt.label.name"></label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-in"><i class="fa fa-edit"></i> <span><span data-i18n="loradecrypt.label.input_from"></span></label>
+        <input type="text" id="node-input-in"  style="width:250px;">
+        <input type="hidden" id="node-input-inFieldType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-out"><i class="fa fa-edit"></i> <span><span data-i18n="loradecrypt.label.output_to"></span></label>
+        <input type="text" id="node-input-out" style="width:250px;">
+        <input type="hidden" id="node-input-outFieldType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-nsw"><i class="fa fa-edit"></i> <span><span data-i18n="loradecrypt.label.nsw"></span></label>
+        <input type="text" id="node-input-nsw"  style="width:250px;">
+        <input type="hidden" id="node-input-nswFieldType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-asw"><i class="fa fa-edit"></i> <span><span data-i18n="loradecrypt.label.asw"></span></label>
+        <input type="text" id="node-input-asw"  style="width:250px;">
+        <input type="hidden" id="node-input-aswFieldType">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="lora-node">
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('lora-node', {
+        category: RED._("lora"),
+        color: "rgb(231, 231, 174)",
+        defaults: {
+            name: { value: "" },
+            out:  { value: ""},
+            outFieldType: { value: "msg" },
+            in: { value: "" },
+            inFieldType: { value: "msg" },
+            nsw: { value: "" },
+            asw: { value: "" },
+            
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "cog.png",
+        label: function () {
+            return this.name || RED._('dojot/lora-node:title');
+        },
+        paletteLabel: RED._('dojot/lora-node:title'),
+        labelStyle: function () {
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function () {
+            if (!this.outFieldType) {
+                this.outFieldType = 'msg';
+            }
+
+            $("#node-input-out").typedInput({
+                default: 'msg',
+                types: ['msg'],
+                typeField: $("#node-input-outFieldType")
+            });
+
+            if (!this.inFieldType) {
+                this.inFieldType = 'msg';
+            }
+
+            $("#node-input-in").typedInput({
+                default: 'msg',
+                types: ['msg'],
+                typeField: $("#node-input-inFieldType")
+            });
+
+            if (!this.nswFieldType) {
+                this.nswFieldType = 'msg';
+            }
+
+            $("#node-input-nsw").typedInput({
+                default: 'msg',
+                types: ['msg'],
+                typeField: $("#node-input-nswFieldType")
+            });
+
+            if (!this.aswFieldType) {
+                this.aswFieldType = 'msg';
+            }
+
+             $("#node-input-asw").typedInput({
+                default: 'msg',
+                types: ['msg'],
+                typeField: $("#node-input-aswFieldType")
+            });
+        },
+        oneditsave: function () { }
+    });
+</script>

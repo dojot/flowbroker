@@ -1,0 +1,18 @@
+{
+  "loradecrypt": {
+      "title": "modelo de dispositivo",
+      "label": {
+          "name": "Nome",
+          "input_from": "De",
+          "output_to": "Para",
+          "nsw": "NwkSKey",
+          "asw": "AppSKey",
+          "device_template": "Modelo de dispositivo",
+          "status": "Status"
+      },
+      "text": {
+          "exclude": "excluir alterações de status do dispositivo",
+          "include": "incluir alterações de status do dispositivo"
+      }
+  }
+}

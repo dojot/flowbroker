@@ -1,0 +1,56 @@
+{
+  "title": "definir valor",
+  "common": {
+    "label": {
+      "payload": "Payload",
+      "topic": "Tópico",
+      "name": "Nome",
+      "username": "Nome de usuário",
+      "password": "Senha"
+    },
+    "status": {
+      "connected": "conectado",
+      "not-connected": "não conectado",
+      "disconnected": "desconectado",
+      "connecting": "conectando",
+      "error": "erro",
+      "ok": "OK"
+    },
+    "notification": {
+      "error": "<strong>Erro</strong>: __message__",
+      "errors": {
+        "not-deployed": "nó não implantado",
+        "no-response": "nenhuma resposta do servidor",
+        "unexpected": "erro inesperado (__status__) __message__"
+      }
+    },
+    "errors": {
+      "nooverride": "Aviso: as propriedades msg não podem mais substituir as propriedades do nó configurado. Veja bit.ly/nr-override-msg-props"
+    }
+  },
+  "change": {
+    "label": {
+      "rules": "Regras",
+      "rule": "regra",
+      "set": "definir __property__",
+      "change": "alterar __property__",
+      "delete": "excluir __property__",
+      "move": "mover __property__",
+      "changeCount": "alteração: __count__ rules",
+      "regex": "Use expressões regulares"
+    },
+    "action": {
+      "set": "Definir",
+      "change": "Alterar",
+      "delete": "Excluir",
+      "move": "Mover",
+      "to": "para",
+      "search": "Procurar por",
+      "replace": "Substituir por"
+    },
+    "errors": {
+      "invalid-from": "Propriedade 'de' inválida: __error__",
+      "invalid-json": "Propriedade 'para' JSON inválida"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+language: node_js
+node_js:
+  - "8"
+cache:
+  directories:
+  - node_modules
+env:
+  - DOCKER_COMPOSE_VERSION=1.21.2
+before_install:
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+script:
+  - export FLOWBROKER_NETWORK=flowbroker
+  - docker build -t flowbroker -f orchestrator.docker .
+  - docker build -t flowbroker-context-manager -f contextManager.docker .
+  - docker build -t tests-flowbroker -f ./tests/Dockerfile .
+  - docker-compose -f tests/docker-compose.yml up -d kafka rabbitmq data-broker mongodb auth postgres-users device-manager device-manager-redis
+  - sleep 10
+  - docker-compose -f tests/docker-compose.yml up -d flowbroker flowbroker-context-manager flowbroker-redis
+  - sleep 10
+  - docker-compose -f ./tests/docker-compose.yml run --rm tester * --level=debug
+
+after_success:
+  - travis/publish.sh
+  - travis/deploy-gh-pages.sh

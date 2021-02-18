@@ -1,0 +1,105 @@
+<script type="text/x-red" data-template-name="notification">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.name"></label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-msgType"><i class="fa fa-gears"></i> <span data-i18n="label.message"></label>
+        <select id="node-input-msgType" onchange="handleChangeMsgType()" style="width:70%;">
+            <option value="static" data-i18n="text.static"></option>
+            <option value="dynamic" data-i18n="text.dynamic"></option>
+        </select>
+    </div>
+    <div class="form-row" id="notification-static-message" >
+        <label for="node-input-messageStatic"><i class="fa fa-edit"></i> <span data-i18n="label.value"></label>
+        <textarea id="node-input-messageStatic" style="width:70%;"></textarea>
+    </div>
+    <div class="form-row" id="notification-dynamic-message">
+        <label for="node-input-messageDynamic"><i class="fa fa-edit"></i> <span data-i18n="label.value"></label>
+        <input type="text" id="node-input-messageDynamic">
+        <input type="hidden" id="node-input-messageFieldType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-source"><i class="fa fa-cube"></i> <span data-i18n="label.source"></label>
+        <input type="text" id="node-input-source">
+        <input type="hidden" id="node-input-sourceFieldType">
+    </div>
+
+</script>
+
+<script type="text/x-red" data-help-name="notification">
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('notification', {
+        category: 'output',
+        color: "#87A980",
+        defaults: {
+            name: {value: "", required: false},
+            source: {
+                value: "",
+                required: false,
+                validate: RED.validators.typedInput("sourceFieldType")
+            },
+            sourceFieldType: {value: "msg"},
+            messageDynamic: {
+                value: "",
+                validate: RED.validators.typedInput("messageFieldType")
+            },
+            messageStatic: {value: ""},
+            messageFieldType: {value: "msg"},
+            msgType: {value: 'static', required: true}
+        },
+        inputs: 1,
+        outputs: 0,
+        icon: "alert.png",
+        label: function () {
+            return this.name || RED._('dojot/notification:title');
+        },
+        paletteLabel: RED._('dojot/notification:title'),
+        labelStyle: function () {
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function () {
+
+            handleChangeMsgType();
+
+            if (!this.sourceFieldType) {
+                this.sourceFieldType = 'msg';
+            }
+            $("#node-input-source").typedInput({
+                default: 'msg',
+                types: ['msg'],
+                typeField: $("#node-input-sourceFieldType")
+            });
+
+            if (!this.messageFieldType) {
+                this.messageFieldType = 'msg';
+            }
+            $("#node-input-messageDynamic").typedInput({
+                default: 'msg',
+                types: ['msg'],
+                typeField: $("#node-input-messageFieldType")
+            });
+        },
+        oneditsave: function () {
+        }
+    });
+
+    function handleChangeMsgType() {
+        let msgType = $('#node-input-msgType');
+        let staticArea = $('#notification-static-message');
+        let dynamicArea = $('#notification-dynamic-message');
+
+        switch (msgType.val()) {
+            case "dynamic":
+                staticArea.hide();
+                dynamicArea.show();
+                break;
+            case "static":
+                staticArea.show();
+                dynamicArea.hide();
+                break;
+        }
+    }
+</script>

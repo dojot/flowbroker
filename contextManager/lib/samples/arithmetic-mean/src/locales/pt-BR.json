@@ -1,0 +1,10 @@
+{
+  "title": "média aritmética",
+  "config": {
+    "name": "Nome",
+    "target_attribute": "atributo alvo",
+    "mean": "média",
+    "payload": "payload"
+  },
+  "category": "função"
+}

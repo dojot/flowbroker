@@ -1,0 +1,184 @@
+<script type="text/javascript">
+    RED.nodes.registerType('cron', {
+        // (string) the palette category the node appears in
+        category: "function",
+        // (string) the icon to use
+        icon: "timer.png",
+        // (string) the background colour to use
+        color: "#71c4b1",
+        // (number) how many inputs the node has, either 0 or 1
+        inputs: 1,
+        // (number) how many outputs the node has. Can be 0 or more.
+        outputs: 1,
+        inputLabels: "in",
+        outputLabels: ["out"],
+        // (object) the editable properties for the node
+        defaults: {
+            name: {
+                value: "",
+                required: false
+            },
+            operation: {
+                value: "CREATE",
+                required: true
+            },
+            cronTimeExpression: {
+                value: "",
+                validate: function(v) {
+                    if($("#node-input-operation option:selected").val() === 'CREATE') {
+                        let cronregex = new RegExp(/^(\*|(([0-9])|([0-5][0-9]))(((\,)(([0-9])|([0-5][0-9])))*)?(\/(([0-9])|([0-5][0-9])))?) (\*|(([0-9])|(1[0-9]|2[0-3]))(((\,)(([0-9])|(1[0-9]|2[0-3])))*)?(\/(([0-9])|(1[0-9]|2[0-3])))?) (\*|(([0-9])|(1[0-9]|2[0-9]|3[01]))(((\,)((0-9)|(1[0-9]|2[0-9]|3[01]))*))?(\/(([0-9])|(1[0-9]|2[0-9]|3[01])))?) (\*|(([0-9])|(0[0-9]|1[0-2]))(((\,)(([0-9])|(0[0-9]|1[0-2])))*)?(\/(([0-9])|(0[0-9]|1[0-2])))?) (\*|(([0-7])|(0[0-7]))((\,)(([0-7])|(0[0-7]))*)?(\/(([0-7])|(0[0-7])))?)$/);
+                        return cronregex.test(v);
+                    }
+                    return true;
+                }
+            },
+            jobName: {
+                value: ""
+            },
+            jobDescription: {
+                value: ""
+            },
+            jobType: {
+                value: "EVENT REQUEST",
+                required: true
+            },
+            jobAction: {
+                value: "",
+                validate: function(v) {
+                    if($("#node-input-operation option:selected").val() === 'CREATE') {
+                        if(v === "") {
+                            return false;
+                        }
+                    }
+                    return RED.validators.typedInput('jobActionType');
+                }
+            },
+            jobActionType: {
+                value: 'msg'
+            },
+            inJobId: {
+                value: "",
+                validate: function(v) {
+                    if($("#node-input-operation option:selected").val() === 'REMOVE') {
+                        if(v === "") {
+                            return false;
+                        }
+                    }
+                    return RED.validators.typedInput('inJobIdType');
+                }
+            },
+            inJobIdType: {
+                value: 'msg'
+            },
+            outJobId: {
+                value: "",
+                validate: function(v) {
+                    if($("#node-input-operation option:selected").val() === 'CREATE') {
+                        if(v === "") {
+                            return false;
+                        }
+                    }
+                    return RED.validators.typedInput('outJobIdType');
+                }
+            },
+            outJobIdType: {
+                value: 'msg'
+            }
+        },
+        // (string|function) the label to use in the workspace
+        label: function() {
+            return this.name || RED._('dojot/cron:label.cron')
+        },
+        //
+        oneditprepare: function() {
+            $('#node-input-outJobId').typedInput({
+                default: 'msg',
+                typeField: $("#node-input-outJobIdType"),
+                types: ['msg']
+            });
+            $('#node-input-inJobId').typedInput({
+                default: 'msg',
+                typeField: $("#node-input-inJobIdType"),
+                types: ['msg']
+            });
+            $('#node-input-jobAction').typedInput({
+                default: 'msg',
+                typeField: $("#node-input-jobActionType"),
+                types: ['msg']
+            });
+
+            $("#node-input-operation").change(function() {
+                if ($("#node-input-operation option:selected").val() === 'CREATE') {
+                    $("#node-operation-create-cronTimeExpression").show();
+                    $("#node-operation-create-jobName").show();
+                    $("#node-operation-create-jobDescription").show();
+                    $("#node-operation-create-jobType").show();
+                    $("#node-operation-remove-inJobId").hide();
+                    $("#node-operation-create-jobAction").show();
+                    $("#node-operation-create-outJobId").show();
+                }
+                else if ($("#node-input-operation option:selected").val() === 'REMOVE') {
+                    $("#node-operation-create-cronTimeExpression").hide();
+                    $("#node-operation-create-jobName").hide();
+                    $("#node-operation-create-jobDescription").hide();
+                    $("#node-operation-create-jobType").hide();
+                    $("#node-operation-remove-inJobId").show();
+                    $("#node-operation-create-jobAction").hide();
+                    $("#node-operation-create-outJobId").hide();
+                }
+            });
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="cron">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]label.name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-operation"><i class="fa fa-tasks"></i> <span data-i18n="label.operation"></span></label>
+        <select type="text" id="node-input-operation" style="width:70%;">
+            <option value="CREATE">CREATE</option>
+            <option value="REMOVE">REMOVE</option>
+        </select>
+    </div>
+    <div class="form-row" id="node-operation-create-cronTimeExpression">
+        <label for="node-input-cronTimeExpression"><i class="fa fa-clock-o"></i> <span data-i18n="label.cronTimeExpression"></span></label>
+        <input type="text" id="node-input-cronTimeExpression" data-i18n="[placeholder]timeExpressionExample">
+    </div>
+    <div class="form-row" id="node-operation-create-jobName">
+        <label for="node-input-jobName"><i class="fa fa-tag"></i> <span data-i18n="label.jobName"></span></label>
+        <input type="text" id="node-input-jobName" data-i18n="[placeholder]label.jobName">
+    </div>
+    <div class="form-row" id="node-operation-create-jobDescription">
+        <label for="node-input-jobDescription"><i class="fa fa-pencil-square-o"></i> <span data-i18n="label.jobDescription"></span></label>
+        <input type="text" id="node-input-jobDescription" data-i18n="[placeholder]label.jobDescription">
+    </div>
+    <div class="form-row" id="node-operation-create-jobType">
+        <label for="node-input-jobType"><i class="fa fa-tasks"></i> <span data-i18n="label.jobType"></span></label>
+        <select type="text" id="node-input-jobType" style="width:70%;">
+            <option value="EVENT REQUEST">EVENT REQUEST</option>
+            <option value="HTTP REQUEST">HTTP REQUEST</option>
+        </select>
+    </div>
+    <div class="form-row" id="node-operation-create-jobAction">
+        <label for="node-input-jobAction"><i class="fa fa-code"></i> <span data-i18n="label.jobAction"></span></label>
+        <input type="text" id="node-input-jobAction" data-i18n="[placeholder]jobActionKey">
+        <input type="hidden" id="node-input-jobActionType">
+    </div>
+    <div class="form-row" id="node-operation-remove-inJobId">
+        <label for="node-input-inJobId"><i class="fa fa-tag"></i> <span data-i18n="label.inJobId"></span></label>
+        <input type="text" id="node-input-inJobId" data-i18n="[placeholder]inJobIdKey">
+        <input type="hidden" id="node-input-inJobIdType">
+    </div>
+    <div class="form-row" id="node-operation-create-outJobId">
+            <label for="node-input-outJobId"><i class="fa fa-arrow-circle-o-left "></i> <span data-i18n="label.outJobId"></span></label>
+            <input type="text" id="node-input-outJobId" data-i18n="[placeholder]outJobIdKey">
+            <input type="hidden" id="node-input-outJobIdType">
+    </div>
+
+</script>
+
+<script type="text/x-red" data-help-name="cron">
+</script>

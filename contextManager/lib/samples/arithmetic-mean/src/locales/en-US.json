@@ -1,0 +1,10 @@
+{
+  "title": "arithmetic mean",
+  "config": {
+    "name": "Name",
+    "target_attribute": "target attribute",
+    "mean": "mean",
+    "payload": "payload"
+  },
+  "category": "function"
+}

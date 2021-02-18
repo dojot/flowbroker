@@ -1,0 +1,48 @@
+{
+  "title": "FTP request",
+  "ftpin": {
+    "label": {
+        "method": "Method",
+        "url": "URL",
+        "doc": "Docs",
+        "return": "Return",
+        "upload": "Accept file uploads?",
+        "status": "Status code",
+        "headers": "Headers",
+        "other": "other",
+        "body": "Request body",
+        "response": "Response",
+        "name": "Name",
+        "username": "Username",
+        "password": "Password",
+        "filecontent": "File content",
+        "fileencoding": "File encoding",
+        "filename": "File name",
+        "authentication": "Authentication"
+    },
+    "setby": "- set by msg.method -",
+    "basicauth": "Use basic authentication",
+    "use-tls": "Enable secure (SSL/TLS) connection",
+    "tls-config":"TLS Configuration",
+    "utf8": "a UTF-8 string",
+    "binary": "a binary buffer",
+    "json": "a parsed JSON object",
+    "tip": {
+        "in": "The url will be relative to ",
+        "res": "The messages sent to this node <b>must</b> originate from an <i>ftp input</i> node",
+        "req": "Tip: If the JSON parse fails the fetched string is returned as-is."
+    },
+    "errors": {
+        "not-created": "Cannot create ftp-in node when ftpNodeRoot set to false",
+        "missing-path": "missing path",
+        "no-response": "No response object",
+        "json-error": "JSON parse error",
+        "no-url": "No url specified",
+        "deprecated-call":"Deprecated call to __method__",
+        "invalid-transport":"non-ftp transport requested"
+    },
+    "status": {
+        "requesting": "requesting"
+    }
+  }
+}
