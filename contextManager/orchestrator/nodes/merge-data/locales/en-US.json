@@ -1,8 +1,0 @@
-{
-  "title": "merge data",
-  "config": {
-    "name": "Name",
-    "target_data": "Target data (JSON)",
-    "merged_data": "Merged data (JSON)"
-  }
-}

@@ -1,13 +1,13 @@
 {
   "loradecrypt": {
-      "title": "modelo de dispositivo",
+      "title": "Lora Decrypt",
       "label": {
           "name": "Nome",
           "input_from": "De",
           "output_to": "Para",
           "nsw": "NwkSKey",
           "asw": "AppSKey",
-          "device_template": "Modelo de dispositivo",
+          "device_template": "Lora Decrypt",
           "status": "Status"
       },
       "text": {

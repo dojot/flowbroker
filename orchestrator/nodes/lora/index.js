@@ -59,17 +59,22 @@ class DataHandler extends dojot.DataHandlerBase {
      */
     handleMessage(config, message) {
         try {
-            console.log(message);
             let NwkSKey = Buffer.from(config.nsw, "hex");
             let AppSKey = Buffer.from(config.asw, "hex");
+            let payload = this._get(config.in, message);
+            
+            var packet = lora_packet.fromWire(Buffer.from(payload, 'base64'));            
+            this._set(config.out,lora_packet.decrypt(packet, AppSKey, NwkSKey).toString(),message);
+            //console.log("DevAddr: " + Buffer.from(packet.getBuffers().DevAddr, 'hex'));
+            console.log("DevAddr: " + Buffer.from(packet.FRMPayload, 'hex'));
+            //console.log("Decifragem: " + lora_packet.decrypt(packet, AppSKey, NwkSKey).toString()); Caso precise verificar se a decifragem foi feita corretamente
+            
+            return Promise.resolve([message]);            
 
-            let payload = this._get(config.in, message)
-            var packet = lora_packet.fromWire(Buffer.from(payload, 'base64'));
-            console.log("Decrypted (ASCII)='" + lora_packet.decrypt(packet, AppSKey, NwkSKey).toString() + "'");
-            this._set(config.out,lora_packet.decrypt(packet, AppSKey, NwkSKey).toString(),message)
-            return Promise.resolve('Sucesso');
         } catch (error) {
+            
             return Promise.reject(error);
+
         }
     }
 }
