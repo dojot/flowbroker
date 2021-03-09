@@ -36,7 +36,7 @@
     "@dojot/dojot-module-logger": "^0.1.0",
     "@dojot/flow-node": "../lib",
     "@dojot/healthcheck": "^0.1.0",
-    "amqplib": "^0.5.2",
+    "amqplib": "^0.7.1",
     "argparse": "^1.0.9",
     "axios": "^0.18.0",
     "bluebird": "^3.4.7",
