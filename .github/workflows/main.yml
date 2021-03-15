@@ -41,7 +41,7 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
 
-    - name: Build the stack
+    - name: Build the stack and test
       run: |
         export FLOWBROKER_NETWORK=flowbroker
         docker build -t flowbroker -f orchestrator.docker .
@@ -49,9 +49,7 @@ jobs:
         docker build -t tests-flowbroker -f ./tests/Dockerfile .
         docker-compose -f tests/docker-compose.yml up -d kafka rabbitmq data-broker mongodb auth postgres-users device-manager device-manager-redis
         docker-compose -f tests/docker-compose.yml up -d flowbroker flowbroker-context-manager flowbroker-redis
-
-    - name: Test
-      run: docker-compose -f ./tests/docker-compose.yml run --rm tester * --level=debug
+        docker-compose -f ./tests/docker-compose.yml run --rm tester * --level=debug
 
   docker-hub:
     needs: docker-compose
