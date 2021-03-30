@@ -7,6 +7,7 @@ var amqp = require('amqplib');
 var config = require('./config');
 const util = require('util');
 const logger = require("@dojot/dojot-module-logger").logger;
+const retries = 10
 
 class AMQPProducer {
   constructor(queue, url, maxPriority) {
@@ -36,7 +37,13 @@ class AMQPProducer {
       });
     }).catch((error) => {
       logger.error(`Failed to create a connection. Error: ${error}`, { filename: 'amqp' });
-      return Promise.reject('Cannot connect to RabbitMQ');
+      if (retries-- > 0){
+	logger.info(`Trying connect to RabbitMQ again. Remaning: ${retries}`, { filename: 'amqp' });
+	connect();
+      }else {
+      	return Promise.reject('Cannot connect to RabbitMQ');
+      }
+
     });
   }
 

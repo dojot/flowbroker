@@ -15,7 +15,7 @@ class DataHandler extends dojot.DataHandlerBase {
 
         handlebars.registerHelper('parseAndSelect', function(context,key) {
             //console.log(JSON.stringify(JSON.parse(context)['bootNotificationReq']));
-            return JSON.stringify(JSON.parse(context)[key]) +"}";
+            return JSON.stringify(context[key]) +"}";
         });
 
     }
