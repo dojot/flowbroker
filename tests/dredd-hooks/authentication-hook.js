@@ -13,7 +13,7 @@ hooks.beforeEach(function (transaction, done) {
     // Generate token
     if (transaction.hasOwnProperty('request') &&
             transaction.request.hasOwnProperty('headers') &&
-            transaction.request.headers.hasOwnProperty('Authorization33333')) {
+            transaction.request.headers.hasOwnProperty('Authorization')) {
         transaction.request.headers.Authorization = generate_token();
     }
     done();
