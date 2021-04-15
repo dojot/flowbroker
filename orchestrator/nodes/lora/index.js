@@ -145,7 +145,7 @@ class DataHandler extends dojot.DataHandlerBase {
                 Type: packet.getMType(),
                 Direction: packet.getDir(),
                 DevAddr: packet.getBuffers().DevAddr.toString("hex"),
-                FRMpayload: newFRMpayload.getBuffers().FRMPayload.toString("hex"),
+                FRMpayload: payload.FRMPayload.toString("hex"),
                 FCnt: packet.getFCnt(),
                 MIC: mic_status
             };
@@ -153,7 +153,7 @@ class DataHandler extends dojot.DataHandlerBase {
             console.log("Type: " + packet.getMType());
             console.log("Direction: " + packet.getDir());
             console.log("DevAddr: " + packet.getBuffers().DevAddr.toString("hex"));
-            console.log("FRMpayload: " + packet.getBuffers().FRMPayload.toString("hex"));
+            console.log("FRMpayload: " + payload.FRMPayload.toString("hex"));
             console.log("FCnt: " + packet.getFCnt());
             console.log("MIC: " + mic_status);           
             console.log("JSON Packet: " + json_packet);
