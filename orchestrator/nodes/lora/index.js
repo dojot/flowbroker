@@ -136,7 +136,7 @@ class DataHandler extends dojot.DataHandlerBase {
             const max = Math.max(...lengths.filter(length => length > 0));
             decoded = lines.map(s => s.replace(/^\s*(.*)( = .*)$/, (match, m1, m2) => ' '.repeat(max - m1.length) + m1 + m2)).join('\n');
 
-            console.log("Decoded FRMPayload (ASCI): " + lorapacket.decrypt(packet, appSKey, nwkSKey).toString());
+            //console.log("Decoded FRMPayload (ASCI): " + lorapacket.decrypt(packet, appSKey, nwkSKey).toString());
             console.log(`Assuming ${enc}-encoded packet\n${data}\n\n${decoded}`);
 
             let newFRMpayload = lorapacket.decrypt(packet, appSKey, nwkSKey).toString();
@@ -145,7 +145,7 @@ class DataHandler extends dojot.DataHandlerBase {
                 Type: packet.getMType(),
                 Direction: packet.getDir(),
                 DevAddr: packet.getBuffers().DevAddr.toString("hex"),
-                FRMpayload: JSON.parse(newFRMpayload),
+                FRMpayload: packet.getBuffers().FRMPayload.toString("hex"),
                 FCnt: packet.getFCnt(),
                 MIC: mic_status
             };
@@ -153,7 +153,7 @@ class DataHandler extends dojot.DataHandlerBase {
             console.log("Type: " + packet.getMType());
             console.log("Direction: " + packet.getDir());
             console.log("DevAddr: " + packet.getBuffers().DevAddr.toString("hex"));
-            console.log("FRMpayload: " + JSON.parse(newFRMpayload));
+            console.log("FRMpayload: " + packet.getBuffers().FRMPayload.toString("hex"));
             console.log("FCnt: " + packet.getFCnt());
             console.log("MIC: " + mic_status);           
             console.log("JSON Packet: " + json_packet);
