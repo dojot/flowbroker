@@ -133,6 +133,18 @@ class DataHandler extends dojot.DataHandlerBase {
             switch(aplicacao){
                 case "01":
                 var FRMpayload_decoded = aplicacao01.parse(FRMpayload_buffer)
+                var json_endnode = {
+                    aplicacao: aplicacao,                                
+                    Timestamp: FRMpayload_decoded.Timestamp,
+                    TensaoRMSFaseA: FRMpayload_decoded.TensaoRMSFaseA,
+                    TensaoRMSFaseb: FRMpayload_decoded.TensaoRMSFaseB,                
+                    TensaoRMSFaseC: FRMpayload_decoded.TensaoRMSFaseC,
+                    CorrenteRMSFaseA: FRMpayload_decoded.CorrenteRMSFaseA,
+                    CorrenteRMSFaseB: FRMpayload_decoded.CorrenteRMSFaseB,
+                    CorrenteRMSFaseC: FRMpayload_decoded.CorrenteRMSFaseC,
+                    CorrenteRMSneutro: FRMpayload_decoded.CorrenteRMSneutro
+                };
+                this._set(config.out, json_endnode, message);
                 break;
                 case "04":
                 var FRMpayload_decoded = aplicacao04.parse(FRMpayload_buffer)      
@@ -141,10 +153,6 @@ class DataHandler extends dojot.DataHandlerBase {
 
             console.log("FRMpayload_decoded: " + FRMpayload_decoded)
 
-            // Parse buffer and show result
-            //console.log(aplicacao01.parse(buf));
-
-            this._set(config.out, FRMpayload_decoded, message);
 
             return Promise.resolve([message]);
 
