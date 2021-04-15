@@ -4,9 +4,14 @@
         <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
-        <label for="node-input-nsw"><i class="fa fa-edit"></i> <span><span data-i18n="loradecrypt.label.nsw"></span></label>
-        <input type="text" id="node-input-nsw"  style="width:250px;">
-        <input type="hidden" id="node-input-nswFieldType">
+        <label for="node-input-in"><i class="fa fa-edit"></i> <span><span data-i18n="loradecrypt.label.input_from"></span></label>
+        <input type="text" id="node-input-in"  style="width:250px;">
+        <input type="hidden" id="node-input-inFieldType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-out"><i class="fa fa-edit"></i> <span><span data-i18n="loradecrypt.label.output_to"></span></label>
+        <input type="text" id="node-input-out" style="width:250px;">
+        <input type="hidden" id="node-input-outFieldType">
     </div>    
 </script>
 
@@ -19,11 +24,11 @@
         color: "rgb(231, 231, 174)",
         defaults: {
             name: { value: "" },
-            //out:  { value: ""},
-            //outFieldType: { value: "msg" },
-            //in: { value: "" },
-            //inFieldType: { value: "msg" },
-            nsw: { value: "" },
+            out:  { value: ""},
+            outFieldType: { value: "msg" },
+            in: { value: "" },
+            inFieldType: { value: "msg" },
+            //nsw: { value: "" },
             //asw: { value: "" },
             
         },
@@ -38,7 +43,6 @@
             return this.name ? "node_label_italic" : "";
         },
         oneditprepare: function () {
-            /*
             if (!this.outFieldType) {
                 this.outFieldType = 'msg';
             }
@@ -58,7 +62,7 @@
                 types: ['msg'],
                 typeField: $("#node-input-inFieldType")
             });
-            */
+            /*
             if (!this.nswFieldType) {
                 this.nswFieldType = 'msg';
             }
@@ -68,7 +72,7 @@
                 types: ['msg'],
                 typeField: $("#node-input-nswFieldType")
             });
-            /*
+            
             if (!this.aswFieldType) {
                 this.aswFieldType = 'msg';
             }
