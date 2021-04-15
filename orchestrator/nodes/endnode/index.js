@@ -137,23 +137,59 @@ class DataHandler extends dojot.DataHandlerBase {
                     aplicacao: aplicacao,                                
                     Timestamp: FRMpayload_decoded.Timestamp,
                     TensaoRMSFaseA: FRMpayload_decoded.TensaoRMSFaseA,
-                    TensaoRMSFaseb: FRMpayload_decoded.TensaoRMSFaseB,                
+                    TensaoRMSFaseB: FRMpayload_decoded.TensaoRMSFaseB,                
                     TensaoRMSFaseC: FRMpayload_decoded.TensaoRMSFaseC,
                     CorrenteRMSFaseA: FRMpayload_decoded.CorrenteRMSFaseA,
                     CorrenteRMSFaseB: FRMpayload_decoded.CorrenteRMSFaseB,
                     CorrenteRMSFaseC: FRMpayload_decoded.CorrenteRMSFaseC,
-                    CorrenteRMSneutro: FRMpayload_decoded.CorrenteRMSneutro
+                    CorrenteRMSneutro: FRMpayload_decoded.CorrenteRMSneutro,
+                    FrequenciaFaseA: FRMpayload_decoded.FrequenciaFaseA,
+                    FrequenciaFaseB: FRMpayload_decoded.FrequenciaFaseB,
+                    FrequenciaFaseC: FRMpayload_decoded.FrequenciaFaseC,
+                    PotenciaAtivaFaseA: FRMpayload_decoded.PotenciaAtivaFaseA,
+                    PotenciaAtivaFaseB: FRMpayload_decoded.PotenciaAtivaFaseA,
+                    PotenciaAtivaFaseC: FRMpayload_decoded.PotenciaAtivaFaseC,
+                    PotenciaAtivaTotal: FRMpayload_decoded.PotenciaAtivaTotal,
+                    PotenciaReativaFaseA: FRMpayload_decoded.PotenciaReativaFaseA,
+                    PotenciaReativaFaseB: FRMpayload_decoded.PotenciaReativaFaseB,
+                    PotenciaReativaFaseC: FRMpayload_decoded.PotenciaReativaFaseC,
+                    PotenciaReativaTotal: FRMpayload_decoded.PotenciaReativaTotal,    
+                    PotenciaAparenteFaseA: FRMpayload_decoded.PotenciaReativaTotal,
+                    PotenciaAparenteFaseB: FRMpayload_decoded.PotenciaAparenteFaseB,
+                    PotenciaAparenteFaseC: FRMpayload_decoded.PotenciaAparenteFaseC,
+                    PotenciaAparenteTotal: FRMpayload_decoded.PotenciaAparenteTotal,     
+                    FatordePotenciaFaseA: FRMpayload_decoded.FatordePotenciaFaseA,
+                    FatordePotenciaFaseB: FRMpayload_decoded.FatordePotenciaFaseB,
+                    FatordePotenciaFaseC: FRMpayload_decoded.FatordePotenciaFaseC,
+                    FatordePotenciaTotal: FRMpayload_decoded.FatordePotenciaTotal,     
+                    ConsumoFaseA: FRMpayload_decoded.ConsumoFaseA,
+                    ConsumoFaseB: FRMpayload_decoded.ConsumoFaseB,
+                    ConsumoFaseC: FRMpayload_decoded.ConsumoFaseC,
+                    ConsumoTotal: FRMpayload_decoded.ConsumoTotal
                 };
                 this._set(config.out, json_endnode, message);
                 break;
+
                 case "04":
                 var FRMpayload_decoded = aplicacao04.parse(FRMpayload_buffer)      
+                var json_endnode = {
+                    aplicacao: aplicacao,                   
+                    TensaoCC: FRMpayload_decoded.TensaoCC,
+                    CorrenteCC: FRMpayload_decoded.CorrenteCC,
+                    PotenciaCC: FRMpayload_decoded.PotenciaCC,
+                    EnergiaFornecida: FRMpayload_decoded.EnergiaFornecida,
+                    EnergiaConsumida: FRMpayload_decoded.EnergiaConsumida,
+                    Temperatura: FRMpayload_decoded.Temperatura,
+                    Status: FRMpayload_decoded.Status,
+                    SaudeBateria: FRMpayload_decoded.SaudeBateria,
+                    EstadoCarga: FRMpayload_decoded.EstadoCarga
+                }
+                this._set(config.out, json_endnode, message);
                 break;
             }
 
             console.log("FRMpayload_decoded: " + FRMpayload_decoded)
-
-
+            
             return Promise.resolve([message]);
 
         } //handle try (first) end 
