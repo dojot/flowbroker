@@ -70,13 +70,13 @@ class DataHandler extends dojot.DataHandlerBase {
 
             //var FRMpayload_raw = Buffer.from(FRMpayload, "hex");
 
-            headStart = 0
-            headEnd = 2    
-            bodyEnd = FRMpayload.length
+            var headStart = 0
+            var headEnd = 2    
+            var bodyEnd = FRMpayload.length
             
-            aplicacao = FRMpayload.substring(headStart, headEnd)
+            var aplicacao = FRMpayload.substring(headStart, headEnd)
             //timestamp_raw = FRMpayload.substring(timestampStart, bodyStart)
-            body_raw = FRMpayload.substring(headEnd, bodyEnd)
+            var body_raw = FRMpayload.substring(headEnd, bodyEnd)
             
             var FRMpayload_buffer = Buffer.from(body_raw, "hex");
 
