@@ -139,13 +139,13 @@ class DataHandler extends dojot.DataHandlerBase {
             //console.log("Decoded FRMPayload (ASCI): " + lorapacket.decrypt(packet, appSKey, nwkSKey).toString());
             console.log(`Assuming ${enc}-encoded packet\n${data}\n\n${decoded}`);
 
-            let newFRMpayload = lorapacket.decrypt(packet, appSKey, nwkSKey).toString();
+            let newFRMpayload = lorapacket.decrypt(packet, appSKey, nwkSKey);
 
             var json_packet = {
                 Type: packet.getMType(),
                 Direction: packet.getDir(),
                 DevAddr: packet.getBuffers().DevAddr.toString("hex"),
-                FRMpayload: packet.getBuffers().FRMPayload.toString("hex"),
+                FRMpayload: newFRMpayload.getBuffers().FRMPayload.toString("hex"),
                 FCnt: packet.getFCnt(),
                 MIC: mic_status
             };
