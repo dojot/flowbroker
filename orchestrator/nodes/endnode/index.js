@@ -64,7 +64,7 @@ class DataHandler extends dojot.DataHandlerBase {
             //let nwkSKey = Buffer.from(config.nsw, "hex");          
 
             // Module import
-            var Parser = require(binaryParser).Parser;
+            var Parser = require("binary-parser").Parser;
 
             //FRMpayload = "040002000F43C80F5C4124000044802D71412926E9412926E90024005500550055";
 
