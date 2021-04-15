@@ -136,11 +136,11 @@ class DataHandler extends dojot.DataHandlerBase {
             const max = Math.max(...lengths.filter(length => length > 0));
             decoded = lines.map(s => s.replace(/^\s*(.*)( = .*)$/, (match, m1, m2) => ' '.repeat(max - m1.length) + m1 + m2)).join('\n');
 
-            //console.log("Decoded FRMPayload (ASCI): " + lorapacket.decrypt(packet, appSKey, nwkSKey).toString());
-            //console.log(`Assuming ${enc}-encoded packet\n${data}\n\n${decoded}`);
+            console.log("Decoded FRMPayload (ASCI): " + lorapacket.decrypt(packet, appSKey, nwkSKey).toString());
+            console.log(`Assuming ${enc}-encoded packet\n${data}\n\n${decoded}`);
 
             let newFRMpayload = lorapacket.decrypt(packet, appSKey, nwkSKey).toString();
-            
+
             var json_packet = {
                 Type: packet.getMType(),
                 Direction: packet.getDir(),
