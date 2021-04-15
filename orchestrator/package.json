@@ -59,7 +59,8 @@
     "zeromq": "^4.6.0",
     "basic-ftp": "^3.4.4",
     "buffer-splice": "^1.0.0",
-    "lora-packet": "^0.6.0"
+    "lora-packet": "^0.6.0",
+    "binary-parser": "1.7.0"
   },
   "devDependencies": {
     "@bbc/apache2-license-checker": "^1.1.4"

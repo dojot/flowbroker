@@ -28,6 +28,7 @@ const k8sRemote = require('./nodes/kubernetesRemoteNode/index').Handler;
 const cumulative_sum = require('./nodes/cumulative-sum/cumulative-sum').Handler;
 const merge_data = require('./nodes/merge-data/merge-data').Handler;
 const lora = require('./nodes/lora/index').Handler;
+const endnode = require('./nodes/endnode/index').Handler;
 const Publisher = require('./publisher');
 const logger = require("@dojot/dojot-module-logger").logger;
 
@@ -220,6 +221,7 @@ class NodeManager {
             "cumulative sum": new cumulative_sum(),
             "merge data": new merge_data(),
             "lora-node": new lora(),
+            "endnode": new endnode(),
           };
 
           logger.debug(`Succeeded to set manager to handle processing nodes for tenant ${tenant}`, TAG);

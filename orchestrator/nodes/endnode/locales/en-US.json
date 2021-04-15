@@ -1,0 +1,18 @@
+{
+  "loradecrypt": {
+      "title": "Endnode Decrypt",
+      "label": {
+          "name": "Nome",
+          "input_from": "De",
+          "output_to": "Para",
+          "nsw": "FRMpayload",
+          "asw": "AppSKey",
+          "device_template": "Lora Decrypt",
+          "status": "Status"
+      },
+      "text": {
+          "exclude": "excluir alterações de status do dispositivo",
+          "include": "incluir alterações de status do dispositivo"
+      }
+  }
+}
