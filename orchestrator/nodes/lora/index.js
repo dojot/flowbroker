@@ -64,7 +64,7 @@ class DataHandler extends dojot.DataHandlerBase {
             let nwkSKey = Buffer.from(config.nsw, "hex");
             let appSKey = Buffer.from(config.asw, "hex");
 
-            console.log("PHYPayload: " + data);
+            //console.log("PHYPayload: " + data);
             data = data.trim();
             nwkSKey = nwkSKey ? new Buffer.from(nwkSKey, 'hex') : undefined;
             appSKey = appSKey ? new Buffer.from(appSKey, 'hex') : undefined;
@@ -145,7 +145,7 @@ class DataHandler extends dojot.DataHandlerBase {
                 Type: packet.getMType(),
                 Direction: packet.getDir(),
                 DevAddr: packet.getBuffers().DevAddr.toString("hex"),
-                FRMpayload: payload.FRMPayload.toString("hex"),
+                FRMpayload: newFRMpayload.toString("hex"),
                 FCnt: packet.getFCnt(),
                 MIC: mic_status
             };
@@ -153,7 +153,7 @@ class DataHandler extends dojot.DataHandlerBase {
             console.log("Type: " + packet.getMType());
             console.log("Direction: " + packet.getDir());
             console.log("DevAddr: " + packet.getBuffers().DevAddr.toString("hex"));
-            console.log("FRMpayload: " + payload.FRMPayload.toString("hex"));
+            console.log("FRMpayload: " + newFRMpayload.toString("hex"));
             console.log("FCnt: " + packet.getFCnt());
             console.log("MIC: " + mic_status);           
             console.log("JSON Packet: " + json_packet);
