@@ -1,0 +1,6 @@
+{
+    "01": "new Parser().floatbe('Timestamp').floatbe('TensaoRMSFaseA').floatbe('TensaoRMSFaseB').floatbe('TensaoRMSFaseC').floatbe('CorrenteRMSFaseA').floatbe('CorrenteRMSFaseB').floatbe('CorrenteRMSFaseC').floatbe('CorrenteRMSneutro').floatbe('FrequenciaFaseA').floatbe('FrequenciaFaseB').floatbe('FrequenciaFaseC').floatbe('PotenciaAtivaFaseA').floatbe('PotenciaAtivaFaseB').floatbe('PotenciaAtivaFaseC').floatbe('PotenciaAtivaTotal').floatbe('PotenciaReativaFaseA').floatbe('PotenciaReativaFaseB').floatbe('PotenciaReativaFaseC').floatbe('PotenciaReativaTotal').floatbe('PotenciaAparenteFaseA').floatbe('PotenciaAparenteFaseB').floatbe('PotenciaAparenteFaseC').floatbe('PotenciaAparenteTotal').floatbe('FatordePotenciaFaseA').floatbe('FatordePotenciaFaseB').floatbe('FatordePotenciaFaseC').floatbe('FatordePotenciaTotal').floatbe('ConsumoFaseA').floatbe('ConsumoFaseB').floatbe('ConsumoFaseC').floatbe('ConsumoTotal')",
+
+    "04": "new Parser().floatbe('Timestamp').floatbe('TensaoCC').floatbe('CorrenteCC').floatbe('PotenciaCC').floatbe('EnergiaFornecida').floatbe('EnergiaConsumida').uint16be('Temperatura').uint16be('Status').uint16be('SaudeBateria').uint16be('EstadoCarga')"
+}
+
