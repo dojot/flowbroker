@@ -1,11 +1,11 @@
 {
-    "title": "Decifragem LoRa",
+    "title": "Decifragem Endnode",
     "loradecrypt": {
         "label": {
             "name": "Nome",
             "input_from": "De",
             "output_to": "Para",
-            "nsw": "NwkSKey",
+            "nsw": "FRMpayload",
             "asw": "AppSKey",
             "device_template": "Decifragem LoRa",
             "status": "Status"

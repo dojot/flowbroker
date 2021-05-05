@@ -1,11 +1,11 @@
 {
   "loradecrypt": {
-      "title": "Lora Decrypt",
+      "title": "Endnode Decrypt",
       "label": {
           "name": "Nome",
           "input_from": "De",
           "output_to": "Para",
-          "nsw": "NwkSKey",
+          "nsw": "FRMpayload",
           "asw": "AppSKey",
           "device_template": "Lora Decrypt",
           "status": "Status"

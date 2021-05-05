@@ -1,8 +1,0 @@
-{
-  "title": "mesclar dados",
-  "config": {
-    "name": "Nome",
-    "target_data": "Dado alvo (JSON)",
-    "merged_data": "Dado mesclado (JSON)"
-  }
-}
