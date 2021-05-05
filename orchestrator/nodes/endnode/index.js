@@ -1,11 +1,10 @@
 "use strict";
 const path = require('path');
 const dojot = require('@dojot/flow-node');
-const binaryParser = require('binary-parser')
+const binaryParser = require('binary-parser');
 const splice = require('buffer-splice');
 const { Console } = require('console');
-const fs = require('fs');
-const aplication = require('./id-map.json');
+const applicationsMap = require('./applicationsMap');
 
 // Sample node implementation
 class DataHandler extends dojot.DataHandlerBase {
@@ -71,33 +70,23 @@ class DataHandler extends dojot.DataHandlerBase {
             var headEnd = 2;    
             var bodyEnd = FRMpayload.length;
                 
-            var aplicacao = FRMpayload.substring(headStart, headEnd);
-            var body_raw = FRMpayload.substring(headEnd, bodyEnd);
+            var head = FRMpayload.substring(headStart, headEnd);
+            var body = FRMpayload.substring(headEnd, bodyEnd);
                 
-            var FRMpayload_buffer = Buffer.from(body_raw, "hex");
+            var FRMpayload_buffer = Buffer.from(body, "hex");
 
-            console.log("aplicação: " + aplicacao); 
-            console.log("body: " + body_raw);
+            console.log("head: " + head); 
+            console.log("body: " + body);
 
-            const reducer = (map, currentValue) => { 
-                const [key, value] = currentValue;
-                map.set(key, eval(value));
-                return map;
-            }
+            var applicationsParser = applicationsMap[head];
 
-            var myMap = Object.entries(aplication).reduce(reducer , new Map());
+            var FRMpayload_final = applicationsParser.parse(FRMpayload_buffer);
+
+            console.log("Final: " + JSON.stringify(FRMpayload_final));
+
+            this._set(config.out, FRMpayload_final, message);
             
-            if(myMap.get(aplicacao) == null){
-                
-                throw new Error("Aplicação não encontrada");
-
-            } else{
-                
-                var FRMpayload_decoded = myMap.get(aplicacao).parse(FRMpayload_buffer);
-                console.log(FRMpayload_decoded);
-                this._set(config.out, FRMpayload_decoded, message);
-                return Promise.resolve([message]); 
-            }          
+            return Promise.resolve([message]); 
 
         } //handle try (first) end 
         catch (error) {
