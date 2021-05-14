@@ -1,18 +1,41 @@
 {
   "name": "orchestrator",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Flow orchestrator module",
   "main": "src/index.js",
   "scripts": {
-    "test": ""
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check-licenses": "apache2-license-checker"
   },
   "author": "Matheus Magalhaes",
-  "license": "GPL-3.0",
+  "contributors": [
+    "Raul Negreiros",
+    "Mariane Previde",
+    "Giovanni Curiel dos Santos",
+    "Rafael Augusto Scaraficci",
+    "Luis Sá Júnior",
+    "Elias Reis",
+    "Anderson Luis Ribeiro",
+    "Eric Baum",
+    "Andrew Jye Shih Chuang",
+    "Matheus Campanha Ferreira",
+    "Jonaphael Aristil",
+    "Vinícius do Carmo",
+    "Manuel Gavidia",
+    "Joab Ramazoto Nunes"
+  ],
+  "license": "Apache-2.0",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
   "dependencies": {
-    "@dojot/dojot-module": "^0.0.1-beta.5",
-    "@dojot/flow-node": "^3.0.0-alpha.5",
-    "@dojot/healthcheck": "^0.0.1-alpha",
-    "@dojot/dojot-module-logger": "0.0.1-alpha.5",
+    "@dojot/dojot-module": "^0.1.1",
+    "@dojot/dojot-module-logger": "^0.1.0",
+    "@dojot/flow-node": "../lib",
+    "@dojot/healthcheck": "^0.1.0",
     "amqplib": "^0.5.2",
     "argparse": "^1.0.9",
     "axios": "^0.18.0",
@@ -22,7 +45,7 @@
     "geolib": "^2.0.24",
     "ioredis": "^4.0.0",
     "joi": "^10.2.0",
-    "kubernetes-client": "^5.3.0",
+    "kubernetes-client": "8.3.6",
     "lodash": "^4.17.4",
     "mongodb": "^3.0.4",
     "mustache": "^2.3.0",
@@ -35,5 +58,8 @@
     "when": "~3.7.8",
     "zeromq": "^4.6.0",
     "basic-ftp": "^3.4.4"
+  },
+  "devDependencies": {
+    "@bbc/apache2-license-checker": "^1.1.4"
   }
 }

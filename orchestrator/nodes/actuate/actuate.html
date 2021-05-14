@@ -39,6 +39,7 @@
 </script>
 
 <script type="text/javascript">
+    var ACTUATOR = 'actuator';
     RED.nodes.registerType('actuate', {
         category: 'deprecated nodes',      // the palette category
         defaults: {              // defines the editable properties of the node
@@ -80,12 +81,25 @@
                 var orderByLabel = "sortBy=label";
 
                 extra += '&' + orderByLabel;
-
+                var listActuate=[];
                 util.GET(`/device${extra}`).then((list) => {
                     list.devices.map((dev) => {
-                        listDevices.append('<option data-value="' + dev.id +
-                            '" value="' + dev.label + ' (' + dev.id + ')"/>');
-                    });
+                            for (let template in dev.attrs) {
+                                for (let attr of dev.attrs[template]) {
+                                    if (attr.type === ACTUATOR){
+                                        listActuate.push(dev);
+                                    }
+                                }
+                            }
+                        });
+
+                    if (listActuate){
+                            listActuate.map((dev) => {
+                                listDevices.append('<option data-value="' + dev.id +
+                                    '" value="' + dev.label + ' (' + dev.id + ')"/>');
+                            });
+                        }
+                    
                     if (list.pagination.has_next) {
                         list_all(list.pagination.next_page);
                     }

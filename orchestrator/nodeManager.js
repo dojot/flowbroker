@@ -105,7 +105,7 @@ class NodeManager {
                 this.socketPath, this.network, item.containerId);
             }
             else if (config.deploy.engine === "kubernetes") {
-              node = new k8sRemote(item.image, tenant + item.id);
+              node = new k8sRemote(item.image, tenant + item.id,'flownode-' + tenant + item.id);
             }
 
             if (!node) {
@@ -132,6 +132,11 @@ class NodeManager {
             let containerId;
             try {
               containerId = await node.create();
+
+              // When recreating node.init() dont return and the map dont be updated
+              // So this code is needed after node.init to reload the map when flowbroker
+              // is restarted
+              this.nodes[tenant][item.id] = node;
               await node.init();
               // update map
               this.nodes[tenant][item.id] = node;
@@ -144,7 +149,7 @@ class NodeManager {
               // rollback
               if (containerId) {
                 try {
-                  await this.delRemoteNode(containerId);
+                  await this.delRemoteNode(containerId,tenant);
                 }
                 catch (error) {
                   logger.error(`(Rollback) Failed to remove remote node ${tenant}/${item.id} (${error}). keep going ..`, TAG);
@@ -263,14 +268,14 @@ class NodeManager {
 
             let metadata = node.getMetadata();
             if (id !== metadata.name) {
-              this.delRemoteNode(containerId).catch((error) => {
+              this.delRemoteNode(id,tenant).catch((error) => {
                 logger.error(`Failed to remove remote node
                 ${tenant}/${id} (${error}). keep going ..`, TAG);
               });
-              return reject(new Error(`The remote node id (${id}) differs from its name (${name}).`));
+              return reject(new Error(`The remote node id (${id}) differs from its name (${metadata.name}).`));
             }
 
-            this.nodes[tenant][id] = node;
+	    this.nodes[tenant][id] = node;
 
             // Step 3: Persist remote node
             let nodeDbEntry = {

@@ -79,7 +79,7 @@ class DataHandler extends dojot.DataHandlerBase {
         var ret = config.ret || "txt";
         var reqTimeout = 120000;
         var url = nodeUrl || message.url;
-        var httpRequest;
+        var httpRequest = {};
 
 
         try {
@@ -172,7 +172,52 @@ class DataHandler extends dojot.DataHandlerBase {
 
                     if (v === "authorization") {
                         opts.auth = httpRequest.headers[v];
+        try {
+            // Fill opts variable. It will be used to send the request.
+            var { opts, payload } = this.handleMessageRequest(url, method, httpRequest);
+            var urltotest = url;
+
+            return this.resolveRequest(opts, urltotest, ret, reqTimeout, payload, config, message);
+        } catch (error) {
+            logger.debug("... http node was not successfully executed.", { filename: 'http' });
+            logger.error(`An exception was thrown: ${error}`, { filename: 'http' });
+            return Promise.reject(error);
+        }
+    }
+    testUrl(url) {
+        if (!/^.*:\/\//.test(url)) {
+            url = "http://" + url;
+        }
+
+        var checkUrl = true;
+        // Then, check whether it is correctly set - starts with http:// or https://
+        if (!/^(http|https):\/\//.test(url)) {
+            logger.debug("... http node was not successfully executed.", { filename: 'http' });
+            logger.error("Node has an invalid transport protocol (no http nor https).", { filename: 'http' });
+            checkUrl = false;
+        }
+        return { checkUrl, url };
+    }
+
+    handleMessageRequest(url, method, httpRequest) {
+        var opts = urllib.parse(url);
+        opts.method = method;
+        opts.headers = {};
+        var ctSet = "Content-Type"; // set default camel case
+        var clSet = "Content-Length";
+
+        if (httpRequest.headers) {
+            for (var v in httpRequest.headers) {
+                if (httpRequest.headers.hasOwnProperty(v)) {
+                    var name = v.toLowerCase();
+                    if (name !== "content-type" && name !== "content-length") {
+                        // only normalise the known headers used later in this
+                        // function. Otherwise leave them alone.
+                        name = v;
                     }
+                    else if (name === 'content-type') { ctSet = v; }
+                    else { clSet = v; }
+                    opts.headers[name] = httpRequest.headers[v];
                 }
             }
         }
@@ -240,7 +285,6 @@ class DataHandler extends dojot.DataHandlerBase {
                 logger.error(`Error was: ${err}`, { filename: 'http' });
                 return reject(err);
             });
-
             if (payload && req.method !== "GET") {
                 req.write(payload);
             }
