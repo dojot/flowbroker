@@ -84,8 +84,6 @@ class DataHandler extends dojot.DataHandlerBase {
         try {
             if (message){
                 httpRequest = JSON.parse(this._get(config.body, message));
-            }else{
-                httpRequest = "";
             }
         } catch (e) {
                 logger.debug("... http node was not successfully executed.", { filename: 'http' });
