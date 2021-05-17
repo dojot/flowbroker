@@ -82,13 +82,13 @@ class DataHandler extends dojot.DataHandlerBase {
         var httpRequest = {};
 
         try {
-            httpRequest = JSON.parse(this._get(config.body, message));
+            if (message){
+                httpRequest = JSON.parse(this._get(config.body, message));
+            }
         } catch (e) {
-            if (config.method !== "GET") {
                 logger.debug("... http node was not successfully executed.", { filename: 'http' });
                 logger.error(`Error while retrieving http payload: ${e}`, { filename: 'http' });
                 return Promise.reject("httpin.errors.no-body");
-            }
         }
 
 
@@ -164,6 +164,9 @@ class DataHandler extends dojot.DataHandlerBase {
                     else if (name === 'content-type') { ctSet = v; }
                     else { clSet = v; }
                     opts.headers[name] = httpRequest.headers[v];
+                    if (v === "authorization") {
+                        opts.auth = httpRequest.headers[v];
+                    }
                 }
             }
         }
@@ -177,6 +180,9 @@ class DataHandler extends dojot.DataHandlerBase {
         if (opts.headers.hasOwnProperty('content-length') && (clSet !== 'content-length')) {
             opts.headers[clSet] = opts.headers['content-length'];
             delete opts.headers['content-length'];
+        }
+        if (opts.headers.hasOwnProperty('authorization')) {
+            delete opts.headers['authorization'];
         }
         return { opts, payload };
     }
@@ -228,7 +234,7 @@ class DataHandler extends dojot.DataHandlerBase {
                 logger.error(`Error was: ${err}`, { filename: 'http' });
                 return reject(err);
             });
-            if (payload) {
+            if (payload && req.method !== "GET") {
                 req.write(payload);
             }
 
