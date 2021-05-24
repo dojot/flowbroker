@@ -1,6 +1,6 @@
 {
   "name": "orchestrator",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Flow orchestrator module",
   "main": "src/index.js",
   "scripts": {
@@ -32,32 +32,32 @@
     }
   ],
   "dependencies": {
-    "@dojot/dojot-module": "^0.2.0",
+    "@dojot/dojot-module": "^0.2.1",
     "@dojot/dojot-module-logger": "^0.1.0",
     "@dojot/flow-node": "../lib",
     "@dojot/healthcheck": "^0.1.0",
     "amqplib": "^0.5.2",
     "argparse": "^1.0.9",
     "axios": "^0.18.0",
+    "basic-ftp": "^3.4.4",
     "bluebird": "^3.4.7",
     "express": "^4.16.2",
     "follow-redirects": "^1.4.1",
     "geolib": "^2.0.24",
+    "handlebars": "^4.0.12",
     "ioredis": "^4.0.0",
     "joi": "^10.2.0",
     "kubernetes-client": "8.3.6",
     "lodash": "^4.17.4",
     "mongodb": "^3.0.4",
     "mustache": "^2.3.0",
-    "handlebars": "^4.0.12",
     "nodemailer": "^4.6.4",
     "request": "^2.79.0",
     "url": "^0.11.0",
     "uuid": "^3.2.1",
     "uuid4": "^1.1.4",
     "when": "~3.7.8",
-    "zeromq": "^4.6.0",
-    "basic-ftp": "^3.4.4"
+    "zeromq": "^4.6.0"
   },
   "devDependencies": {
     "@bbc/apache2-license-checker": "^1.1.4"
