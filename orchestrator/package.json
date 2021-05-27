@@ -1,6 +1,6 @@
 {
   "name": "orchestrator",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Flow orchestrator module",
   "main": "src/index.js",
   "scripts": {
@@ -32,7 +32,7 @@
     }
   ],
   "dependencies": {
-    "@dojot/dojot-module": "^0.2.1",
+    "@dojot/dojot-module": "^0.2.2",
     "@dojot/dojot-module-logger": "^0.1.0",
     "@dojot/flow-node": "../lib",
     "@dojot/healthcheck": "^0.1.0",
