@@ -41,99 +41,99 @@
 </script>
 
 <script type="text/javascript">
-   RED.nodes.registerType('event template in',{
-       category: 'input',      // the palette category
-       defaults: {
-           // defines the editable properties of the node
+  RED.nodes.registerType('event template in', {
+    category: 'input',      // the palette category
+    defaults: {
+      // defines the editable properties of the node
 
-           // just the UI label displayed back to the user on the flow.
-           name: {value:"", required:false},
+      // just the UI label displayed back to the user on the flow.
+      name: { value: "", required: false },
 
-           event_create: {value: false, required: true},
-           event_update: {value: false, required: true},
-           event_remove: {value: false, required: true},
-           event_configure: {value: false, required: true},
-           event_publish: {value: false, required: true},
+      event_create: { value: false, required: true },
+      event_update: { value: false, required: true },
+      event_remove: { value: false, required: true },
+      event_configure: { value: false, required: true },
+      event_publish: { value: false, required: true },
 
-           template_id: { value:"", required: false}
-       },
-       inputs:0,                // set the number of inputs - only 0 or 1
-       outputs:1,               // set the number of outputs - 0 to n
-       align: "left",          // align the icon
-       icon: "bridge-dash.png", // set the icon (held in icons dir below where you save the node)
-       color: "#679BF3",        // background-color
-       label: function() {
-           // sets the default label contents
-           return this.name || RED._('dojot/event-template-in:title');
-       },
-       paletteLabel:  RED._('dojot/event-template-in:title'),
-       labelStyle: function() {
-           // sets the class to apply to the label
-           return this.name ? "node_label_italic" : "";
-       },
-       oneditprepare: function() {
-        let listTemplates = $("#node-input-list_template_id");
-        let node = this;
+      template_id: { value: "", required: false }
+    },
+    inputs: 0,                // set the number of inputs - only 0 or 1
+    outputs: 1,               // set the number of outputs - 0 to n
+    align: "left",          // align the icon
+    icon: "bridge-dash.png", // set the icon (held in icons dir below where you save the node)
+    color: "#679BF3",        // background-color
+    label: function () {
+      // sets the default label contents
+      return this.name || RED._('dojot/event-template-in:title');
+    },
+    paletteLabel: RED._('dojot/event-template-in:title'),
+    labelStyle: function () {
+      // sets the class to apply to the label
+      return this.name ? "node_label_italic" : "";
+    },
+    oneditprepare: function () {
+      let listTemplates = $("#node-input-list_template_id");
+      let node = this;
 
-        // request to the device manager all templates
-        async function list_all(page) {
-            return new Promise( (resolve,reject) => {
-                if (!page) {
-                    page = 1;
-                }
-                
-                let extra=`?page_num=${page}`
-                let orderByLabel = "sortBy=label";
+      // request to the device manager all templates
+      async function list_all(page) {
+        return new Promise((resolve, reject) => {
+          if (!page) {
+            page = 1;
+          }
 
-                extra+='&'+orderByLabel;
+          let extra = `?page_num=${page}`
+          let orderByLabel = "sortBy=label";
 
-                util.GET(`/template${extra}`).then((list) => {
-                    list.templates.map((template) => {
-                      listTemplates.append('<option data-value="' + template.id +
-                            '" value="' + template.label + ' (' + template.id + ')"/>');
-                    });
-                    if (list.pagination.has_next) {
-                        return list_all(list.pagination.next_page).then(() => {
-                            return resolve();
-                        });
-                    } else {
-                        node._templates_loaded = true;
-                        return resolve();
-                    }
-                }).catch((error) => {
-                    console.error('Failed to retrieve the list of available templates', error);
-                    node._templates_loaded = false;
-                    return reject();
-                });
+          extra += '&' + orderByLabel;
+
+          util.GET_PROXY(`/template${extra}`).then((list) => {
+            list.templates.map((template) => {
+              listTemplates.append('<option data-value="' + template.id +
+                '" value="' + template.label + ' (' + template.id + ')"/>');
             });
-          }
-
-         list_all().then(() => {
-          if (node.template_id !== '') {
-            let selectedTemplate = $("#node-input-template");
-            let configuredTemplateEntry = listTemplates.find('option[data-value="' + node.template_id + '"]');
-            if (configuredTemplateEntry.attr('value')) {
-              selectedTemplate.val(configuredTemplateEntry.attr('value'));
+            if (list.pagination.has_next) {
+              return list_all(list.pagination.next_page).then(() => {
+                return resolve();
+              });
             } else {
-              selectedTemplate.val(`Missing template: ${node.template}`);
+              node._templates_loaded = true;
+              return resolve();
             }
-          }
-         });
-       },
+          }).catch((error) => {
+            console.error('Failed to retrieve the list of available templates', error);
+            node._templates_loaded = false;
+            return reject();
+          });
+        });
+      }
 
-       oneditsave: function() {
-        let node = this;
-        let selectedTemplate = $("#node-input-template");
-        let entry = $('#node-input-list_template_id').find(
-          'option[value="' + selectedTemplate.val() + '"]');
-        if (entry.attr('data-value')) {
-          let templateId = entry.attr('data-value');
-          if (templateId) {
-              node.template_id = templateId;
+      list_all().then(() => {
+        if (node.template_id !== '') {
+          let selectedTemplate = $("#node-input-template");
+          let configuredTemplateEntry = listTemplates.find('option[data-value="' + node.template_id + '"]');
+          if (configuredTemplateEntry.attr('value')) {
+            selectedTemplate.val(configuredTemplateEntry.attr('value'));
           } else {
-            console.log('Cannot save template: invalid value');
+            selectedTemplate.val(`Missing template: ${node.template}`);
           }
         }
-       }
-   });
+      });
+    },
+
+    oneditsave: function () {
+      let node = this;
+      let selectedTemplate = $("#node-input-template");
+      let entry = $('#node-input-list_template_id').find(
+        'option[value="' + selectedTemplate.val() + '"]');
+      if (entry.attr('data-value')) {
+        let templateId = entry.attr('data-value');
+        if (templateId) {
+          node.template_id = templateId;
+        } else {
+          console.log('Cannot save template: invalid value');
+        }
+      }
+    }
+  });
 </script>

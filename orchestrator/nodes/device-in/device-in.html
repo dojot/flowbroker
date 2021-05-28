@@ -55,7 +55,7 @@
             // sets the class to apply to the label
             return this.name ? "node_label_italic" : "";
         },
-        paletteLabel:  RED._('dojot/device-in:title'),
+        paletteLabel: RED._('dojot/device-in:title'),
         oneditprepare: function () {
             var listDevices = $("#node-input-list_devices_id");
 
@@ -63,15 +63,15 @@
             function list_all(page) {
 
                 if (page === undefined) {
-                    page=1;
+                    page = 1;
                 }
 
-                var extra=`?page_num=${page}`
+                var extra = `?page_num=${page}`
                 var orderByLabel = "sortBy=label";
 
-                extra+='&'+orderByLabel;
+                extra += '&' + orderByLabel;
 
-                util.GET(`/device${extra}`).then((list) => {
+                util.GET_PROXY(`/device${extra}`).then((list) => {
                     list.devices.map((dev) => {
                         listDevices.append('<option data-value="' + dev.id +
                             '" value="' + dev.label + ' (' + dev.id + ')"/>');
@@ -90,13 +90,13 @@
             let deviceLabel = $('#node-input-device_source_id').val();
 
             let deviceId = $('#node-input-list_devices_id').find(
-                    'option[value="' + deviceLabel + '"]').attr('data-value');
+                'option[value="' + deviceLabel + '"]').attr('data-value');
 
-                if (!deviceId) {
-                    $('#node-input-_device_id').val(undefined);
-                } else {
-                    $('#node-input-_device_id').val(deviceId);
-                }
+            if (!deviceId) {
+                $('#node-input-_device_id').val(undefined);
+            } else {
+                $('#node-input-_device_id').val(deviceId);
+            }
         }
     });
 </script>
