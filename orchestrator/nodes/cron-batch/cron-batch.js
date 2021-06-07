@@ -38,7 +38,7 @@ class DataHandler extends dojot.DataHandlerBase {
             "iss": "http://internal/auth/realms/"+tenant,
              // to ensure backward compatibility
             'service': tenant,
-            'username': 'flowbroker',
+            'username': 'flowbroker'
          };
         return (new Buffer('jwt schema').toString('base64')) + '.' +
         (new Buffer(JSON.stringify(payload)).toString('base64')) + '.' +
