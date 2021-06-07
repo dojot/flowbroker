@@ -5,7 +5,6 @@ const APP_PORT = 5002;
 function initExpressApp() {
   const app = express();
   app.use((req, res, next) => {
-    console.log('----------------------- req', req.path);
     const rawToken = req.header("authorization");
     if (rawToken !== undefined) {
       const token = rawToken.split(".");
