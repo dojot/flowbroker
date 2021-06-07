@@ -33,10 +33,11 @@ class DataHandler extends dojot.DataHandlerBase {
 
     _makeJwtToken(tenant) {
         const payload = { 
-            'service': tenant,
-            'username': 'flowbroker',
             'preferred_username': 'flowbroker',
             "iss": "http://internal/auth/realms/"+tenant,
+             // to ensure backward compatibility
+            'service': tenant,
+            'username': 'flowbroker'
          };
         return (new Buffer('jwt schema').toString('base64')) + '.' +
         (new Buffer(JSON.stringify(payload)).toString('base64')) + '.' +
