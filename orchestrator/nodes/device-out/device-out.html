@@ -78,7 +78,7 @@
 
                 extra += '&' + orderByLabel;
 
-                util.GET(`/device${extra}`).then((list) => {
+                util.GET_PROXY(`/device${extra}`).then((list) => {
                     list.devices.map((dev) => {
                         listDevices.append('<option data-value="' + dev.id +
                             '" value="' + dev.label + ' (' + dev.id + ')"/>');
@@ -126,19 +126,19 @@
                 deviceSourceMsg.hide();
                 deviceSourceIdLabel.hide();
                 deviceSourceMsgLabel.hide();
-            break;
+                break;
             case "configured":
                 deviceSourceId.show();
                 deviceSourceMsg.hide();
                 deviceSourceIdLabel.show();
                 deviceSourceMsgLabel.hide();
-            break;
+                break;
             case "dynamic":
                 deviceSourceId.hide();
                 deviceSourceMsg.show();
                 deviceSourceIdLabel.hide();
                 deviceSourceMsgLabel.show();
-            break;
+                break;
         }
     }
 

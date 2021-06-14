@@ -43,11 +43,11 @@
             device_source: { value: 'self', required: true },
             devices_source_dynamic: { value: '', required: false },
             devices_source_dynamicFieldType: { value: "msg" },
-            devices_source_configured: { value: [ "" ], required: false },
+            devices_source_configured: { value: [""], required: false },
             attrs: { value: "", required: true },
 
             // private
-            _devices_loaded: {value: false, required: false}
+            _devices_loaded: { value: false, required: false }
         },
         inputs: 1,                // set the number of inputs - only 0 or 1
         outputs: 0,               // set the number of outputs - 0 to n
@@ -62,7 +62,7 @@
             // sets the class to apply to the label
             return this.name ? "node_label_italic" : "";
         },
-        paletteLabel:  RED._('dojot/multi-actuate:title'),
+        paletteLabel: RED._('dojot/multi-actuate:title'),
         oneditprepare: function () {
             let node = this;
             let listDevices = $("#node-input-list_devices_id");
@@ -85,27 +85,27 @@
 
             // request to the device manager all devices
             function list_all(page) {
-                return new Promise( (resolve,reject) => {
+                return new Promise((resolve, reject) => {
                     if (page === undefined) {
-                        page=1;
+                        page = 1;
                     }
 
-                    var extra=`?page_num=${page}`
+                    var extra = `?page_num=${page}`
                     var orderByLabel = "sortBy=label";
 
-                    extra+='&'+orderByLabel;
-                    var listActuate=[];
-                    util.GET(`/device${extra}`).then((list) => {
+                    extra += '&' + orderByLabel;
+                    var listActuate = [];
+                    util.GET_PROXY(`/device${extra}`).then((list) => {
                         list.devices.map((dev) => {
                             for (let template in dev.attrs) {
                                 for (let attr of dev.attrs[template]) {
-                                    if (attr.type === ACTUATOR){
+                                    if (attr.type === ACTUATOR) {
                                         listActuate.push(dev);
                                     }
                                 }
                             }
                         });
-                        if (listActuate){
+                        if (listActuate) {
                             listActuate.map((dev) => {
                                 listDevices.append('<option data-value="' + dev.id +
                                     '" value="' + dev.label + ' (' + dev.id + ')"/>');
@@ -129,38 +129,38 @@
 
             $('#node-input-device_source').css('width', '70%');
 
-            list_all().then( () => {
+            list_all().then(() => {
                 // define the rule box
-                $("#node-input-rule-container").css('min-height','150px').
-                    css('min-width','450px').editableList( {
+                $("#node-input-rule-container").css('min-height', '150px').
+                    css('min-width', '450px').editableList({
 
-                    addItem: function(container, index, data) {
-                        let fieldConfig = {
-                            type: "text",
-                            list: "node-input-list_devices_id",
-                            id: `node-input-device_source_id`,
-                            placeholder: RED._('dojot/multi-actuate:text.select_device')
-                        };
+                        addItem: function (container, index, data) {
+                            let fieldConfig = {
+                                type: "text",
+                                list: "node-input-list_devices_id",
+                                id: `node-input-device_source_id`,
+                                placeholder: RED._('dojot/multi-actuate:text.select_device')
+                            };
 
-                        if (Object.entries(data).length > 0) {
-                            let configuredDeviceEntry = $('#node-input-list_devices_id').find(
-                                'option[data-value="' + data + '"]');
-                            if (configuredDeviceEntry) {
-                                fieldConfig.value = configuredDeviceEntry.attr('value');
-                            } else {
-                                fieldConfig.value = `Missing device: ${data}`;
+                            if (Object.entries(data).length > 0) {
+                                let configuredDeviceEntry = $('#node-input-list_devices_id').find(
+                                    'option[data-value="' + data + '"]');
+                                if (configuredDeviceEntry) {
+                                    fieldConfig.value = configuredDeviceEntry.attr('value');
+                                } else {
+                                    fieldConfig.value = `Missing device: ${data}`;
+                                }
                             }
-                        }
 
-                        $('<input/>', fieldConfig).appendTo(container);
+                            $('<input/>', fieldConfig).appendTo(container);
 
-                    },
-                    sortable: true,
-                    removable: true
-                });
+                        },
+                        sortable: true,
+                        removable: true
+                    });
 
                 // load the previous configuration
-                for (let i=0; i < node.devices_source_configured.length; ++i) {
+                for (let i = 0; i < node.devices_source_configured.length; ++i) {
                     $("#node-input-rule-container").editableList('addItem',
                         node.devices_source_configured[i]);
                 }
@@ -173,7 +173,7 @@
         oneditsave: function () {
             let node = this;
 
-            switch($('#node-input-device_source').val()) {
+            switch ($('#node-input-device_source').val()) {
                 case "configured":
                     node.devices_source_dynamic = "";
 
@@ -186,7 +186,7 @@
                     // rebuilt the list with the devices ids
                     node.devices_source_configured = [];
                     let entries = $("#node-input-rule-container").editableList('items');
-                    entries.each(function(i) {
+                    entries.each(function (i) {
                         let userLabel = this.find("#node-input-device_source_id").val();
                         let entry = $('#node-input-list_devices_id').find(
                             'option[value="' + userLabel + '"]');
@@ -210,24 +210,24 @@
         }
     });
 
-    function nodeDeviceOut_displayDeviceSourceElement () {
+    function nodeDeviceOut_displayDeviceSourceElement() {
         let deviceSource = $('#node-input-device_source');
         let devicesSourceConfigured = $('#node-input-configured');
         let devicesSourceDynamic = $('#node-input-dynamic');
 
-        switch(deviceSource.val()) {
+        switch (deviceSource.val()) {
             case "self":
                 devicesSourceConfigured.hide();
                 devicesSourceDynamic.hide();
-            break;
+                break;
             case "configured":
                 devicesSourceConfigured.show();
                 devicesSourceDynamic.hide();
-            break;
+                break;
             case "dynamic":
                 devicesSourceConfigured.hide();
                 devicesSourceDynamic.show();
-            break;
+                break;
         }
     }
 
