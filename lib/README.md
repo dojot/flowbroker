@@ -107,9 +107,10 @@ Publish it on your DockerHub:
 docker push <your dockerHub username>/<image name>:<image tag>
 ```
 
+Acquire a Dojot's token:
+
 __Note__ You need to enable the `dev-test-cli` client in the keycloak. For security reasons it is disabled by default, after use it is recommended to disable it again.
 
-Acquire a Dojot's token:
 ```sh
 JWT=$(curl --location --request POST http://localhost:8000/auth/realms/admin/protocol/openid-connect/token \
 --data-urlencode 'username=admin' \
