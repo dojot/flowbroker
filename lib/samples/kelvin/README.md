@@ -39,6 +39,7 @@ JWT=$(curl --location --request POST http://localhost:8000/auth/realms/admin/pro
 --data-urlencode 'password=admin' \
 --data-urlencode 'client_id=dev-test-cli' \
 --data-urlencode 'grant_type=password' 2>/dev/null | jq -r '.access_token')
+```
 
 Note: the previous command requires the `jq` and `curl` command, you can install it on on Debian-based Linux distributions with the following command:
 ```
