@@ -88,11 +88,7 @@ class DataHandler extends dojot.DataHandlerBase {
             let rule = config.rules[i];
 
             if (!rule.vt) {
-                if (!isNaN(Number(rule.v))) {
-                    rule.vt = 'num';
-                } else {
-                    rule.vt = 'str';
-                }
+                rule.vt = this._getType(rule.v);
             }
 
             if (rule.vt === 'num') {
@@ -115,11 +111,7 @@ class DataHandler extends dojot.DataHandlerBase {
 
             if (typeof rule.v2 !== 'undefined') {
                 if (!rule.v2t) {
-                    if (!isNaN(Number(rule.v2))) {
-                        rule.v2t = 'num';
-                    } else {
-                        rule.v2t = 'str';
-                    }
+                    rule.v2t = this._getType(rule.v2);
                 }
                 if (rule.v2t === 'num') {
                     rule.v2 = Number(rule.v2);
@@ -180,6 +172,23 @@ class DataHandler extends dojot.DataHandlerBase {
         }
     }
 
+    /**
+     *
+     * @param {string} value 
+     * @returns {*} value type
+     */
+     _getType(value) {
+        let valueType;
+
+        if (!isNaN(Number(value))) {
+            valueType = 'num';
+        } else {
+            valueType = 'str';
+        }
+
+        return valueType;
+    }
+
 
     /**
      * Statelessly handle a single given message, using given node configuration parameters
@@ -195,6 +204,7 @@ class DataHandler extends dojot.DataHandlerBase {
      */
     handleMessage(config, message) {
         logger.debug("Executing switch node...", { filename: 'switch' });
+
         let onward = [];
         try {
             let value;
@@ -231,6 +241,16 @@ class DataHandler extends dojot.DataHandlerBase {
                         logger.error(`Error while evaluating value in jsonata first test: ${err}`, { filename: 'switch' });
                         return Promise.reject(err);
                     }
+                } else if (rule.vt === 'msg') {
+                    try {
+                        v1 = this._get(rule.v, message);
+                        let v1Type = this._getType(v1);
+                        v1 = this._getTyped(v1, v1Type);
+                    } catch (error) {
+                        logger.debug("... switch node was not successfully executed.", { filename: 'switch' });
+                        logger.error(`Error while retrieving variables from switch node: ${error}`, { filename: 'switch' });
+                        return Promise.reject(error);
+                    }
                 } else {
                     v1 = this._getTyped(rule.v, rule.vt);
                     // v1 = util.evaluateNodeProperty(rule.v, rule.vt, config, message);
@@ -247,6 +267,16 @@ class DataHandler extends dojot.DataHandlerBase {
                         logger.debug("... switch node was not successfully executed.", { filename: 'switch' });
                         logger.error(`Error while evaluating value in jsonata second test: ${err}`, { filename: 'switch' });
                         return Promise.reject(err);
+                    }
+                } else if (rule.v2t === 'msg') {
+                    try {
+                        v2 = this._get(rule.v2, message);                        
+                        let v2Type = this._getType(v2);
+                        v2 = this._getTyped(v2, v2Type);
+                    } catch (error) {
+                        logger.debug("... switch node was not successfully executed.", { filename: 'switch' });
+                        logger.error(`Error while retrieving variables from switch node: ${error}`, { filename: 'switch' });
+                        return Promise.reject(error);
                     }
                 } else if (typeof v2 !== 'undefined') {
                     v2 = this._getTyped(rule.v2, rule.v2t);
