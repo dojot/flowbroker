@@ -189,6 +189,45 @@ class DataHandler extends dojot.DataHandlerBase {
         return valueType;
     }
 
+     /**
+      *
+     * @param  {[type]}         config          Node configuration to be used for this message
+     * @param  {[type]}         message         Message being processed
+     * @param  {[type]}         ruleValue       Value to be retrieved    
+     * @param  {[type]}         ruleValueType   Type of value to be retrieved  
+     * @return {*} value            
+     */
+    retrieveRuleValue(config, message, ruleValue, ruleValueType){
+        let retrievedValue;
+
+        if (ruleValueType === 'prev') {
+            retrievedValue = config.previousValue;
+        } else if (ruleValueType === 'jsonata') {
+            try {
+                retrievedValue = ruleValue.evaluate({ msg: message });
+            } catch (err) {
+                logger.debug("... switch node was not successfully executed.", { filename: 'switch' });
+                logger.error(`Error while evaluating value in jsonata first test: ${err}`, { filename: 'switch' });
+                return Promise.reject(err);
+            }
+        } else if (ruleValueType === 'msg') {
+            try {
+                retrievedValue = this._get(ruleValue, message);
+                let checkedType = this._getType(retrievedValue);
+                retrievedValue = this._getTyped(retrievedValue, checkedType);
+            } catch (error) {
+                logger.debug("... switch node was not successfully executed.", { filename: 'switch' });
+                logger.error(`Error while retrieving variables from switch node: ${error}`, { filename: 'switch' });
+                return Promise.reject(error);
+            }
+        } else if (typeof ruleValue !== 'undefined') {
+            retrievedValue = this._getTyped(ruleValue, ruleValueType);
+            // v1 = util.evaluateNodeProperty(rule.v, rule.vt, config, message);
+        }
+
+        return retrievedValue;
+    }
+
 
     /**
      * Statelessly handle a single given message, using given node configuration parameters
@@ -218,76 +257,20 @@ class DataHandler extends dojot.DataHandlerBase {
             }
             prop = this._getTyped(value, config.propertyType);
 
-            // if (config.propertyType === 'jsonata') {
-            //     prop = config.property.evaluate({msg: message});
-            // } else {
-            //     prop = this._get(config.property, message);
-            //     // prop = util.evaluateNodeProperty(config.property, config.propertyType, config, message);
-            // }
-
             let elseflag = true;
             for (let i = 0; i < config.rules.length; i += 1) {
                 let rule = config.rules[i];
                 let test = prop;
-                let v1, v2;
 
-                if (rule.vt === 'prev') {
-                    v1 = config.previousValue;
-                } else if (rule.vt === 'jsonata') {
-                    try {
-                        v1 = rule.v.evaluate({ msg: message });
-                    } catch (err) {
-                        logger.debug("... switch node was not successfully executed.", { filename: 'switch' });
-                        logger.error(`Error while evaluating value in jsonata first test: ${err}`, { filename: 'switch' });
-                        return Promise.reject(err);
-                    }
-                } else if (rule.vt === 'msg') {
-                    try {
-                        v1 = this._get(rule.v, message);
-                        let v1Type = this._getType(v1);
-                        v1 = this._getTyped(v1, v1Type);
-                    } catch (error) {
-                        logger.debug("... switch node was not successfully executed.", { filename: 'switch' });
-                        logger.error(`Error while retrieving variables from switch node: ${error}`, { filename: 'switch' });
-                        return Promise.reject(error);
-                    }
-                } else {
-                    v1 = this._getTyped(rule.v, rule.vt);
-                    // v1 = util.evaluateNodeProperty(rule.v, rule.vt, config, message);
-                }
-
-                v2 = rule.v2;
-
-                if (rule.v2t === 'prev') {
-                    v2 = config.previousValue;
-                } else if (rule.v2t === 'jsonata') {
-                    try {
-                        v2 = rule.v2.evaluate({ msg: message });
-                    } catch (err) {
-                        logger.debug("... switch node was not successfully executed.", { filename: 'switch' });
-                        logger.error(`Error while evaluating value in jsonata second test: ${err}`, { filename: 'switch' });
-                        return Promise.reject(err);
-                    }
-                } else if (rule.v2t === 'msg') {
-                    try {
-                        v2 = this._get(rule.v2, message);                        
-                        let v2Type = this._getType(v2);
-                        v2 = this._getTyped(v2, v2Type);
-                    } catch (error) {
-                        logger.debug("... switch node was not successfully executed.", { filename: 'switch' });
-                        logger.error(`Error while retrieving variables from switch node: ${error}`, { filename: 'switch' });
-                        return Promise.reject(error);
-                    }
-                } else if (typeof v2 !== 'undefined') {
-                    v2 = this._getTyped(rule.v2, rule.v2t);
-                    // v2 = util.evaluateNodeProperty(rule.v2, rule.v2t, config, message);
-                }
+                let v1 = this.retrieveRuleValue(config, message, rule.v, rule.vt);
+                let v2 = this.retrieveRuleValue(config, message, rule.v2, rule.v2t);
 
                 if (rule.t === "else") {
                     test = elseflag;
                     elseflag = true;
                 }
 
+                logger.debug(`Conditions: ${rule.t} ${v1} and ${v2}   `, { filename: 'switch' })
                 if (this.operators[rule.t](test, v1, v2, rule.case)) {
                     onward.push(message);
                     elseflag = false;
