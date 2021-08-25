@@ -18,7 +18,7 @@
   "dependencies": {
     "@dojot/dojot-module-logger": "^0.1.0",
     "express": "^4.16.2",
-    "zeromq": "5.2.8",
+    "zeromq": "^5.2.8",
     "zookeeper": "^4.10.0"
   },
   "devDependencies": {
