@@ -5,6 +5,7 @@
  */
 var amqp = require('amqplib');
 var config = require('./config');
+const util = require('util');
 const logger = require("@dojot/dojot-module-logger").logger;
 
 
@@ -81,7 +82,6 @@ class AMQPProducer {
         this.channel=null;
         this.reconnect();
       });
-
       return this.connection.createConfirmChannel().then((channel) => {
         //Reset counting
         this.timeToReconnection = 10000;
@@ -202,7 +202,7 @@ class AMQPConsumer {
               channel.ack(amqpCtx);
             });
           }).then((consumerTag) => {
-            logger.info(`consumer ${consumerTag} ready ... `, { filename: 'amqp' });
+            logger.info(`consumer ${util.inspect(consumerTag, { depth: null })} ready ... `, { filename: 'amqp' });
             return Promise.resolve();
           }).catch((error) => {
             logger.error(`Failed to consume a channel. Error: ${error}`, { filename: 'amqp' });
