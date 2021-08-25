@@ -23,7 +23,8 @@ let config = {
     amqp: {
         url: process.env.AMQP_URL || "amqp://rabbitmq",
         queue: process.env.AMQP_QUEUE || "task_queue",
-        event_queue: process.env.AMQP_EVENT_QUEUE || "event_queue"
+        event_queue: process.env.AMQP_EVENT_QUEUE || "event_queue",
+        timeToReconnect: process.env.AMQP_TIME_TO_RECONNECT || 10000,
     },
     deploy: {
         engine: process.env.DEPLOY_ENGINE || "kubernetes",

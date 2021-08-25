@@ -13,7 +13,7 @@
     "@dojot/flow-node": "^3.0.0-alpha.5",
     "@dojot/healthcheck": "^0.0.1-alpha",
     "@dojot/dojot-module-logger": "0.0.1-alpha.5",
-    "amqplib": "^0.5.2",
+    "amqplib": "0.8.0",
     "argparse": "^1.0.9",
     "axios": "^0.18.0",
     "bluebird": "^3.4.7",
@@ -33,7 +33,7 @@
     "uuid": "^3.2.1",
     "uuid4": "^1.1.4",
     "when": "~3.7.8",
-    "zeromq": "^4.6.0",
+    "zeromq": "^5.2.8",
     "basic-ftp": "^3.4.4"
   }
 }

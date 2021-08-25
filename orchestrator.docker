@@ -1,4 +1,4 @@
-FROM node:8.14.0-alpine as basis
+FROM node:10.2-alpine as basis
 
 WORKDIR /opt/flowbroker/orchestrator
 
@@ -9,7 +9,7 @@ COPY orchestrator/package-lock.json ./package-lock.json
 RUN npm install
 
 
-FROM node:8.14.0-alpine
+FROM node:10.2-alpine
 RUN apk add --no-cache tini
 ENTRYPOINT ["/sbin/tini", "--"]
 

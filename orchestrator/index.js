@@ -24,6 +24,11 @@ var dojotModule = require("@dojot/dojot-module");
 var healthCheck = require('./healthcheck');
 
 process.on('unhandledRejection', (reason) => {
+
+  //if this reason dont kill because it was handled on amqp.js
+  if (reason === 'Cannot connect to RabbitMQ'){
+    return
+  }
   logger.error(`Unhandled Rejection at: ${reason.stack || reason}. Bailing out!!`);
   process.kill(process.pid, "SIGTERM");
 });
