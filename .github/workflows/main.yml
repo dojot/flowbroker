@@ -29,21 +29,21 @@ jobs:
       run: |
         cd contextManager
         npm rebuild
-        npm ci
+        npm install
         npm run build --if-present
         npm run check-licenses
 
     - name: npm ci, build and check licenses (lib)
       run: |
         cd lib
-        npm ci
+        npm install
         npm run build --if-present
         npm run check-licenses
 
     - name: npm ci, build and check licenses (orchestrator)
       run: |
         cd orchestrator
-        npm ci
+        npm install
         npm run build --if-present
         npm run check-licenses
 
