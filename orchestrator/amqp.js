@@ -141,7 +141,7 @@ class AMQPConsumer {
    */
    disconnect() {
     if (this.connection && this.channel) {
-      return Promise.all([Promise.resolve()]).then(() => {
+      return Promise.resolve().then(() => {
         this.channelDisconnecting = true
         this.connectionDisconnecting = true
       }).then(() => {
