@@ -28,7 +28,6 @@ jobs:
     - name: npm ci, build and check licenses (contextManager)
       run: |
         cd contextManager
-        npm rebuild
         npm install
         npm run build --if-present
         npm run check-licenses
