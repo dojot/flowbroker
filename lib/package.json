@@ -23,7 +23,7 @@
     "url": "https://github.com/dojot/flowbroker.git"
   },
   "dependencies": {
-    "zeromq": "^4.6.0",
+    "zeromq": "5.2.8",
     "uuid": "^3.2.1",
     "@dojot/dojot-module-logger": "^0.1.0"
   },
