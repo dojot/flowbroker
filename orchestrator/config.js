@@ -21,7 +21,7 @@ let config = {
         url: process.env.DATA_BROKER_URL || "http://data-broker:80"
     },
     amqp: {
-        url: process.env.AMQP_URL || "amqp://rabbitmq",
+        url: process.env.AMQP_URL || "amqp://rabbitmq?heartbeat=60",
         task_queue_prefix: process.env.AMQP_PREFIX_TASK_QUEUE || "task_queue",
         task_queue_n: process.env.AMQP_TASK_QUEUE_N || 10,
         event_queue_prefix: process.env.AMQP_PREFIX_EVENT_QUEUE || "event_queue",

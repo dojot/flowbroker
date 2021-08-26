@@ -69,7 +69,7 @@ class AMQPProducer {
       logger.info("[Producer] Disconnecting from RabbitMQ...", { filename: 'amqp' });
       return
     }
-    return amqp.connect(this.url+'?heartbeat=10').then((connection) => {
+    return amqp.connect(this.url).then((connection) => {
       this.connection = connection;
       connection.on('error', (err) => {
         logger.error(`[Producer] Error on connectio with RabbitMQ: ${err}`, { filename: 'amqp' });
@@ -178,7 +178,7 @@ class AMQPConsumer {
   }
 
   async connect() {
-    return amqp.connect(this.url+'?heartbeat=10').then((connection) => {
+    return amqp.connect(this.url).then((connection) => {
       this.connection = connection;
       connection.on('error', (err) => {
         logger.error(`[Consumer] Error on connectio with RabbitMQ: ${err}`, { filename: 'amqp' });
