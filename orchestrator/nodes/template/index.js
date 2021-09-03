@@ -12,6 +12,9 @@ class DataHandler extends dojot.DataHandlerBase {
         handlebars.registerHelper('stringify', function(context) {
             return JSON.stringify(context);
         });
+        handlebars.registerHelper('parseAndSelect', function(context,key) {
+            return JSON.stringify(JSON.parse(context)[key]) +"}";
+        });
     }
 
     /**
