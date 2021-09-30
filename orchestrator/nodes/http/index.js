@@ -79,7 +79,7 @@ class DataHandler extends dojot.DataHandlerBase {
         var ret = config.ret || "txt";
         var reqTimeout = 120000;
         var url = nodeUrl || message.url;
-        var httpRequest;
+        var httpRequest = {};
 
         try {
             httpRequest = JSON.parse(this._get(config.body, message));
