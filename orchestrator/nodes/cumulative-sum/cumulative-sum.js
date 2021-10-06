@@ -120,7 +120,7 @@ class DataHandler extends dojot.DataHandlerBase {
         });
       }).catch((error) => {
         logger.error(`Failed to retrieve context. Error: ${error}`, { filename: 'cumulative sum' });
-        return Promise.resolve('Failed to retrieve context.');
+        return Promise.reject('Failed to retrieve context.');
       });
   }
 }
