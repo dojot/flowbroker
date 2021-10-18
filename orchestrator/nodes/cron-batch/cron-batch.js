@@ -35,8 +35,8 @@ class DataHandler extends dojot.DataHandlerBase {
     _makeJwtToken(tenant) {
         const payload = { 'service': tenant, 'username': 'flowbroker' };
         return (new Buffer('jwt schema').toString('base64')) + '.' +
-        (new Buffer(JSON.stringify(payload)).toString('base64')) + '.' +
-        (new Buffer('dummy signature').toString('base64'));
+            (new Buffer(JSON.stringify(payload)).toString('base64')) + '.' +
+            (new Buffer('dummy signature').toString('base64'));
     }
 
     _removeSingleJob(tenant, jobId, timeout) {
@@ -61,7 +61,7 @@ class DataHandler extends dojot.DataHandlerBase {
 
     _removeMultipleJobs(tenant, jobIds, timeout) {
         let removePromises = [];
-        for(let id of jobIds) {
+        for (let id of jobIds) {
             removePromises.push(this._removeSingleJob(tenant, id, timeout));
         }
         return Promise.all(removePromises);
@@ -84,7 +84,7 @@ class DataHandler extends dojot.DataHandlerBase {
                 return resolve(jobId);
 
             }).catch(error => {
-                logger.error(`Failed to create cron job (${JSON.stringify(error)}).`, { filename: 'cron-batch' });
+                logger.error(`Failed to create cron job (${error}).`, { filename: 'cron-batch' });
                 return reject(error);
             });
         });
@@ -92,7 +92,7 @@ class DataHandler extends dojot.DataHandlerBase {
 
     _createMultipleJobs(tenant, requests, timeout) {
         let createPromises = [];
-        for(let req of requests) {
+        for (let req of requests) {
             createPromises.push(this._createSingleJob(tenant, req, timeout));
         }
         return Promise.all(createPromises);
@@ -106,36 +106,36 @@ class DataHandler extends dojot.DataHandlerBase {
         logger.debug("Executing cron-batch node...", { filename: 'cron-batch' });
         return new Promise(async (resolve, reject) => {
             try {
-                switch(config.operation) {
+                switch (config.operation) {
                     case "CREATE":
-                    {
-                        let requests = this._get(config.jobs, message);
-                        if(!util.isArray(requests)) {
-                            logger.debug(`The input must be an array of job requests.`, { filename: 'cron-batch' });
-                            return reject(new Error(`The input must be an array of job requests.`));
+                        {
+                            let requests = this._get(config.jobs, message);
+                            if (!util.isArray(requests)) {
+                                logger.debug(`The input must be an array of job requests.`, { filename: 'cron-batch' });
+                                return reject(new Error(`The input must be an array of job requests.`));
+                            }
+                            let jobIds = await this._createMultipleJobs(metadata.tenant, requests, timeout);
+                            this._set(config.outJobIds, jobIds, message);
+                            break;
                         }
-                        let jobIds = await this._createMultipleJobs(metadata.tenant, requests, timeout);
-                        this._set(config.outJobIds, jobIds, message);
-                        break;
-                    }
                     case "REMOVE":
-                    {
-                        let jobIds = this._get(config.inJobIds, message);
-                        if(!util.isArray(jobIds)) {
-                            logger.debug(`The input must be an array of job identifiers.`, { filename: 'cron-batch' });
-                            return reject(new Error(`The input must be an array of job identifiers.`));
+                        {
+                            let jobIds = this._get(config.inJobIds, message);
+                            if (!util.isArray(jobIds)) {
+                                logger.debug(`The input must be an array of job identifiers.`, { filename: 'cron-batch' });
+                                return reject(new Error(`The input must be an array of job identifiers.`));
+                            }
+                            await this._removeMultipleJobs(metadata.tenant, jobIds, timeout);
+                            break;
                         }
-                        await this._removeMultipleJobs(metadata.tenant, jobIds, timeout);
-                        break;
-                    }
                     default:
-                    {
-                        logger.debug(`Invalid operation: ${config.operation}`, { filename: 'cron-batch' });
-                        return reject(new Error(`Invalid Operation: ${config.operation}`));
-                    }
+                        {
+                            logger.debug(`Invalid operation: ${config.operation}`, { filename: 'cron-batch' });
+                            return reject(new Error(`Invalid Operation: ${config.operation}`));
+                        }
                 }
             }
-            catch(error) {
+            catch (error) {
                 logger.error(`Failed to execute cron job requests (${error}).`, { filename: 'cron-batch' });
                 return reject(error);
             }
