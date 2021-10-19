@@ -61,7 +61,7 @@ class DataHandler extends dojot.DataHandlerBase {
 
     _removeMultipleJobs(tenant, jobIds, timeout) {
         let removePromises = [];
-        for (let id of jobIds) {
+        for(let id of jobIds) {
             removePromises.push(this._removeSingleJob(tenant, id, timeout));
         }
         return Promise.all(removePromises);
@@ -92,7 +92,7 @@ class DataHandler extends dojot.DataHandlerBase {
 
     _createMultipleJobs(tenant, requests, timeout) {
         let createPromises = [];
-        for (let req of requests) {
+        for(let req of requests) {
             createPromises.push(this._createSingleJob(tenant, req, timeout));
         }
         return Promise.all(createPromises);
@@ -106,7 +106,7 @@ class DataHandler extends dojot.DataHandlerBase {
         logger.debug("Executing cron-batch node...", { filename: 'cron-batch' });
         return new Promise(async (resolve, reject) => {
             try {
-                switch (config.operation) {
+                switch(config.operation) {
                     case "CREATE":
                         {
                             let requests = this._get(config.jobs, message);
@@ -135,7 +135,7 @@ class DataHandler extends dojot.DataHandlerBase {
                         }
                 }
             }
-            catch (error) {
+            catch(error) {
                 logger.error(`Failed to execute cron job requests (${error}).`, { filename: 'cron-batch' });
                 return reject(error);
             }
