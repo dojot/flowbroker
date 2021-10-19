@@ -35,8 +35,8 @@ class DataHandler extends dojot.DataHandlerBase {
     _makeJwtToken(tenant) {
         const payload = { 'service': tenant, 'username': 'flowbroker' };
         return (new Buffer('jwt schema').toString('base64')) + '.' +
-            (new Buffer(JSON.stringify(payload)).toString('base64')) + '.' +
-            (new Buffer('dummy signature').toString('base64'));
+        (new Buffer(JSON.stringify(payload)).toString('base64')) + '.' +
+        (new Buffer('dummy signature').toString('base64'));
     }
 
     _removeSingleJob(tenant, jobId, timeout) {
