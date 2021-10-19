@@ -84,7 +84,7 @@ class DataHandler extends dojot.DataHandlerBase {
                 return resolve(jobId);
 
             }).catch(error => {
-                logger.error(`Failed to create cron job (${JSON.stringify(error)}).`, { filename: 'cron-batch' });
+                logger.error(`Failed to create cron job (${error}).`, { filename: 'cron-batch' });
                 return reject(error);
             });
         });
@@ -108,31 +108,31 @@ class DataHandler extends dojot.DataHandlerBase {
             try {
                 switch(config.operation) {
                     case "CREATE":
-                    {
-                        let requests = this._get(config.jobs, message);
-                        if(!util.isArray(requests)) {
-                            logger.debug(`The input must be an array of job requests.`, { filename: 'cron-batch' });
-                            return reject(new Error(`The input must be an array of job requests.`));
+                        {
+                            let requests = this._get(config.jobs, message);
+                            if (!util.isArray(requests)) {
+                                logger.debug(`The input must be an array of job requests.`, { filename: 'cron-batch' });
+                                return reject(new Error(`The input must be an array of job requests.`));
+                            }
+                            let jobIds = await this._createMultipleJobs(metadata.tenant, requests, timeout);
+                            this._set(config.outJobIds, jobIds, message);
+                            break;
                         }
-                        let jobIds = await this._createMultipleJobs(metadata.tenant, requests, timeout);
-                        this._set(config.outJobIds, jobIds, message);
-                        break;
-                    }
                     case "REMOVE":
-                    {
-                        let jobIds = this._get(config.inJobIds, message);
-                        if(!util.isArray(jobIds)) {
-                            logger.debug(`The input must be an array of job identifiers.`, { filename: 'cron-batch' });
-                            return reject(new Error(`The input must be an array of job identifiers.`));
+                        {
+                            let jobIds = this._get(config.inJobIds, message);
+                            if (!util.isArray(jobIds)) {
+                                logger.debug(`The input must be an array of job identifiers.`, { filename: 'cron-batch' });
+                                return reject(new Error(`The input must be an array of job identifiers.`));
+                            }
+                            await this._removeMultipleJobs(metadata.tenant, jobIds, timeout);
+                            break;
                         }
-                        await this._removeMultipleJobs(metadata.tenant, jobIds, timeout);
-                        break;
-                    }
                     default:
-                    {
-                        logger.debug(`Invalid operation: ${config.operation}`, { filename: 'cron-batch' });
-                        return reject(new Error(`Invalid Operation: ${config.operation}`));
-                    }
+                        {
+                            logger.debug(`Invalid operation: ${config.operation}`, { filename: 'cron-batch' });
+                            return reject(new Error(`Invalid Operation: ${config.operation}`));
+                        }
                 }
             }
             catch(error) {
