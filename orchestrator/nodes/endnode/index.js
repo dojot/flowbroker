@@ -70,19 +70,19 @@ class DataHandler extends dojot.DataHandlerBase {
             var headEnd = 2;    
             var bodyEnd = FRMpayload.length;
                 
-            var head = FRMpayload.substring(headStart, headEnd);
-            var body = FRMpayload.substring(headEnd, bodyEnd);
+            var aplication = FRMpayload.substring(headStart, headEnd);
+            var full_payload = FRMpayload.substring(headStart, bodyEnd);
                 
-            var FRMpayload_buffer = Buffer.from(body, "hex");
+            var FRMpayload_buffer = Buffer.from(full_payload, "hex");
 
-            console.log("head: " + head); 
-            console.log("body: " + body);
+            console.log("Aplication: " + parseInt(aplication, 16)); 
+            console.log("full_payload: " + full_payload);
 
-            var applicationsParser = applicationsMap[head];
+            var applicationsParser = applicationsMap[aplication];
 
             var FRMpayload_final = applicationsParser.parse(FRMpayload_buffer);
 
-            console.log("Final: " + JSON.stringify(FRMpayload_final));
+            console.log("Final Payload: " + JSON.stringify(FRMpayload_final));
 
             this._set(config.out, FRMpayload_final, message);
             
