@@ -139,7 +139,7 @@ class DataHandler extends dojot.DataHandlerBase {
         client.ftp.verbose = true;
         await client.access({
             host,
-          //  port,
+            port,
             password,
             secure: (transport === "ftps"),
             user,
