@@ -1,12 +1,13 @@
 const Parser = require("binary-parser").Parser;
+//Documentação https://github.com/keichi/binary-parser
 
 module.exports = {
     
     //Ônibus Circular
-    "01" : new Parser().uint8("Aplicacao").uint32be('Timestamp').uint16be('QuantidadePassageiros').uint16('TotalPassageirosMomento').floatbe('Latitude').floatbe('Longitude').floatbe('TemperaturaInterna'),
+    "01" : new Parser().uint8("Aplicacao").uint32be('Timestamp').uint16be('QuantidadePassageiros').uint32be('TotalPassageirosMomento').floatbe('Latitude').floatbe('Longitude').floatbe('TemperaturaInterna'),
 
     //Barco Elétrico
-    "02" : new Parser().uint8("Aplicacao").uint32be('Timestamp').uint16be('QuantidadePassageiros').uint16('TotalPassageirosMomento').floatbe('Latitude').floatbe('Longitude').floatbe('TemperaturaInterna'),
+    "02" : new Parser().uint8("Aplicacao").uint32be('Timestamp').uint16be('QuantidadePassageiros').uint32be('TotalPassageirosMomento').floatbe('Latitude').floatbe('Longitude').floatbe('TemperaturaInterna'),
 
     //Sistema Fotovoltaico (UACT 3F)
     "03" : new Parser().uint8("Aplicacao").uint32be('Timestamp').floatbe('TensaoRMSFaseA').floatbe('TensaoRMSFaseB').floatbe('TensaoRMSFaseC').floatbe('CorrenteRMSFaseA').floatbe('CorrenteRMSFaseB').floatbe('CorrenteRMSFaseC').floatbe('CorrenteRMSneutro').floatbe('FrequenciaFaseA').floatbe('FrequenciaFaseB').floatbe('FrequenciaFaseC').floatbe('PotenciaAtivaFaseA').floatbe('PotenciaAtivaFaseB').floatbe('PotenciaAtivaFaseC').floatbe('PotenciaAtivaTotal').floatbe('PotenciaReativaFaseA').floatbe('PotenciaReativaFaseB').floatbe('PotenciaReativaFaseC').floatbe('PotenciaReativaTotal').floatbe('PotenciaAparenteFaseA').floatbe('PotenciaAparenteFaseB').floatbe('PotenciaAparenteFaseC').floatbe('PotenciaAparenteTotal').floatbe('FatordePotenciaFaseA').floatbe('FatordePotenciaFaseB').floatbe('FatordePotenciaFaseC').floatbe('FatordePotenciaTotal').floatbe('ConsumoFaseA').floatbe('ConsumoFaseB').floatbe('ConsumoFaseC').floatbe('ConsumoTotal'),
@@ -16,6 +17,9 @@ module.exports = {
 
     //Eletroposto Ceamazon (UACT 3F)
     "05" : new Parser().uint8("Aplicacao").uint32be('Timestamp').floatbe('TensaoRMSFaseA').floatbe('TensaoRMSFaseB').floatbe('TensaoRMSFaseC').floatbe('CorrenteRMSFaseA').floatbe('CorrenteRMSFaseB').floatbe('CorrenteRMSFaseC').floatbe('CorrenteRMSneutro').floatbe('FrequenciaFaseA').floatbe('FrequenciaFaseB').floatbe('FrequenciaFaseC').floatbe('PotenciaAtivaFaseA').floatbe('PotenciaAtivaFaseB').floatbe('PotenciaAtivaFaseC').floatbe('PotenciaAtivaTotal').floatbe('PotenciaReativaFaseA').floatbe('PotenciaReativaFaseB').floatbe('PotenciaReativaFaseC').floatbe('PotenciaReativaTotal').floatbe('PotenciaAparenteFaseA').floatbe('PotenciaAparenteFaseB').floatbe('PotenciaAparenteFaseC').floatbe('PotenciaAparenteTotal').floatbe('FatordePotenciaFaseA').floatbe('FatordePotenciaFaseB').floatbe('FatordePotenciaFaseC').floatbe('FatordePotenciaTotal').floatbe('ConsumoFaseA').floatbe('ConsumoFaseB').floatbe('ConsumoFaseC').floatbe('ConsumoTotal'),
+
+    //Eletroposto Ginásio ABB (UACT C)
+    "06" : new Parser().uint8("Aplicacao").uint32be('Timestamp').floatbe('TensaoCC').floatbe('CorrenteCC').floatbe('PotenciaCC').floatbe('EnergiaFornecida').floatbe('EnergiaConsumida'),
 
     //Harmônico Individual de Tensão A
     "F1" : new Parser().uint8("Aplicacao").floatbe('HITensaoFaseA1').floatbe('HITensaoFaseA2').floatbe('HITensaoFaseA3').floatbe('HITensaoFaseA4').floatbe('HITensaoFaseA5').floatbe('HITensaoFaseA6').floatbe('HITensaoFaseA7').floatbe('HITensaoFaseA8').floatbe('HITensaoFaseA9').floatbe('HITensaoFaseA10').floatbe('HITensaoFaseA11').floatbe('HITensaoFaseA12').floatbe('HITensaoFaseA13').floatbe('HITensaoFaseA14').floatbe('HITensaoFaseA15').floatbe('HITensaoFaseA16').floatbe('HITensaoFaseA17').floatbe('HITensaoFaseA18').floatbe('HITensaoFaseA19').floatbe('HITensaoFaseA20').floatbe('HITensaoFaseA21').floatbe('HITensaoFaseA22').floatbe('HITensaoFaseA23').floatbe('HITensaoFaseA24').floatbe('HITensaoFaseA25').floatbe('HITensaoFaseA26').floatbe('HITensaoFaseA27').floatbe('HITensaoFaseA28').floatbe('HITensaoFaseA29').floatbe('HITensaoFaseA30').floatbe('HITensaoFaseA31').floatbe('HITensaoFaseA32').floatbe('HITensaoFaseA33').floatbe('HITensaoFaseA34').floatbe('HITensaoFaseA35').floatbe('HITensaoFaseA36').floatbe('HITensaoFaseA37').floatbe('HITensaoFaseA38').floatbe('HITensaoFaseA39').floatbe('HITensaoFaseA40').floatbe('HITensaoFaseA41').floatbe('HITensaoFaseA42').floatbe('HITensaoFaseA43').floatbe('HITensaoFaseA44').floatbe('HITensaoFaseA45').floatbe('HITensaoFaseA46').floatbe('HITensaoFaseA47').floatbe('HITensaoFaseA48').floatbe('HITensaoFaseA49').floatbe('HTTensaoFaseA'),
@@ -52,9 +56,6 @@ module.exports = {
 
     //Harmônico Individual de Corrente C
     "FC" : new Parser().uint8("Aplicacao").floatbe('HICorrenteFaseC1').floatbe('HICorrenteFaseC2').floatbe('HICorrenteFaseC3').floatbe('HICorrenteFaseC4').floatbe('HICorrenteFaseC5').floatbe('HICorrenteFaseC6').floatbe('HICorrenteFaseC7').floatbe('HICorrenteFaseC8').floatbe('HICorrenteFaseC9').floatbe('HICorrenteFaseC10').floatbe('HICorrenteFaseC11').floatbe('HICorrenteFaseC12').floatbe('HICorrenteFaseC13').floatbe('HICorrenteFaseC14').floatbe('HICorrenteFaseC15').floatbe('HICorrenteFaseC16').floatbe('HICorrenteFaseC17').floatbe('HICorrenteFaseC18').floatbe('HICorrenteFaseC19').floatbe('HICorrenteFaseC20').floatbe('HICorrenteFaseC21').floatbe('HICorrenteFaseC22').floatbe('HICorrenteFaseC23').floatbe('HICorrenteFaseC24').floatbe('HICorrenteFaseC25').floatbe('HICorrenteFaseC26').floatbe('HICorrenteFaseC27').floatbe('HICorrenteFaseC28').floatbe('HICorrenteFaseC29').floatbe('HICorrenteFaseC30').floatbe('HICorrenteFaseC31').floatbe('HICorrenteFaseC32').floatbe('HICorrenteFaseC33').floatbe('HICorrenteFaseC34').floatbe('HICorrenteFaseC35').floatbe('HICorrenteFaseC36').floatbe('HICorrenteFaseC37').floatbe('HICorrenteFaseC38').floatbe('HICorrenteFaseC39').floatbe('HICorrenteFaseC40').floatbe('HICorrenteFaseC41').floatbe('HICorrenteFaseC42').floatbe('HICorrenteFaseC43').floatbe('HICorrenteFaseC44').floatbe('HICorrenteFaseC45').floatbe('HICorrenteFaseC46').floatbe('HICorrenteFaseC47').floatbe('HICorrenteFaseC48').floatbe('HICorrenteFaseC49').floatbe('HTCorrenteFaseC'),
-
-    //Eletroposto Ginásio ABB (UACT C)
-    "09" : new Parser().uint8("Aplicacao").uint32be('Timestamp').floatbe('TensaoCC').floatbe('CorrenteCC').floatbe('PotenciaCC').floatbe('EnergiaFornecida').floatbe('EnergiaConsumida'),
 
     //Controlador de Carga (Eletroce)
     "A" : new Parser().uint8("Aplicacao").uint32be('Timestamp').floatbe('TensaoCC').floatbe('CorrenteCC').floatbe('PotenciaCC').floatbe('EnergiaFornecida').floatbe('EnergiaConsumida'),
