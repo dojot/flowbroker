@@ -65,7 +65,7 @@ class DataHandler extends dojot.DataHandlerBase {
 
             // Module import
             var Parser = require("binary-parser").Parser;
-
+            
             var headStart = 0;
             var headEnd = 2;    
             var bodyEnd = FRMpayload.length;
@@ -80,7 +80,41 @@ class DataHandler extends dojot.DataHandlerBase {
 
             var applicationsParser = applicationsMap[aplication];
 
-            var FRMpayload_final = applicationsParser.parse(FRMpayload_buffer);
+            switch(aplication){
+                case "01":
+                  var Latitude = applicationsParser.parse(FRMpayload_buffer).Latitude;
+                  var Longitude = applicationsParser.parse(FRMpayload_buffer).Longitude;
+                  
+                  var onibus_eletrico = {
+                        "Aplicacao": applicationsParser.parse(FRMpayload_buffer).Aplicacao,
+                        "Timestamp": applicationsParser.parse(FRMpayload_buffer).Timestamp,
+                        "QuantidadePassageiros": applicationsParser.parse(FRMpayload_buffer).QuantidadePassageiros,
+                        "TotalPassageirosMomento": applicationsParser.parse(FRMpayload_buffer).TotalPassageirosMomento,
+                        "Localizacao": '' + Latitude + ',' + Longitude + '',
+                        "TemperaturaInterna": applicationsParser.parse(FRMpayload_buffer).TemperaturaInterna      
+                  }      
+                  var FRMpayload_final = onibus_eletrico;
+                break;
+                
+                case "02":
+                  var Latitude = applicationsParser.parse(FRMpayload_buffer).Latitude;
+                  var Longitude = applicationsParser.parse(FRMpayload_buffer).Longitude;
+                  
+                  var barco_eletrico = {
+                        "Aplicacao": applicationsParser.parse(FRMpayload_buffer).Aplicacao,
+                        "Timestamp": applicationsParser.parse(FRMpayload_buffer).Timestamp,
+                        "QuantidadePassageiros": applicationsParser.parse(FRMpayload_buffer).QuantidadePassageiros,
+                        "TotalPassageirosMomento": applicationsParser.parse(FRMpayload_buffer).TotalPassageirosMomento,
+                        "Localizacao": '' + Latitude + ',' + Longitude + '',
+                        "TemperaturaInterna": applicationsParser.parse(FRMpayload_buffer).TemperaturaInterna      
+                  }      
+                  var FRMpayload_final = barco_eletrico;            
+                break;
+                
+                default:
+                    var FRMpayload_final = applicationsParser.parse(FRMpayload_buffer);
+                break;
+            }
 
             console.log("Final Payload: " + JSON.stringify(FRMpayload_final));
 
