@@ -42,7 +42,7 @@
     "axios": "^0.18.0",
     "bluebird": "^3.4.7",
     "express": "^4.16.2",
-    "follow-redirects": "^1.4.1",
+    "follow-redirects": "^1.14.8",
     "geolib": "^2.0.24",
     "ioredis": "^4.0.0",
     "joi": "^10.2.0",
