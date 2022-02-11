@@ -112,7 +112,30 @@ class DataHandler extends dojot.DataHandlerBase {
         return Promise.reject(new Error('Could not define target devices'));
       }
 
-      output.metadata.timestamp = Date.now();
+      const overwriteTimestamp = (ts) => {
+        if (!Number.isNaN(ts)) {
+          metadata.timestamp = ts;
+        } else {
+          logger.warn(`Timestamp ${payload.timestamp} is invalid. `
+            + 'It\'ll be considered the current time.');
+        }
+      };
+
+      if (Object.prototype.hasOwnProperty.call(metadata, 'timestamp')) {
+        // If it is a number, just copy it. Probably Unix time.
+        if (typeof metadata.timestamp === 'number') {
+          overwriteTimestamp(metadata.timestamp);
+        } else if (typeof metadata.timestamp === 'string') {
+          // If it is a ISO string...
+          overwriteTimestamp(Date.parse(metadata.timestamp));
+        } else {
+          logger.warn(`Times+tamp ${metadata.timestamp} is invalid. `
+          + 'It\'ll be considered the current time.');
+          metadata.timestamp = Date.now();
+        }
+      }
+
+      output.metadata.timestamp = metadata.timestamp;
       output.metadata.tenant = metadata.tenant;
 
       logger.debug("Updating device... ", { filename: 'multi device out' });
