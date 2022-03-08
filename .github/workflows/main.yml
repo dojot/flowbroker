@@ -24,6 +24,9 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+   
+    - name: Install xmllint
+      run: sudo apt-get install -y libzmq3-dev
 
     - name: npm ci, build and check licenses (contextManager)
       run: |
