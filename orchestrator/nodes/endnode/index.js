@@ -110,6 +110,26 @@ class DataHandler extends dojot.DataHandlerBase {
                   }      
                   var FRMpayload_final = barco_eletrico;            
                 break;
+
+                case "10":
+                  var Latitude = applicationsParser.parse(FRMpayload_buffer).Latitude;
+                  var Longitude = applicationsParser.parse(FRMpayload_buffer).Longitude;
+                  
+                  var barco_eletrico_uact_cc = {
+                        "Aplicacao": applicationsParser.parse(FRMpayload_buffer).Aplicacao,
+                        "Timestamp": applicationsParser.parse(FRMpayload_buffer).Timestamp,
+                        "QuantidadePassageiros": applicationsParser.parse(FRMpayload_buffer).QuantidadePassageiros,
+                        "TotalPassageirosMomento": applicationsParser.parse(FRMpayload_buffer).TotalPassageirosMomento,
+                        "Localizacao": '' + Latitude + ',' + Longitude + '',
+                        "TemperaturaInterna": applicationsParser.parse(FRMpayload_buffer).TemperaturaInterna,
+                        "TensaoCC": applicationsParser.parse(FRMpayload_buffer).TensaoCC,
+                        "CorrenteCC": applicationsParser.parse(FRMpayload_buffer).CorrenteCC,
+                        "PotenciaCC": applicationsParser.parse(FRMpayload_buffer).PotenciaCC,
+                        "EnergiaFornecida": applicationsParser.parse(FRMpayload_buffer).EnergiaFornecida,
+                        "EnergiaConsumida": applicationsParser.parse(FRMpayload_buffer).EnergiaConsumida         
+                  }      
+                  var FRMpayload_final = barco_eletrico_uact_cc;            
+                break;
                 
                 default:
                     var FRMpayload_final = applicationsParser.parse(FRMpayload_buffer);
