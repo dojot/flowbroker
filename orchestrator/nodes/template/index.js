@@ -5,6 +5,8 @@ const dojot = require('@dojot/flow-node');
 const handlebars = require('handlebars');
 const mustache = require('mustache');
 const logger = require("@dojot/dojot-module-logger").logger;
+const moment = require('moment');
+
 
 class DataHandler extends dojot.DataHandlerBase {
     constructor() {
@@ -14,9 +16,13 @@ class DataHandler extends dojot.DataHandlerBase {
         });
 
         handlebars.registerHelper('parseAndSelect', function(context,key) {
-            //console.log(JSON.stringify(JSON.parse(context)['bootNotificationReq']));
             return JSON.stringify(context[key]) +"}";
         });
+       
+        handlebars.registerHelper('castTimestampToISODate', function(date) {
+            return moment(date).format()
+        });
+
 
     }
 

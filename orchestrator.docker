@@ -17,7 +17,9 @@ COPY --from=basis /opt/flowbroker/orchestrator /opt/flowbroker/orchestrator
 WORKDIR /opt/flowbroker/orchestrator
 COPY orchestrator ./src
 
-CMD ["node", "src/index.js",  "-s"]
-#CMD ["node", "--inspect-brk=0.0.0.0:9229","src/index.js",  "-s"]
-#CMD ["node_modules/.bin/nodemon", "--inspect-brk=0.0.0.0:9229", "src/index.js"]
+ENV DOCKERIZE_VERSION v0.6.1
+RUN wget https://github.com/jwilder/dockerize/releases/download/v0.6.1/dockerize-alpine-linux-amd64-v0.6.1.tar.gz
+RUN tar -C /usr/local/bin -xzvf dockerize-alpine-linux-amd64-v0.6.1.tar.gz
 
+
+CMD dockerize -wait tcp://auth:5000 -timeout 1000s -wait tcp://zookeeper:2181 -timeout 1000s -wait tcp://data-broker-redis:6379 -timeout 1000s -wait tcp://mongodb:27017 -timeout 1000s -wait tcp://auth:5000 -timeout 1000s -wait tcp://rabbitmq:5672 -timeout 1000s -wait tcp://kafka:9092 -timeout 1000s node src/index.js -s
