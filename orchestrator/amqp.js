@@ -132,7 +132,7 @@ class AMQPProducer {
     if (this.channel) {
       let buffer = new Buffer(data);
       return new Promise((resolve, reject) => {
-        if (!this.connection) reject(`[Producer Queue: ${this.queue}] Producer is not connected`);
+        if (!this.connection) return reject(`[Producer Queue: ${this.queue}] Producer is not connected`);
         this.channel.sendToQueue(this.queue, buffer, { persistent: true, priority: priority }, (error, ok) => {
           if (error !== null) {
             return reject();
