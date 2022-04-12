@@ -26,7 +26,8 @@ let config = {
         task_queue_n: process.env.AMQP_TASK_QUEUE_N || 10,
         event_queue_prefix: process.env.AMQP_PREFIX_EVENT_QUEUE || "event_queue",
         event_queue_n: process.env.AMQP_EVENT_QUEUE_N || 10,
-        timeToReconnect: process.env.AMQP_TIME_TO_RECONNECT || 10000
+        maxTimeToRetryReconnection: process.env.AMQP_MAX_TIME_RETRY_RECONNECT || 180,
+        initialTimeToRetryReconnection: process.env.AMQP_INITIAL_TIME_RETRY_RECONNECT || 2
     },
     deploy: {
         engine: process.env.DEPLOY_ENGINE || "kubernetes",

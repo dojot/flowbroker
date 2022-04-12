@@ -8,7 +8,6 @@ var config = require('./config');
 const util = require('util');
 const logger = require("@dojot/dojot-module-logger").logger;
 
-
 class AMQPProducer {
   constructor(queue, url, maxPriority) {
     this.url = url || config.amqp.url;
@@ -18,7 +17,10 @@ class AMQPProducer {
     this.maxPriority = maxPriority;
     this.channelDisconnecting = false
     this.connectionDisconnecting = false
-    this.timeToReconnection = config.amqp.timeToReconnect;
+    this.maxTimeToRetryReconnection = config.amqp.maxTimeToRetryReconnection;
+    this.actualTimeToRetryReconnection = config.amqp.initialTimeToRetryReconnection;
+    this.initialTimeToRetryReconnection = config.amqp.initialTimeToRetryReconnection;
+    this.currentNumberRetryReconnection = 0;
   }
 
   /**
@@ -35,7 +37,7 @@ class AMQPProducer {
         this.channel.close()
       }).then(() => {
         this.connection.close();
-      }).catch((err) => logger.error(`Error when closing connection to RabbitMQ: ${err}`, { filename: 'amqp' }))
+      }).catch((err) => logger.error(`[Producer Queue: ${this.queue}] Error when closing connection to RabbitMQ: ${err}`, { filename: 'amqp' }))
         .finally(() => {
           this.channelDisconnecting = false
           this.connectionDisconnecting = false
@@ -46,62 +48,83 @@ class AMQPProducer {
   /**
   * Try reconnect to rabbitMQ
   */
-  reconnect() {
-    logger.info(`[Producer] Reconnecting to RabbitMQ...`, { filename: 'amqp' });
-    //Add 5s after each iteration to max 120s
-    if (this.timeToReconnection + 5000 > 120000) {
-      this.timeToReconnection = 120000;
-    } else {
-      this.timeToReconnection += 5000;
-    }
+  async reconnect() {
+    return new Promise(async (resolve, reject) => {
+      if (this.initialTimeToRetryReconnection) {
+        if(this.initialTimeToRetryReconnection === 1) this.initialTimeToRetryReconnection = 2;
 
+        const exponentialValue = Math.round(this.initialTimeToRetryReconnection ** this.currentNumberRetryReconnection);
+        this.actualTimeToRetryReconnection = exponentialValue;
 
-    setTimeout(() => {
-      logger.info(`[Producer] Trying to reconnect to RabbitMQ after ${this.timeToReconnection / 1000} seconds passed`, { filename: 'amqp' })
-      this.disconnect();
-      this.connect();
-    }, this.timeToReconnection)
+        if (
+          exponentialValue >= this.maxTimeToRetryReconnection) {
+          this.actualTimeToRetryReconnection = this.maxTimeToRetryReconnection;
+        }
 
+        await logger.info(`[Producer Queue: ${this.queue}] Reconnecting to RabbitMQ...`, { filename: 'amqp' });
+
+        await this.disconnect();
+
+        await logger.info(`[Producer Queue: ${this.queue}] Trying (${this.actualTimeToRetryReconnection}) seconds passed`, { filename: 'amqp' });
+
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+        await delay(this.actualTimeToRetryReconnection * 1000);
+
+        await this.connect();
+      } else {
+        reject(`[Producer Queue: ${this.queue}] Producer is not connected`);
+      }
+    });
   }
 
   async connect() {
     if (this.channelDisconnecting == true || this.connectionDisconnecting == true) {
-      logger.info("[Producer] Disconnecting from RabbitMQ...", { filename: 'amqp' });
+      logger.info(`[Producer Queue: ${this.queue}] Disconnecting from RabbitMQ...`, { filename: 'amqp' });
       return
     }
     return amqp.connect(this.url).then((connection) => {
       this.connection = connection;
-      connection.on('error', (err) => {
-        logger.error(`[Producer] Error on connectio with RabbitMQ: ${err}`, { filename: 'amqp' });
-        this.reconnect();
+      connection.once('error', async (err) => {
+        logger.error(`[Producer Queue: ${this.queue}] Error on connectio with RabbitMQ: ${err}`, { filename: 'amqp' });
+        this.connection = null;
+        this.channel = null;
+        this.currentNumberRetryReconnection++;
+
+        await this.reconnect();
       });
 
-      connection.on('close', (err) => {
-        logger.error(`[Producer] Connection RabbitMQ was closed: ${err}`, { filename: 'amqp' });
-        this.connection=null;
-        this.channel=null;
-        this.reconnect();
+      connection.once('close', async (err) => {
+        logger.error(`[Producer Queue: ${this.queue}] Connection RabbitMQ was closed: ${err}`, { filename: 'amqp' });
+        this.connection = null;
+        this.channel = null;
+
+        await this.connect();
       });
       return this.connection.createConfirmChannel().then((channel) => {
-        //Reset counting
-        this.timeToReconnection = 10000;
         this.channel = channel;
         channel.prefetch(1); // only 1 unacked msg
         channel.assertQueue(this.queue, { durable: true, maxPriority: this.maxPriority }).then(() => {
-          logger.info(`Producer ready ... `, { filename: 'amqp' });
+          logger.info(`Producer Queue: ${this.queue} ready ... `, { filename: 'amqp' });
+
+          this.currentNumberRetryReconnection = 0;
+          this.actualTimeToRetryReconnection = config.amqp.initialTimeToRetryReconnection;
+
           return Promise.resolve();
         }).catch((error) => {
-          logger.error(`Failed to assert a channel. Error: ${error}`, { filename: 'amqp' });
-          return Promise.reject('Cannot connect to RabbitMQ');
+          logger.error(`[Producer Queue: ${this.queue}] Failed to assert a channel. Error: ${error}`, { filename: 'amqp' });
+          return Promise.reject(`[Producer Queue: ${this.queue}] Cannot connect to RabbitMQ`);
         });
       }).catch((error) => {
-        logger.error(`Failed to create a channel. Error: ${error}`, { filename: 'amqp' });
-        return Promise.reject('Cannot connect to RabbitMQ');
+        logger.error(`[Producer Queue: ${this.queue}] Failed to create a channel. Error: ${error}`, { filename: 'amqp' });
+        return Promise.reject(`[Producer Queue: ${this.queue}] Cannot connect to RabbitMQ`);
       });
-    }).catch((error) => {
-      logger.error(`Failed to create a connection. Error: ${error}`, { filename: 'amqp' });
-      this.reconnect();
-      return Promise.reject('Cannot connect to RabbitMQ');
+    }).catch(async (error) => {
+      logger.error(`[Producer Queue: ${this.queue}] Failed to create a connection. Error: ${error}`, { filename: 'amqp' });
+      this.connection = null;
+      this.channel = null;
+      this.currentNumberRetryReconnection++;
+      await this.reconnect();
+      return Promise.reject(`[Producer Queue: ${this.queue}] Cannot connect to RabbitMQ`);
     });
   }
 
@@ -109,6 +132,7 @@ class AMQPProducer {
     if (this.channel) {
       let buffer = new Buffer(data);
       return new Promise((resolve, reject) => {
+        if (!this.connection) reject(`[Producer Queue: ${this.queue}] Producer is not connected`);
         this.channel.sendToQueue(this.queue, buffer, { persistent: true, priority: priority }, (error, ok) => {
           if (error !== null) {
             return reject();
@@ -117,8 +141,8 @@ class AMQPProducer {
         });
       });
     } else {
-      logger.error('channel was not ready yet', { filename: 'amqp' });
-      return Promise.reject('Producer is not connected');
+      logger.error(`[Producer Queue: ${this.queue}] Channel was not ready yet`, { filename: 'amqp' });
+      return Promise.reject(`[Producer Queue: ${this.queue}] Producer is not connected`);
     }
   }
 }
@@ -131,7 +155,10 @@ class AMQPConsumer {
     this.queue = queue;
     this.onMessage = onMessage;
     this.maxPriority = maxPriority;
-    this.timeToReconnection = config.amqp.timeToReconnect;
+    this.maxTimeToRetryReconnection = config.amqp.maxTimeToRetryReconnection;
+    this.actualTimeToRetryReconnection = config.amqp.initialTimeToRetryReconnection;
+    this.initialTimeToRetryReconnection = config.amqp.initialTimeToRetryReconnection;
+    this.currentNumberRetryReconnection = 0;
   }
 
   /**
@@ -139,59 +166,74 @@ class AMQPConsumer {
    * 
    * @returns 
    */
-   disconnect() {
+  disconnect() {
     if (this.connection && this.channel) {
       return Promise.resolve().then(() => {
-        this.channelDisconnecting = true
-        this.connectionDisconnecting = true
+        this.channelDisconnecting = true;
+        this.connectionDisconnecting = true;
       }).then(() => {
-        this.channel.close()
+        this.channel.close();
       }).then(() => {
         this.connection.close();
-      }).catch((err) => logger.error(`[Consumer] Error when closing connection to RabbitMQ: ${err}`, { filename: 'amqp' }))
+      }).catch((err) => logger.error(`[Consumer: Queue: ${this.queue}] Error when closing connection to RabbitMQ: ${err}`, { filename: 'amqp' }))
         .finally(() => {
-          this.channelDisconnecting = false
-          this.connectionDisconnecting = false
-        })
+          this.channelDisconnecting = false;
+          this.connectionDisconnecting = false;
+        });
     }
   }
 
   /**
   * Try reconnect to rabbitMQ
   */
-  reconnect() {
-    logger.info(`[Consumer] Reconnecting to RabbitMQ...`, { filename: 'amqp' });
-    //Add 5s after each iteration to max 120s
-    if (this.timeToReconnection + 5000 > 120000) {
-      this.timeToReconnection = 120000;
-    } else {
-      this.timeToReconnection += 5000;
-    }
+  async reconnect() {
+    return new Promise(async (resolve, reject) => {
+      if (this.initialTimeToRetryReconnection) {
+        if(this.initialTimeToRetryReconnection === 1) this.initialTimeToRetryReconnection = 2;
 
+        const exponentialValue = Math.round(this.initialTimeToRetryReconnection ** this.currentNumberRetryReconnection);
+        this.actualTimeToRetryReconnection = exponentialValue;
 
-    setTimeout(() => {
-      logger.info(`[Consumer] Trying to reconnect to RabbitMQ after ${this.timeToReconnection / 1000} seconds passed`, { filename: 'amqp' })
-      this.disconnect();
-      this.connect();
-    }, this.timeToReconnection)
+        if (
+          exponentialValue >= this.maxTimeToRetryReconnection) {
+          this.actualTimeToRetryReconnection = this.maxTimeToRetryReconnection;
+        }
 
+        await logger.info(`[Consumer: Queue: ${this.queue}] Reconnecting to RabbitMQ...`, { filename: 'amqp' });
+
+        await this.disconnect();
+
+        await logger.info(`[Consumer: Queue: ${this.queue}] Trying (${this.actualTimeToRetryReconnection}) seconds passed`, { filename: 'amqp' });
+
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
+        await delay(this.actualTimeToRetryReconnection * 1000);
+
+        await this.connect();
+      } else {
+        reject(`[Consumer: Queue: ${this.queue}] Consumer is not connected`);
+      }
+    });
   }
 
   async connect() {
     return amqp.connect(this.url).then((connection) => {
       this.connection = connection;
-      connection.on('error', (err) => {
-        logger.error(`[Consumer] Error on connectio with RabbitMQ: ${err}`, { filename: 'amqp' });
-        this.reconnect();
+      connection.once('error', async (err) => {
+        logger.error(`[Consumer Queue: ${this.queue}] Error on connectio with RabbitMQ: ${err}`, { filename: 'amqp' });
+        this.connection = null;
+        this.channel = null;
+        this.currentNumberRetryReconnection++;
+
+        await this.reconnect();
       });
 
-      connection.on('close', (err) => {
-        logger.error(`[Consumer] RabbitMQ was closed: ${err}`, { filename: 'amqp' });
-        this.connection=null;
-        this.channel=null;
-        this.reconnect();
-      });
+      connection.once('close', async (err) => {
+        logger.error(`[Consumer Queue: ${this.queue}] Connection RabbitMQ was closed: ${err}`, { filename: 'amqp' });
+        this.connection = null;
+        this.channel = null;
 
+        await this.connect();
+      });
 
       return this.connection.createChannel().then((channel) => {
         this.channel = channel;
@@ -202,24 +244,31 @@ class AMQPConsumer {
               channel.ack(amqpCtx);
             });
           }).then((consumerTag) => {
-            logger.info(`consumer ${util.inspect(consumerTag, { depth: null })} ready ... `, { filename: 'amqp' });
+            logger.info(`[Consumer Queue: ${this.queue}] ${util.inspect(consumerTag, { depth: null })} ready ... `, { filename: 'amqp' });
+
+            this.currentNumberRetryReconnection = 0;
+            this.actualTimeToRetryReconnection = config.amqp.initialTimeToRetryReconnection;
+
             return Promise.resolve();
           }).catch((error) => {
-            logger.error(`Failed to consume a channel. Error: ${error}`, { filename: 'amqp' });
-            return Promise.reject('Cannot connect to RabbitMQ');
+            logger.error(`[Consumer Queue: ${this.queue}] Failed to consume a channel. Error: ${error}`, { filename: 'amqp' });
+            return Promise.reject(`[Consumer Queue: ${this.queue}] Cannot connect to RabbitMQ`);
           });
         }).catch((error) => {
-          logger.error(`Failed to assert a channel. Error: ${error}`, { filename: 'amqp' });
-          return Promise.reject('Cannot connect to RabbitMQ');
+          logger.error(`[Consumer Queue: ${this.queue}] Failed to assert a channel. Error: ${error}`, { filename: 'amqp' });
+          return Promise.reject(`[Consumer Queue: ${this.queue}] Cannot connect to RabbitMQ`);
         });
       }).catch((error) => {
-        logger.error(`Failed to create a channel. Error: ${error}`, { filename: 'amqp' });
-        return Promise.reject('Cannot connect to RabbitMQ');
+        logger.error(`[Consumer Queue: ${this.queue}] Failed to create a channel. Error: ${error}`, { filename: 'amqp' });
+        return Promise.reject(`[Consumer Queue: ${this.queue}] Cannot connect to RabbitMQ`);
       });
-    }).catch((error) => {
-      logger.error(`Failed to create a connection. Error: ${error}`, { filename: 'amqp' });
-      this.reconnect();
-      return Promise.reject('Cannot connect to RabbitMQ');
+    }).catch(async (error) => {
+      logger.error(`[Consumer Queue: ${this.queue}] Failed to create a connection. Error: ${error}`, { filename: 'amqp' });
+      this.connection = null;
+      this.channel = null;
+      this.currentNumberRetryReconnection++;
+      await this.reconnect();
+      return Promise.reject(`[Consumer Queue: ${this.queue}] Cannot connect to RabbitMQ`);
     });
   }
 }
