@@ -61,7 +61,7 @@ module.exports = {
     "0a" : new Parser().uint8("Aplicacao").uint32be('Timestamp').floatbe('TensaoCC').floatbe('CorrenteCC').floatbe('PotenciaCC').floatbe('EnergiaFornecida').floatbe('EnergiaConsumida'),
     
     //Barco Elétrico (UACT CC)
-    "0b" : new Parser().uint8("Aplicacao").uint32be('Timestamp').uint16be('QuantidadePassageiros').uint16('TotalPassageirosMomento').floatbe('Latitude').floatbe('Longitude').floatbe('TemperaturaInterna').floatbe('TensaoCC').floatbe('CorrenteCC').floatbe('PotenciaCC').floatbe('EnergiaFornecida').floatbe('EnergiaConsumida')                
+    "0b" : new Parser().uint8("Aplicacao").uint32be('Timestamp').uint16be('QuantidadePassageiros').uint32('TotalPassageirosMomento').floatbe('Latitude').floatbe('Longitude').floatbe('TemperaturaInterna').floatbe('TensaoCC').floatbe('CorrenteCC').floatbe('PotenciaCC').floatbe('EnergiaFornecida').floatbe('EnergiaConsumida')                
 }
 
 
