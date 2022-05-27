@@ -18,6 +18,7 @@ const actuate = require('./nodes/actuate/actuate').Handler;
 const multi_actuate = require('./nodes/multi-actuate/multi_actuate').Handler;
 const device_out = require('./nodes/device-out/device-out').Handler;
 const multi_device_out = require('./nodes/multi-device-out/multi-device-out').Handler;
+const multi_device_out_ts = require('./nodes/multi-device-out-ts/multi-device-out-ts').Handler;
 const publish_ftp = require('./nodes/publish-ftp/index').Handler;
 const notification = require('./nodes/notification/index').Handler;
 const get_context = require('./nodes/get-context/get-context').Handler;
