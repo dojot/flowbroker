@@ -209,6 +209,7 @@ class NodeManager {
             "device out": new device_out(
               new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData, tenant)),
             "multi device out": new multi_device_out(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData),
+            "multi device out ts": new multi_device_out_ts(kafkaMessenger, config.kafkaMessenger.dojot.subjects.deviceData),
             "publish-ftp": new publish_ftp(kafkaMessenger, config.kafkaMessenger.dojot.subjects.ftp),
             "notification": new notification(kafkaMessenger, config.kafkaMessenger.dojot.subjects.notification, tenant),
             "event template in": new event_template_in(),
