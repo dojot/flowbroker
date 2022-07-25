@@ -20,12 +20,11 @@ module.exports = class Executor {
         this.contextHandler = contextHandler;
     }
 
-    init() {
-        return this.producer
-            .connect()
-            .then(() => {
-                this.consumer.connect();
-            });
+    async init() {
+        await this.producer.connect();
+        await this.consumer.connect();
+
+        return Promise.all([this.producer, this.consumer]);
     }
 
     hop(data, ack) {
