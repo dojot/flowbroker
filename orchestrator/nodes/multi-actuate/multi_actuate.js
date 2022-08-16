@@ -11,9 +11,9 @@ class DataHandler extends dojot.DataHandlerBase {
   }
 
   /**
-     * Returns full path to html file
-     * @return {string} String with the path to the node representation file
-     */
+   * Returns full path to html file
+   * @return {string} String with the path to the node representation file
+   */
   getNodeRepresentationPath() {
     return path.resolve(__dirname, 'multi_actuate.html');
   }
@@ -32,14 +32,13 @@ class DataHandler extends dojot.DataHandlerBase {
     };
   }
 
-
-    /**
-     * Returns full path to locales
-     * @returns String
-     */
-    getLocalesPath() {
-        return path.resolve(__dirname, './locales');
-    }
+  /**
+   * Returns full path to locales
+   * @returns String
+   */
+  getLocalesPath() {
+      return path.resolve(__dirname, './locales');
+  }
 
   _getDevicesIds(deviceSource, configuredDevices, dynamicDevices, originatorDeviceId, message) {
     let devicesIds = [];

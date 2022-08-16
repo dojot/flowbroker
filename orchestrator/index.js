@@ -197,9 +197,15 @@ kafkaMessenger.init().then(() => {
   logger.debug("... r-only channel for tenancy was created.");
 
   // read:  device events for updating local cache
-  // write: actuation
+  // write: general
   logger.debug("Creating r+w channel for device-manager subject...");
   kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.devices, "rw");
+  logger.debug("... r+w channel for device-manager was created.");
+
+  // read:  device events for updating local cache
+  // write: actuation
+  logger.debug("Creating r+w channel for device-manager actuation subject...");
+  kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.actuation, "rw");
   logger.debug("... r+w channel for device-manager was created.");
 
   // read:  device data to trigger the flows
