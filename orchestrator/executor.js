@@ -20,11 +20,20 @@ module.exports = class Executor {
         this.contextHandler = contextHandler;
     }
 
-    async init() {
-        await this.producer.connect();
-        await this.consumer.connect();
+    init() {
+        const amqpConsumerPromises = [];
+        const amqpProducerPromises = [];
 
-        return Promise.all([this.producer, this.consumer]);
+        amqpConsumerPromises.push(this.consumer.connect());
+        amqpProducerPromises.push(this.producer.connect());
+
+        return Promise.all([...amqpConsumerPromises, 
+        ...amqpProducerPromises]).then(() => {
+            logger.debug('[Executor] Connections established with RabbitMQ!');
+        }).catch(errors => {
+            logger.error(`[Executor] Failed to establish connections with RabbitMQ. Error = ${errors}`);
+            process.exit(1);
+        });
     }
 
     hop(data, ack) {
