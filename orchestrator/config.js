@@ -141,6 +141,9 @@ let config = {
     keycloak: {
         url: process.env.KEYCLOAK_URL || 'http://keycloak:8080',
         'client.id': process.env.KEYCLOAK_CLIENT_ID || 'dojot-flowbroker',
+        tenants: {
+            url: process.env.KEYCLOAK_TENANTS_URL || "http://keycloak-proxy:8081/api/v1/tenant",
+        },
     }
 };
 

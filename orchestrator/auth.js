@@ -77,6 +77,7 @@ async function getTenantData(tenantId) {
   try {
     logger.debug('looking up tenant data in keycloak')
     const response = await httpClient.request({
+      method: 'GET',
       url: `/auth/realms/${tenant}/protocol/openid-connect/certs`,
     });
 
