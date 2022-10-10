@@ -34,10 +34,10 @@
   "dependencies": {
     "amqplib": "0.8.0",
     "@dojot/dojot-module": "^0.1.1",
+    "@dojot/microservice-sdk": "^0.2.1",
     "@dojot/dojot-module-logger": "^0.1.0",
     "@dojot/flow-node": "../lib",
     "@dojot/healthcheck": "^0.1.0",
-    "amqplib": "0.8.0",
     "argparse": "^1.0.9",
     "axios": "^0.18.0",
     "bluebird": "^3.4.7",

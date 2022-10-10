@@ -1,5 +1,8 @@
 "use strict";
 
+const { WebUtils } = require('@dojot/microservice-sdk');
+const { logger } = require('handlebars');
+
 let config = {
     redis: {
         url: process.env.FLOWBROKER_CACHE_HOST || "flowbroker-redis"
@@ -134,6 +137,10 @@ let config = {
     },
     logging: {
         level: process.env.LOG_LEVEL || 'info' // it could be error, warn, info or debug
+    },
+    keycloak: {
+        url: process.env.KEYCLOAK_URL || 'http://keycloak:8080',
+        'client.id': process.env.KEYCLOAK_CLIENT_ID || 'dojot-flowbroker',
     }
 };
 
