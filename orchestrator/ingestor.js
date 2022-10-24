@@ -5,7 +5,7 @@ var util = require('util');
 var node = require('./nodeManager').Manager;
 var redisManager = require('./redisManager').RedisManager;
 var logger = require("@dojot/dojot-module-logger").logger;
-const getTenantList = require("./tenant-service");
+const tenantService = require("./tenant-service");
 
 // class InitializationError extends Error {}
 

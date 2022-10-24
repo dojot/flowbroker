@@ -3,13 +3,15 @@
 "use strict";
 
 const NodeCache = require( "node-cache" );
-const { Logger, WebUtils  } = require('@dojot/microservice-sdk')
+const jwt = require('jsonwebtoken');
+const { DojotHttpClient, SecretFileHandler, KeycloakClientSession } = require('./internal-sdk/index')
 const config = require('./config');
 
-Logger.setLevel('console', config.logging.level);
-const logger = new Logger('flow-broker');
+const DojotLogger = require("@dojot/dojot-module-logger");
+const logger = DojotLogger.logger;
+
 const tenantCache = new NodeCache( { stdTTL: 100, checkperiod: 7200 } );
-const httpClient = new WebUtils.DojotHttpClient({
+const httpClient = new DojotHttpClient({
   defaultClientOptions: {
     baseURL: config.keycloak.url,
     timeout: 12000,
@@ -19,13 +21,11 @@ const httpClient = new WebUtils.DojotHttpClient({
   defaultRetryDelay: 5000,
 });
 
-async function getSession(tenantId) {  
+async function getSession(tenant) {
   try {
-    const secretFileHandler = new WebUtils.SecretFileHandler(config, logger);
-    await secretFileHandler.handle('keycloak.client.secret', '/secrets/');
-    const session = new WebUtils.KeycloakClientSession(
+    const session = new KeycloakClientSession(
       config.keycloak.url,
-      tenantId,
+      tenant.id,
       {
         client_id: config.keycloak['client.id'],
         client_secret: config.keycloak['client.secret'],
@@ -35,10 +35,11 @@ async function getSession(tenantId) {
       { retryDelay: 5000 },
     )
     await session.start()
+    return session;
   } catch (error) {
-    logger.error(error.message)
+    logger.error(error.message);
+    throw error;
   }
-  return session;
 }
 
 function b64decode(data) {
@@ -68,7 +69,7 @@ function formatCertificate(certificateBody) {
 async function getTenantData(tenantId) {
   logger.debug('retrieving cached tenant data');
   const tenantData = tenantCache.get(tenantId);
-  if (tenantCache) {
+  if (tenantData) {
     logger.debug('found cached tenant data');
     return tenantData;
   }
@@ -78,7 +79,7 @@ async function getTenantData(tenantId) {
     logger.debug('looking up tenant data in keycloak')
     const response = await httpClient.request({
       method: 'GET',
-      url: `/auth/realms/${tenant}/protocol/openid-connect/certs`,
+      url: `/auth/realms/${tenantId}/protocol/openid-connect/certs`,
     });
 
     const certs = response.data.keys.find((key) => key.use === 'sig');
@@ -99,7 +100,7 @@ async function getTenantData(tenantId) {
     return tenantData;
 
   } catch (error) {
-    logger.error(error.message)
+    logger.error(error)
   }
 }
 
@@ -116,13 +117,16 @@ async function authParse(req, res, next) {
 
   if (prefix === 'Bearer') {
     let tenant;
+    let tokenDecoded;
+
     try {
       logger.debug('Decoding access_token.');
-      const tokenDecoded = jwt.decode(tokenRaw);
+      tokenDecoded = jwt.decode(tokenRaw);
       logger.debug('Getting tenant.');
       requestTenant = tokenDecoded.iss.split('/').pop();
       tenant = await getTenantData(requestTenant);
     } catch (decodedError) {
+      logger.debug(decodedError)
       return res.status(401).send({ message: 'Invalid access_token'});
     }
 
@@ -139,8 +143,8 @@ async function authParse(req, res, next) {
           }
           logger.debug('Successfully verified.');
           req.service = tenant.id;
-          // req.user = tokenData.username;
-          // req.userid = tokenData.userid;
+          req.user = tokenDecoded.preferred_username;
+          req.userid = tokenDecoded.sid;
           next();
         },
       );

@@ -1,7 +1,10 @@
 const config = require("./config");
-const { WebUtils } = require("@dojot/microservice-sdk");
+const { DojotHttpClient } = require("./internal-sdk/index");
+const DojotLogger = require("@dojot/dojot-module-logger");
+const logger = DojotLogger.logger;
 
-const httpClient = new WebUtils.DojotHttpClient({
+
+const httpClient = new DojotHttpClient({
   defaultClientOptions: {
     timeout: 12000,
   },

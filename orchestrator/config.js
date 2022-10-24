@@ -1,6 +1,5 @@
 "use strict";
 
-const { WebUtils } = require('@dojot/microservice-sdk');
 const { logger } = require('handlebars');
 
 let config = {
@@ -8,7 +7,7 @@ let config = {
         url: process.env.FLOWBROKER_CACHE_HOST || "flowbroker-redis"
     },
     deviceManager: {
-        url: process.env.DEVICE_MANAGER_HOST || "http://device-manager:5000"
+        url: process.env.DEVICE_MANAGER_HOST || "http://device-manager-sidecar:5000"
     },
     mongodb: {
         url: process.env.MONGO_URL || "mongodb://mongodb:27017",
@@ -77,12 +76,12 @@ let config = {
             connectionRetries: 5
         },
         auth: {
-            url: process.env.AUTH_URL || "http://auth:5000",
+            url: process.env.AUTH_URL || "http://keycloak-proxy:8081/api/v1/tenant?onlyids=true",
             timeoutSleep: 5,
             connectionRetries: 5
         },
         deviceManager: {
-            url: process.env.DEVICE_MANAGER_URL || "http://device-manager:5000",
+            url: process.env.DEVICE_MANAGER_URL || "http://device-manager-sidecar:5000",
             timeoutSleep: 5,
             connectionRetries: 5
         },
@@ -141,6 +140,7 @@ let config = {
     keycloak: {
         url: process.env.KEYCLOAK_URL || 'http://keycloak:8080',
         'client.id': process.env.KEYCLOAK_CLIENT_ID || 'dojot-flowbroker',
+        'client.secret.file' : process.env.KEYCLOAK_CLIENT_SECRET_FILE || 'dojot-flowbroker',
         tenants: {
             url: process.env.KEYCLOAK_TENANTS_URL || "http://keycloak-proxy:8081/api/v1/tenant",
         },
