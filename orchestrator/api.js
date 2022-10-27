@@ -58,68 +58,71 @@ function summarizeNode(node) {
 }
 
 app.post('/v1/node', (req, res) => {
+  return res.status(405).send();
+  // const error = validateMandatoryFields(req.body, ['image', 'id']);
+  // if (error) {
+  //   return res.status(400).send({ 'message': error });
+  // }
 
-  const error = validateMandatoryFields(req.body, ['image', 'id']);
-  if (error) {
-    return res.status(400).send({ 'message': error });
-  }
-
-  nodeManager.addRemoteNode(req.body.image, req.body.id, req.service).then(() => {
-    return res.status(200).send({ message: 'ok' });
-  }).catch((error) => {
-    if (error instanceof InvalidFlowError) {
-      return res.status(400).send({ message: error.message });
-    }
-    return res.status(500).send({ message: 'Failed to add node: ' + error.message });
-  });
+  // nodeManager.addRemoteNode(req.body.image, req.body.id, req.service).then(() => {
+  //   return res.status(200).send({ message: 'ok' });
+  // }).catch((error) => {
+  //   if (error instanceof InvalidFlowError) {
+  //     return res.status(400).send({ message: error.message });
+  //   }
+  //   return res.status(500).send({ message: 'Failed to add node: ' + error.message });
+  // });
 });
 
 app.delete('/v1/node/:id', (req, res) => {
-  nodeManager.delRemoteNode(req.params.id, req.service).then(() => {
-    return res.status(200).send({ message: 'ok' });
-  }).catch((error) => {
-    logger.error(error, { filename: 'api' });
-    return res.status(500).send({ message: 'Failed to remove node.', error: error.message });
-  });
+  return res.status(405).send();
+  // nodeManager.delRemoteNode(req.params.id, req.service).then(() => {
+  //   return res.status(200).send({ message: 'ok' });
+  // }).catch((error) => {
+  //   logger.error(error, { filename: 'api' });
+  //   return res.status(500).send({ message: 'Failed to remove node.', error: error.message });
+  // });
 });
 
 app.delete('/v1/node', (req, res) => {
-  nodeManager.getAll(req.service).then((nodes) => {
-    var promises = [];
-    for (let node of nodes) {
-      promises.push(nodeManager.delRemoteNode(node.id, req.service));
-    }
+  return res.status(405).send();
+  // nodeManager.getAll(req.service).then((nodes) => {
+  //   var promises = [];
+  //   for (let node of nodes) {
+  //     promises.push(nodeManager.delRemoteNode(node.id, req.service));
+  //   }
 
-    Promise.all(promises).then(() => {
-      return res.status(200).send({ message: 'ok' });
-    }).catch((error) => {
-      logger.error(error, { filename: 'api' });
-      return res.status(500).send({ message: 'Failed to remove node.', error: error.message });
-    });
+  //   Promise.all(promises).then(() => {
+  //     return res.status(200).send({ message: 'ok' });
+  //   }).catch((error) => {
+  //     logger.error(error, { filename: 'api' });
+  //     return res.status(500).send({ message: 'Failed to remove node.', error: error.message });
+  //   });
 
-  }).catch((error) => {
-    logger.error(error, { filename: 'api' });
-    return res.status(500).send({ 'message': 'Failed to list nodes' });
-  });
-
+  // }).catch((error) => {
+  //   logger.error(error, { filename: 'api' });
+  //   return res.status(500).send({ 'message': 'Failed to list nodes' });
+  // });
 });
 
 app.get('/v1/node', (req, res) => {
-  nodeManager.getAll(req.service).then((nodes) => {
-    let filtered = [];
-    for (let node of nodes) {
-      filtered.push(summarizeNode(node));
-    }
-    return res.status(200).send({ 'nodes': filtered });
-  }).catch((error) => {
-    logger.error(error, { filename: 'api' });
-    return res.status(500).send({ 'message': 'Failed to list nodes' });
-  });
+  return res.status(405).send();
+  // nodeManager.getAll(req.service).then((nodes) => {
+  //   let filtered = [];
+  //   for (let node of nodes) {
+  //     filtered.push(summarizeNode(node));
+  //   }
+  //   return res.status(200).send({ 'nodes': filtered });
+  // }).catch((error) => {
+  //   logger.error(error, { filename: 'api' });
+  //   return res.status(500).send({ 'message': 'Failed to list nodes' });
+  // });
 });
 
-app.get('/v1/flow', (req, res) => {
+app.get('/v1/flow', async (req, res) => {
   let fm = null;
   try {
+    logger.debug(`Get Flow manager for ${req.service}`);
     fm = FlowManager.get(req.service);
   } catch (e) {
     if (e instanceof FlowError) {
@@ -130,16 +133,19 @@ app.get('/v1/flow', (req, res) => {
     return res.status(500).send({ "message": "Failed to switch tenancy context" });
   }
 
-  fm.getAll().then((flows) => {
+  logger.debug(`Get Flows...`);
+  try{
+    const flows = await fm.getAll();
     let filtered = [];
     for (let flow of flows) {
       filtered.push(summarizeFlow(flow));
     }
+    logger.debug("Return flows");
     return res.status(200).send({ 'flows': filtered });
-  }).catch((error) => {
+  } catch (error) {
     logger.error(error, { filename: 'api' });
     return res.status(500).send({ 'message': 'Failed to list flows' });
-  });
+  }
 });
 
 app.post('/v1/flow', (req, res) => {
