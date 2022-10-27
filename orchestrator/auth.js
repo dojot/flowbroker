@@ -151,8 +151,9 @@ async function authParse(req, res, next) {
     } else {
       return res.status(401).send({ message: 'Tenant not found'});
     }
+  } else {
+    return res.status(401).send({ message: 'Invalid authorization header'});
   }
-  next();
 }
 
 function authEnforce(req, res, next) {

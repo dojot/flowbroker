@@ -80,10 +80,10 @@ class NodeManager {
    */
   _createMongoDBCollection(tenant) {
     return MongoManager.get().then((client) => {
-      let collection = client.db(`flowbroker_${tenant}`).collection('remoteNode');
+      let collection = client.db(`flowbroker_${tenant.id}`).collection('remoteNode');
       return collection;
     }).catch(() => {
-      throw new Error(`Failed to create mongoDB collection for tenant ${tenant}.`);
+      throw new Error(`Failed to create mongoDB collection for tenant ${tenant.id}.`);
     });
   }
 
