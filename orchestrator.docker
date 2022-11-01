@@ -3,15 +3,16 @@ FROM node:8.14.0-alpine as basis
 RUN apk --no-cache add gcc g++ musl-dev make python bash zlib-dev
 
 WORKDIR /opt/flowbroker
-
 COPY lib lib
+
+WORKDIR /opt/flowbroker/lib
+RUN npm install 
 
 WORKDIR /opt/flowbroker/orchestrator
 
 COPY orchestrator/package.json ./package.json
-COPY orchestrator/package-lock.json ./package-lock.json
+# COPY orchestrator/package-lock.json ./package-lock.json
 RUN npm install
-
 
 FROM node:8.14.0-alpine
 RUN apk add --no-cache tini

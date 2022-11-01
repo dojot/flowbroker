@@ -48,6 +48,7 @@
     "handlebars": "^4.0.12",
     "ioredis": "^4.0.0",
     "joi": "^10.2.0",
+    "jsonwebtoken": "^8.5.1",
     "kubernetes-client": "8.3.6",
     "lodash": "^4.17.4",
     "mongodb": "^3.0.4",
