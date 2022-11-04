@@ -142,7 +142,7 @@ let config = {
         'client.id': process.env.KEYCLOAK_CLIENT_ID || 'dojot-flowbroker',
         'client.secret.file' : process.env.KEYCLOAK_CLIENT_SECRET_FILE || 'dojot-flowbroker',
         tenants: {
-            url: process.env.KEYCLOAK_TENANTS_URL || "http://keycloak-proxy:8081/api/v1/tenant",
+            url: process.env.KEYCLOAK_TENANTS_URL || "http://keycloak-proxy:8081/api/v1/tenant?onlyids=true",
         },
     }
 };

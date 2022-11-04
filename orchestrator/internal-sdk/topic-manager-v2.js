@@ -34,8 +34,13 @@ class TopicManagerV2 {
    * @param {string} broker URL where data broker can be accessed
    * @param {boolean} global true if this topic should be sensitive to tenants
    */
-  async getTopic(subject, _tenant, _broker, _global) {
-    return "^." + subject
+  async getTopic(subject, tenant, _broker, _global) {
+    if( subject === 'dojot.tenancy' ) {
+      return 'dojot-management.dojot.tenancy'
+    }
+    
+    logger.debug(`${subject}, ${tenant} => ${tenant}.${subject}`);
+    return `${tenant}.${subject}`;
   }
 }
 

@@ -21,11 +21,11 @@ const httpClient = new DojotHttpClient({
   defaultRetryDelay: 5000,
 });
 
-async function getSession(tenant) {
+async function getSession(tenantId) {
   try {
     const session = new KeycloakClientSession(
       config.keycloak.url,
-      tenant.id,
+      tenantId,
       {
         client_id: config.keycloak['client.id'],
         client_secret: config.keycloak['client.secret'],

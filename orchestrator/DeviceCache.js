@@ -91,32 +91,41 @@ class DeviceCache {
    * @param {string} deviceid 
    * @param {string} tenant 
    */
-  _requestDeviceInfo(tenant, deviceid) {
-    return axios.get(config.deviceManager.url + "/device/" + deviceid,
+  async _requestDeviceInfo(tenant, deviceid) {
+    let tenantSession;
+    let response;
+    try {
+      tenantSession = await auth.getSession(tenant);
+      response = await axios.get(config.deviceManager.url + "/device/" + deviceid,
       {
         'headers': {
-          'authorization': "Bearer " + auth.getToken(tenant)
+          'authorization': "Bearer " + tenantSession.getTokenSet().access_token,
         }
-      }).then((response) => {
-
-        let templates = [];
-        for (let templateId of response.data.templates) {
-          templates.push(templateId.toString());
-        }
-
-        let deviceInfo = {
-          "templates": templates,
-          "staticAttrs": this._addStaticAttrs(response.data.attrs)
-        };
-        if (this.client.status === 'ready') {
-          return this._writeDeviceInfo(tenant, deviceid, deviceInfo).then(() => {
-            return Promise.resolve(deviceInfo);
-          });
-        }
-        return Promise.resolve(deviceInfo);
-      }).catch((error) => {
-        return Promise.reject(error);
       });
+      tenantSession.close()
+    } catch (error) {
+      tenantSession.close()
+      logger.error(error);
+      throw error;
+    }
+
+    let templates = [];
+    for (let templateId of response.data.templates) {
+      templates.push(templateId.toString());
+    }
+
+    let deviceInfo = {
+      "templates": templates,
+      "staticAttrs": this._addStaticAttrs(response.data.attrs)
+    };
+    if (this.client.status === 'ready') {
+      return this._writeDeviceInfo(tenant, deviceid, deviceInfo).then(() => {
+        tenantSession.close();
+        return Promise.resolve(deviceInfo);
+      });
+    }
+
+    return deviceInfo
   }
 
   /**

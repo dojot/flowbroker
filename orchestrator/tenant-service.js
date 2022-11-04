@@ -1,5 +1,5 @@
 const config = require("./config");
-const { DojotHttpClient } = require("./internal-sdk/index");
+const DojotHttpClient = require("./internal-sdk/http-client");
 const DojotLogger = require("@dojot/dojot-module-logger");
 const logger = DojotLogger.logger;
 
