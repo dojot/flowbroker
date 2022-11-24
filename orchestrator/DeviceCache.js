@@ -65,8 +65,7 @@ class DeviceCache {
    * @param {string} deviceid
    * @param {string} tenant 
    */
-  getDeviceInfo(tenant, deviceid) {
-    
+  getDeviceInfo(tenant, deviceid) {    
     if (this.client.status === 'ready') {
       return this.client.get(tenant + ":" + deviceid).then((data) => {
 
@@ -92,32 +91,41 @@ class DeviceCache {
    * @param {string} deviceid 
    * @param {string} tenant 
    */
-  _requestDeviceInfo(tenant, deviceid) {
-    return axios.get(config.deviceManager.url + "/device/" + deviceid,
+  async _requestDeviceInfo(tenant, deviceid) {
+    let tenantSession;
+    let response;
+    try {
+      tenantSession = await auth.getSession(tenant);
+      response = await axios.get(config.deviceManager.url + "/device/" + deviceid,
       {
         'headers': {
-          'authorization': "Bearer " + auth.getToken(tenant)
+          'authorization': "Bearer " + tenantSession.getTokenSet().access_token,
         }
-      }).then((response) => {
-
-        let templates = [];
-        for (let templateId of response.data.templates) {
-          templates.push(templateId.toString());
-        }
-
-        let deviceInfo = {
-          "templates": templates,
-          "staticAttrs": this._addStaticAttrs(response.data.attrs)
-        };
-        if (this.client.status === 'ready') {
-          return this._writeDeviceInfo(tenant, deviceid, deviceInfo).then(() => {
-            return Promise.resolve(deviceInfo);
-          });
-        }
-        return Promise.resolve(deviceInfo);
-      }).catch((error) => {
-        return Promise.reject(error);
       });
+      tenantSession.close()
+    } catch (error) {
+      tenantSession.close()
+      logger.error(error);
+      throw error;
+    }
+
+    let templates = [];
+    for (let templateId of response.data.templates) {
+      templates.push(templateId.toString());
+    }
+
+    let deviceInfo = {
+      "templates": templates,
+      "staticAttrs": this._addStaticAttrs(response.data.attrs)
+    };
+    if (this.client.status === 'ready') {
+      return this._writeDeviceInfo(tenant, deviceid, deviceInfo).then(() => {
+        tenantSession.close();
+        return Promise.resolve(deviceInfo);
+      });
+    }
+
+    return deviceInfo
   }
 
   /**
@@ -174,36 +182,40 @@ class DeviceCache {
       if (!page) {
         page = 1;
       }
-      
-      axios.get(`${config.deviceManager.url}/device?page_num=${page}`,
-        {
-          'headers': {
-            'authorization': "Bearer " + auth.getToken(tenant)
-          }
-        }
-      ).then((response) => {
-        for (let device of response.data.devices) {
-          // this is only a hotfix, because the api returns templates as int instead string
-          let templates = [];
-          for (let templateId of device.templates) {
-            templates.push(templateId.toString());
-          }
 
-          devices[`${tenant}:${device.id}`] = JSON.stringify({
-            "templates": templates,
-            "staticAttrs": this._addStaticAttrs(device.attrs)
-          });
-        }
-        if (response.data.pagination.has_next) {
-          return this._getAllDevices(tenant, response.data.pagination.next_page, devices).then(() => {
+      auth.getSession(tenant).then((tenantSession) => {
+        axios.get(`${config.deviceManager.url}/device?page_num=${page}`,
+          {
+            'headers': {
+              'authorization': "Bearer " + tenantSession.getTokenSet().access_token,
+            }
+          }
+        ).then((response) => {
+          for (let device of response.data.devices) {
+            // this is only a hotfix, because the api returns templates as int instead string
+            let templates = [];
+            for (let templateId of device.templates) {
+              templates.push(templateId.toString());
+            }
+
+            devices[`${tenant}:${device.id}`] = JSON.stringify({
+              "templates": templates,
+              "staticAttrs": this._addStaticAttrs(device.attrs)
+            });
+          }
+          if (response.data.pagination.has_next) {
+            return this._getAllDevices(tenant, response.data.pagination.next_page, devices).then(() => {
+              return resolve();
+            });
+          } else {
+            tenantSession.close();
             return resolve();
-          });
-        } else {
-          return resolve();
-        }
-      }).catch((error) => {
-        logger.error(`Failed to retrieve the list of available devices: ${error}`, { filename: 'dev cache' });
-        return reject(error);
+          }
+        }).catch((error) => {
+          logger.error(`Failed to retrieve the list of available devices: ${error}`, { filename: 'dev cache' });
+          tenantSession.close();
+          return reject(error);
+        });
       });
     });
   }

@@ -2,53 +2,150 @@
 /* jshint esversion: 6 */
 "use strict";
 
-const logger = require("@dojot/dojot-module-logger").logger;
+const NodeCache = require( "node-cache" );
+const jwt = require('jsonwebtoken');
+const { DojotHttpClient, KeycloakClientSession } = require('./internal-sdk/index')
+const config = require('./config');
 
-function getToken(tenant) {
-  const payload = { 'service': tenant, 'username': 'flowbroker' };
-  return (new Buffer('jwt schema').toString('base64')) + '.' +
-      (new Buffer(JSON.stringify(payload)).toString('base64')) + '.' +
-      (new Buffer('dummy signature').toString('base64'));
+const DojotLogger = require("@dojot/dojot-module-logger");
+const logger = DojotLogger.logger;
+
+const tenantCache = new NodeCache( { stdTTL: 100, checkperiod: 7200 } );
+const httpClient = new DojotHttpClient({
+  defaultClientOptions: {
+    baseURL: config.keycloak.url,
+    timeout: 12000,
+  },
+  logger: logger,
+  defaultMaxNumberAttempts: 3,
+  defaultRetryDelay: 5000,
+});
+
+async function getSession(tenantId) {
+  try {
+    const session = new KeycloakClientSession(
+      config.keycloak.url,
+      tenantId,
+      {
+        client_id: config.keycloak['client.id'],
+        client_secret: config.keycloak['client.secret'],
+        grant_type: "client_credentials",
+      },
+      logger,
+      { retryDelay: 5000 },
+    )
+    await session.start()
+    return session;
+  } catch (error) {
+    logger.error(error.message);
+    throw error;
+  }
 }
 
-function b64decode(data) {
-  if (typeof Buffer.from === "function") {
-    return Buffer.from(data, 'base64').toString();
+/**
+ * Format certificate in x5c format
+ *
+ * @param {string} base64PublicKey Public key in base64
+ *
+ * @returns rsa cerficate
+ */
+function formatCertificate(certificateBody) {
+  let certificate = '-----BEGIN CERTIFICATE-----\n';
+  const chucks = certificateBody.match(/.{1,64}/g);
+  certificate += chucks.join('\n');
+  certificate += '\n-----END CERTIFICATE-----';
+
+  return certificate;
+}
+
+async function getTenantData(tenantId) {
+  logger.debug('retrieving cached tenant data');
+  const tenantData = tenantCache.get(tenantId);
+  if (tenantData) {
+    logger.debug('found cached tenant data');
+    return tenantData;
+  }
+  logger.debug('there is no cached tenant data');
+
+  try {
+    logger.debug('looking up tenant data in keycloak')
+    const response = await httpClient.request({
+      method: 'GET',
+      url: `/auth/realms/${tenantId}/protocol/openid-connect/certs`,
+    });
+
+    const certs = response.data.keys.find((key) => key.use === 'sig');
+    const tenantData = {
+      id: tenantId,
+      signatureKey: {
+        algorithm: certs.alg,
+        certificate: formatCertificate(certs.x5c[0]),
+      },
+    };
+
+    logger.debug('writing cached tenant data');
+    const success = tenantCache.set(tenantId, tenantData);
+    if( !success){
+      logger.error('failed to write cache tenant data');
+    }
+
+    return tenantData;
+
+  } catch (error) {
+    logger.error(error)
+  }
+}
+
+async function authParse(req, res, next) {
+  let prefix;
+  let tokenRaw;
+  let requestTenant;
+
+  try {
+    [prefix, tokenRaw] = req.headers.authorization.split(' ');
+  } catch (error) {
+    return res.status(401).send({ message: 'Invalid authorization header'});
+  }
+
+  if (prefix === 'Bearer') {
+    let tenant;
+    let tokenDecoded;
+
+    try {
+      logger.debug('Decoding access_token.');
+      tokenDecoded = jwt.decode(tokenRaw);
+      logger.debug('Getting tenant.');
+      requestTenant = tokenDecoded.iss.split('/').pop();
+      tenant = await getTenantData(requestTenant);
+    } catch (decodedError) {
+      logger.debug(decodedError)
+      return res.status(401).send({ message: 'Invalid access_token'});
+    }
+
+    if (tenant) {
+      logger.debug('Verify access_token.');
+      jwt.verify(
+        tokenRaw,
+        tenant.signatureKey.certificate,
+        { algorithms: tenant.signatureKey.algorithm },
+        (verifyTokenError) => {
+          if (verifyTokenError) {
+            logger.debug(verifyTokenError.message);
+            return res.status(401).send({ message: verifyTokenError.message });
+          }
+          logger.debug('Successfully verified.');
+          req.service = tenant.id;
+          req.user = tokenDecoded.preferred_username;
+          req.userid = tokenDecoded.sid;
+          next();
+        },
+      );
+    } else {
+      return res.status(401).send({ message: 'Tenant not found'});
+    }
   } else {
-    return (new Buffer(data, 'base64')).toString();
+    return res.status(401).send({ message: 'Invalid authorization header'});
   }
-}
-
-class UnauthorizedError {
-  constructor(){
-    this.message = "Authentication (JWT) required for API";
-  }
-}
-
-class InvalidTokenError {
-  constructor(){
-    this.message = "Invalid authentication token given";
-  }
-}
-
-function authParse(req, res, next) {
-  const rawToken = req.get('authorization');
-  if (rawToken === undefined) {
-    return next();
-  }
-
-  const token = rawToken.split('.');
-  if (token.length !== 3) {
-    logger.error(`Got invalid request: token is malformed ${rawToken}`, { filename: 'auth' });
-    return res.status(401).send(new InvalidTokenError());
-  }
-
-  const tokenData = JSON.parse(b64decode(token[1]));
-
-  req.user = tokenData.username;
-  req.userid = tokenData.userid;
-  req.service = tokenData.service;
-  next();
 }
 
 function authEnforce(req, res, next) {
@@ -74,5 +171,5 @@ function authEnforce(req, res, next) {
 module.exports = {
   authParse: authParse,
   authEnforce: authEnforce,
-  getToken: getToken
+  getSession: getSession
 };

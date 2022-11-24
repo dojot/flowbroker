@@ -11,6 +11,9 @@
       },
       "node-forge@0.8.5": {
         "reason": "It allows to choose between BSD-3-Clause and GPL. We chose BSD-3-Clause to be compatible with Apache-2.0."
+      },
+      "json-schema@0.4.0": {
+        "reason": "It allows to choose between BSD-3-Clause and AFL-2.1. We chose BSD-3-Clause to be compatible with Apache-2.0."
       }
     }
   }
