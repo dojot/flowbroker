@@ -21,11 +21,19 @@ module.exports = class Executor {
     }
 
     init() {
-        return this.producer
-            .connect()
-            .then(() => {
-                this.consumer.connect();
-            });
+        const amqpConsumerPromises = [];
+        const amqpProducerPromises = [];
+
+        amqpConsumerPromises.push(this.consumer.connect());
+        amqpProducerPromises.push(this.producer.connect());
+
+        return Promise.all([...amqpConsumerPromises, 
+        ...amqpProducerPromises]).then(() => {
+            logger.debug('[Executor] Connections established with RabbitMQ!');
+        }).catch(errors => {
+            logger.error(`[Executor] Failed to establish connections with RabbitMQ. Error = ${errors}`);
+            process.exit(1);
+        });
     }
 
     hop(data, ack) {
