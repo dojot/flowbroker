@@ -358,7 +358,6 @@ module.exports = class DeviceIngestor {
     }
   }
 
-
   async _preProcessDeviceManagerEvent(messageStringfied) {
 
     try {
@@ -469,5 +468,4 @@ module.exports = class DeviceIngestor {
     event.data.attrs = attrs;
     return event;
   }
-
 };

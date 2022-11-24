@@ -94,6 +94,7 @@ let config = {
             subjects: {
                 tenancy: process.env.DOJOT_SUBJECT_TENANCY || "dojot.tenancy",
                 devices: process.env.DOJOT_SUBJECT_DEVICES || "dojot.device-manager.device",
+                actuation: process.env.DOJOT_SUBJECT_DEVICES_ACTUATION || "dojot.device-manager.device.actuation",
                 deviceData: process.env.DOJOT_SUBJECT_DEVICE_DATA || "device-data",
                 notification: process.env.DOJOT_SUBJECT_NOTIFICATIONS || "dojot.notifications",
                 ftp: process.env.DOJOT_SUBJECT_FTP || "dojot.ftp"
