@@ -1,7 +1,4 @@
 "use strict";
-
-const { logger } = require('handlebars');
-
 let config = {
     redis: {
         url: process.env.FLOWBROKER_CACHE_HOST || "flowbroker-redis"

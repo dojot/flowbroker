@@ -10,10 +10,6 @@ var FlowError = require('./flowManager').FlowError;
 
 var NodeAPI = require('./node-red/src/index');
 
-var nodeManager = require('./nodeManager').Manager;
-
-var InvalidFlowError = require('./flowManager').InvalidFlowError;
-
 var healthCheck = require('@dojot/healthcheck');
 const logger = require("@dojot/dojot-module-logger").logger;
 const DojotLogger = require("@dojot/dojot-module-logger");

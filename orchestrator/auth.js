@@ -4,7 +4,7 @@
 
 const NodeCache = require( "node-cache" );
 const jwt = require('jsonwebtoken');
-const { DojotHttpClient, SecretFileHandler, KeycloakClientSession } = require('./internal-sdk/index')
+const { DojotHttpClient, KeycloakClientSession } = require('./internal-sdk/index')
 const config = require('./config');
 
 const DojotLogger = require("@dojot/dojot-module-logger");
@@ -39,14 +39,6 @@ async function getSession(tenantId) {
   } catch (error) {
     logger.error(error.message);
     throw error;
-  }
-}
-
-function b64decode(data) {
-  if (typeof Buffer.from === "function") {
-    return Buffer.from(data, 'base64').toString();
-  } else {
-    return (new Buffer(data, 'base64')).toString();
   }
 }
 
