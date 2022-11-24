@@ -211,8 +211,9 @@ class NodeManager {
             "event template in": new event_template_in(),
             "device template in": new template_in(),
             "actuate": new actuate(
-              new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices, tenant)),
-            "multi actuate": new multi_actuate(kafkaMessenger, config.kafkaMessenger.dojot.subjects.devices),
+              new Publisher(kafkaMessenger, config.kafkaMessenger.dojot.subjects.actuation, tenant),
+            ),
+            "multi actuate": new multi_actuate(kafkaMessenger, config.kafkaMessenger.dojot.subjects.actuation),
             "get context": new get_context(),
             "cron": new cron(),
             "cron-batch": new cron_batch(),

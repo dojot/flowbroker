@@ -191,6 +191,7 @@ secretFileHandler.handle('keycloak.client.secret', '/secrets/').then(() => {
     exec.init().then(loggerCallback).catch(errorCallback);
   }
 
+
   // Kafka listeners and writers
   const topicManagerV2 = new TopicManagerV2()
   const kafkaMessenger = new KafkaMessegerV2("flowbroker", config.kafkaMessenger, topicManagerV2);
