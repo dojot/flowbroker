@@ -15,11 +15,12 @@ class DeviceCache {
   }
 
   async populate(tenants) {
+
     let devices = {};
     let promises = [];
 
     for (let tenant of tenants) {
-      promises.push(this._getAllDevices(tenant, 1, devices));
+      promises.push(this._getAllDevices(tenant.id, 1, devices));
     }
 
     return Promise.all(promises).then(() => {
