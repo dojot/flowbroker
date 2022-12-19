@@ -104,7 +104,7 @@ async function authParse(req, res, next) {
   try {
     [prefix, tokenRaw] = req.headers.authorization.split(' ');
   } catch (error) {
-    return res.status(401).send({ message: 'Invalid authorization header'});
+    return next();
   }
 
   if (prefix === 'Bearer') {

@@ -123,7 +123,7 @@ module.exports = class DeviceIngestor {
         logger.debug("Initializing flow nodes for current tenants ...");
         for (const tenant of this.kafkaMessenger.tenants) {
           logger.debug(`Initializing nodes for ${tenant} ...`)
-          node.addTenant(tenant, this.kafkaMessenger).catch((error) => {
+          node.addTenant(tenant.id, this.kafkaMessenger).catch((error) => {
             logger.error(`Failed to add tenant ${tenant} to node handler (${error}). Bailing out...`);
             process.kill(process.pid, "SIGTERM");
           });
