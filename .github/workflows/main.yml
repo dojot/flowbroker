@@ -46,29 +46,29 @@ jobs:
         npm run build --if-present
         npm run check-licenses
 
-  integration-tests:
-    needs: npm-build
-    name: Integration tests
-    runs-on: ubuntu-18.04
-    steps:
-
-    - name: checkout
-      uses: actions/checkout@v2
-
-    - name: Build the stack and test
-      run: |
-        export FLOWBROKER_NETWORK=flowbroker
-        docker build -t flowbroker -f orchestrator.docker .
-        docker build -t flowbroker-context-manager -f contextManager.docker .
-        docker build -t tests-flowbroker -f ./tests/Dockerfile .
-        docker-compose -f tests/docker-compose.yml up -d kafka rabbitmq data-broker mongodb auth postgres-users device-manager device-manager-redis
-        sleep 10
-        docker-compose -f tests/docker-compose.yml up -d flowbroker flowbroker-context-manager flowbroker-redis
-        sleep 10
-        docker-compose -f ./tests/docker-compose.yml run --rm tester * --level=debug
+#  integration-tests:
+#    needs: npm-build
+#    name: Integration tests
+#    runs-on: ubuntu-18.04
+#    steps:
+#
+#    - name: checkout
+#      uses: actions/checkout@v2
+#
+#    - name: Build the stack and test
+#      run: |
+#        export FLOWBROKER_NETWORK=flowbroker
+#        docker build -t flowbroker -f orchestrator.docker .
+#        docker build -t flowbroker-context-manager -f contextManager.docker .
+#        docker build -t tests-flowbroker -f ./tests/Dockerfile .
+#        docker-compose -f tests/docker-compose.yml up -d kafka rabbitmq data-broker mongodb auth postgres-users device-manager device-manager-redis
+#        sleep 10
+#        docker-compose -f tests/docker-compose.yml up -d flowbroker flowbroker-context-manager flowbroker-redis
+#        sleep 10
+#        docker-compose -f ./tests/docker-compose.yml run --rm tester * --level=debug
 
   docker-hub:
-    needs: integration-tests
+#    needs: integration-tests
     name: Build and Publish image to DockerHub
     runs-on: ubuntu-18.04
     # If this is a PR, it won't run
@@ -86,7 +86,7 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Build and Push
-      uses: elgohr/Publish-Docker-Github-Action@2.16
+      uses: elgohr/Publish-Docker-Github-Action@2.17
       with:
         name: ${{ steps.get_owner.outputs.owner }}/flowbroker
         username: ${{ secrets.DOCKER_USERNAME }}
@@ -98,7 +98,7 @@ jobs:
         tag_names: true
 
     - name: Build and Push
-      uses: elgohr/Publish-Docker-Github-Action@2.16
+      uses: elgohr/Publish-Docker-Github-Action@2.17
       with:
         name: ${{ steps.get_owner.outputs.owner }}/flowbroker-context-manager
         username: ${{ secrets.DOCKER_USERNAME }}
