@@ -42,10 +42,10 @@ class KafkaMessegerV2 extends dojotModule.Messenger {
     let tenants = await tenantService.getTenantList();
     logger.info(`Retrieved list of tenants: ${tenants}.`);
     for (const tenant of tenants) {
-      const tenantObj = { type: this.config.dojot.events.tenantActionType.CREATE, tenant: tenant };
+      const tenantObj = { type: this.config.dojot.events.tenantActionType.CREATE, tenant: tenant.id };
       logger.info(`Bootstrapping tenant ${JSON.stringify(tenantObj)}...`, TAG);
-      this._processNewTenant(tenant, tenantObj);
-      logger.info(`... ${tenant} bootstrapped.`, TAG);
+      this._processNewTenant(tenant.id, tenantObj);
+      logger.info(`... ${tenant.id} bootstrapped.`, TAG);
     }
     logger.info(`Finished tenant bootstrapping.`, TAG);
   }

@@ -94,7 +94,7 @@ module.exports = class DeviceIngestor {
               message: message
             };
             this._enqueueEvent(event).then(() => {
-              logger.debug(`Queued event ${event}`);
+              logger.debug(`Queued event ${event.source}`);
             }).catch((error) => {
               logger.warn(`Failed to enqueue event ${event}. Error: ${error}`);
             });
@@ -111,7 +111,7 @@ module.exports = class DeviceIngestor {
               message: message
             };
             this._enqueueEvent(event).then(() => {
-              logger.debug(`Queued event ${event}`);
+              logger.debug(`Queued event ${event.source}`);
             }).catch((error) => {
               logger.warn(`Failed to enqueue event ${event}. Error: ${error}`);
             });
@@ -123,7 +123,7 @@ module.exports = class DeviceIngestor {
         logger.debug("Initializing flow nodes for current tenants ...");
         for (const tenant of this.kafkaMessenger.tenants) {
           logger.debug(`Initializing nodes for ${tenant} ...`)
-          node.addTenant(tenant.id, this.kafkaMessenger).catch((error) => {
+          node.addTenant(tenant, this.kafkaMessenger).catch((error) => {
             logger.error(`Failed to add tenant ${tenant} to node handler (${error}). Bailing out...`);
             process.kill(process.pid, "SIGTERM");
           });

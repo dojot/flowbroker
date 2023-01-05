@@ -149,7 +149,7 @@ async function authParse(req, res, next) {
 }
 
 function authEnforce(req, res, next) {
-  if (req.path.match(/(\.png|svg$)|(keymap\.json$)/)){
+  if (req.path.match(/(\.png|svg$)|(keymap\.json$)|(healthcheck$)/)){
     logger.debug(`will ignore ${req.path}`, { filename: 'auth' });
     return next();
   }
