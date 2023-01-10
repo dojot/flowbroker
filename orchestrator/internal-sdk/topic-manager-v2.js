@@ -36,7 +36,7 @@ class TopicManagerV2 {
    */
   async getTopic(subject, tenant, _broker, _global) {
     if( subject === 'dojot.tenancy' ) {
-      return 'dojot-management.dojot.tenancy'
+      return 'dojot-management.dojot.tenancy';
     }
     
     logger.debug(`${subject}, ${tenant} => ${tenant}.${subject}`);

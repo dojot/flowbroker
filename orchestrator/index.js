@@ -213,6 +213,7 @@ secretFileHandler.handle('keycloak.client.secret', '/secrets/').then(() => {
     logger.debug("Creating r+w channel for device-manager subject...");
     kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.devices, "rw");
     logger.debug("... r+w channel for device-manager was created.");
+    kafkaMessenger.createChannel(config.kafkaMessenger.dojot.subjects.actuation, "rw");
 
     // read:  device data to trigger the flows
     // write: virtual device
