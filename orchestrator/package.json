@@ -46,7 +46,7 @@
     "geolib": "^2.0.24",
     "ioredis": "^4.0.0",
     "joi": "^10.2.0",
-    "kubernetes-client": "8.3.6",
+    "kubernetes-client": "8.3.7",
     "lodash": "^4.17.4",
     "mongodb": "^3.0.4",
     "mustache": "^2.3.0",
