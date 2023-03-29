@@ -86,7 +86,7 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Build and Push
-      uses: elgohr/Publish-Docker-Github-Action@2.16
+      uses: elgohr/Publish-Docker-Github-Action@v5
       with:
         name: ${{ steps.get_owner.outputs.owner }}/flowbroker
         username: ${{ secrets.DOCKER_USERNAME }}
@@ -98,7 +98,7 @@ jobs:
         tag_names: true
 
     - name: Build and Push
-      uses: elgohr/Publish-Docker-Github-Action@2.16
+      uses: elgohr/Publish-Docker-Github-Action@v5
       with:
         name: ${{ steps.get_owner.outputs.owner }}/flowbroker-context-manager
         username: ${{ secrets.DOCKER_USERNAME }}
